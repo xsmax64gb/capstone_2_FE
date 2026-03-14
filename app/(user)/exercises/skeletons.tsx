@@ -1,5 +1,7 @@
 function SkeletonBlock({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded-md bg-slate-200/80 ${className}`} />;
+  return (
+    <div className={`animate-pulse rounded-md bg-slate-200/80 ${className}`} />
+  );
 }
 
 export function ExercisesListSkeleton() {

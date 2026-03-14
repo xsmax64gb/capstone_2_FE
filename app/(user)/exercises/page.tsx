@@ -116,7 +116,16 @@ export default function ExercisesPage() {
             <select
               value={selectedLevel}
               onChange={(e) =>
-                setSelectedLevel(e.target.value as "all" | "A1" | "A2" | "B1" | "B2" | "C1" | "C2")
+                setSelectedLevel(
+                  e.target.value as
+                    | "all"
+                    | "A1"
+                    | "A2"
+                    | "B1"
+                    | "B2"
+                    | "C1"
+                    | "C2",
+                )
               }
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
@@ -130,7 +139,9 @@ export default function ExercisesPage() {
             <select
               value={selectedType}
               onChange={(e) =>
-                setSelectedType(e.target.value as "all" | "mcq" | "fill_blank" | "matching")
+                setSelectedType(
+                  e.target.value as "all" | "mcq" | "fill_blank" | "matching",
+                )
               }
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >

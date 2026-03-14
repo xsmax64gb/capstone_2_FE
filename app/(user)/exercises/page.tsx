@@ -1,32 +1,52 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { BookCheck, Clock3, History, Search, Sparkles, Trophy } from 'lucide-react'
-import { ProtectedRoute } from '@/components/auth/protected-route'
-import { TOPIC_LABELS, TYPE_LABELS } from './data'
-import { useGetExercisesQuery, useGetExerciseSummaryQuery } from '@/lib/api/exercisesApi'
+import { useState } from "react";
+import Link from "next/link";
+import {
+  BookCheck,
+  Clock3,
+  History,
+  Search,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { TOPIC_LABELS, TYPE_LABELS } from "./data";
+import {
+  useGetExercisesQuery,
+  useGetExerciseSummaryQuery,
+} from "@/lib/api/exercisesApi";
 
 export default function ExercisesPage() {
-  const [query, setQuery] = useState('')
-  const [selectedLevel, setSelectedLevel] = useState<'all' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'>('all')
-  const [selectedType, setSelectedType] = useState<'all' | 'mcq' | 'fill_blank' | 'matching'>('all')
+  const [query, setQuery] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState<
+    "all" | "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+  >("all");
+  const [selectedType, setSelectedType] = useState<
+    "all" | "mcq" | "fill_blank" | "matching"
+  >("all");
 
-  const { data: listData, isLoading, isError } = useGetExercisesQuery({
+  const {
+    data: listData,
+    isLoading,
+    isError,
+  } = useGetExercisesQuery({
     query,
     level: selectedLevel,
     type: selectedType,
     limit: 50,
-  })
-  const { data: summaryData } = useGetExerciseSummaryQuery()
+  });
+  const { data: summaryData } = useGetExerciseSummaryQuery();
 
-  const items = listData?.items ?? []
-  const totalQuestions = summaryData?.totalQuestions ?? 0
-  const totalXp = summaryData?.totalXp ?? 0
-  const pastAttempts = summaryData?.pastAttempts ?? 0
+  const items = listData?.items ?? [];
+  const totalQuestions = summaryData?.totalQuestions ?? 0;
+  const totalXp = summaryData?.totalXp ?? 0;
+  const pastAttempts = summaryData?.pastAttempts ?? 0;
 
-  const getTopicLabel = (topic: string) => TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic
-  const getTypeLabel = (type: string) => TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type
+  const getTopicLabel = (topic: string) =>
+    TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic;
+  const getTypeLabel = (type: string) =>
+    TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type;
 
   return (
     <ProtectedRoute>
@@ -34,9 +54,12 @@ export default function ExercisesPage() {
         <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Exercise Arena</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Exercise Arena
+              </h1>
               <p className="mt-1 text-slate-500">
-                Full practice hub with attempt flow, result analysis, and review pages.
+                Full practice hub with attempt flow, result analysis, and review
+                pages.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -59,15 +82,21 @@ export default function ExercisesPage() {
 
           <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">Question Bank</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">
+                Question Bank
+              </p>
               <p className="mt-1 text-xl font-bold">{totalQuestions}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">Potential XP</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">
+                Potential XP
+              </p>
               <p className="mt-1 text-xl font-bold">{totalXp}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">Past Attempts</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">
+                Past Attempts
+              </p>
               <p className="mt-1 text-xl font-bold">{pastAttempts}</p>
             </div>
           </div>
@@ -85,7 +114,11 @@ export default function ExercisesPage() {
 
             <select
               value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value as 'all' | ExerciseItem['level'])}
+              onChange={(e) =>
+                setSelectedLevel(
+                  e.target.value as "all" | ExerciseItem["level"],
+                )
+              }
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
               <option value="all">All levels</option>
@@ -97,7 +130,9 @@ export default function ExercisesPage() {
 
             <select
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as 'all' | ExerciseItem['type'])}
+              onChange={(e) =>
+                setSelectedType(e.target.value as "all" | ExerciseItem["type"])
+              }
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
               <option value="all">All types</option>
@@ -116,13 +151,17 @@ export default function ExercisesPage() {
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load exercises. Please check login token or backend connection.
+            Failed to load exercises. Please check login token or backend
+            connection.
           </div>
         )}
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {items.map((item) => (
-            <article key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <article
+              key={item.id}
+              className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+            >
               <div className="h-36 bg-slate-100">
                 <img
                   src={item.coverImage}
@@ -133,8 +172,12 @@ export default function ExercisesPage() {
               <div className="p-5">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-2xl font-bold leading-tight">{item.title}</h3>
-                    <p className="mt-1 text-sm text-slate-500">{item.description}</p>
+                    <h3 className="text-2xl font-bold leading-tight">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {item.description}
+                    </p>
                   </div>
                   <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold">
                     {item.level}
@@ -202,5 +245,5 @@ export default function ExercisesPage() {
         )}
       </main>
     </ProtectedRoute>
-  )
+  );
 }

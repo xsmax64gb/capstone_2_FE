@@ -1,22 +1,25 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useParams, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Check, X } from 'lucide-react'
-import { ProtectedRoute } from '@/components/auth/protected-route'
-import { useGetExerciseReviewQuery } from '@/lib/api/exercisesApi'
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
+import { ArrowLeft, Check, X } from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useGetExerciseReviewQuery } from "@/lib/api/exercisesApi";
 
 export default function ExerciseReviewPage() {
-  const params = useParams<{ id: string }>()
-  const searchParams = useSearchParams()
-  const id = params?.id ?? ''
+  const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const id = params?.id ?? "";
 
-  const answers = searchParams.get('answers') ?? ''
-  const score = searchParams.get('score') ?? ''
-  const total = searchParams.get('total') ?? ''
+  const answers = searchParams.get("answers") ?? "";
+  const score = searchParams.get("score") ?? "";
+  const total = searchParams.get("total") ?? "";
 
-  const { data, isLoading, isError } = useGetExerciseReviewQuery({ id, answers }, { skip: !id })
-  const review = data?.review ?? []
+  const { data, isLoading, isError } = useGetExerciseReviewQuery(
+    { id, answers },
+    { skip: !id },
+  );
+  const review = data?.review ?? [];
 
   return (
     <ProtectedRoute>
@@ -52,14 +55,19 @@ export default function ExerciseReviewPage() {
 
         <section className="space-y-4">
           {review.map((question, index) => (
-            <article key={question.questionId} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <article
+              key={question.questionId}
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-bold">
                   Q{index + 1}. {question.prompt}
                 </h2>
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    question.isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                    question.isCorrect
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-rose-100 text-rose-700"
                   }`}
                 >
                   {question.isCorrect ? (
@@ -76,14 +84,18 @@ export default function ExerciseReviewPage() {
                 </span>
               </div>
               <p className="text-sm text-slate-700">
-                <span className="font-semibold">Your answer:</span>{' '}
-                {question.selectedText ?? 'Not answered'}
+                <span className="font-semibold">Your answer:</span>{" "}
+                {question.selectedText ?? "Not answered"}
               </p>
               <p className="mt-1 text-sm text-slate-700">
-                <span className="font-semibold">Correct answer:</span> {question.correctText ?? '-'}
+                <span className="font-semibold">Correct answer:</span>{" "}
+                {question.correctText ?? "-"}
               </p>
               <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-                <span className="font-semibold text-slate-800">Explanation:</span> {question.explanation}
+                <span className="font-semibold text-slate-800">
+                  Explanation:
+                </span>{" "}
+                {question.explanation}
               </p>
             </article>
           ))}
@@ -92,10 +104,12 @@ export default function ExerciseReviewPage() {
         {!isLoading && !isError && review.length === 0 && (
           <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <p className="font-semibold">No review data</p>
-            <p className="mt-1 text-sm text-slate-500">Submit an attempt first to generate review details.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Submit an attempt first to generate review details.
+            </p>
           </div>
         )}
       </main>
     </ProtectedRoute>
-  )
+  );
 }

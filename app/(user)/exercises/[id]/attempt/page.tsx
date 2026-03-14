@@ -1,14 +1,16 @@
-'use client'
+"use client";
 
-import { useParams } from 'next/navigation'
-import { ProtectedRoute } from '@/components/auth/protected-route'
-import { useGetExerciseByIdQuery } from '@/lib/api/exercisesApi'
-import { AttemptClient } from './attempt-client'
+import { useParams } from "next/navigation";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useGetExerciseByIdQuery } from "@/lib/api/exercisesApi";
+import { AttemptClient } from "./attempt-client";
 
 export default function ExerciseAttemptPage() {
-  const params = useParams<{ id: string }>()
-  const id = params?.id ?? ''
-  const { data, isLoading, isError } = useGetExerciseByIdQuery(id, { skip: !id })
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? "";
+  const { data, isLoading, isError } = useGetExerciseByIdQuery(id, {
+    skip: !id,
+  });
 
   return (
     <ProtectedRoute>
@@ -28,7 +30,9 @@ export default function ExerciseAttemptPage() {
         </main>
       )}
 
-      {!isLoading && !isError && data?.exercise && <AttemptClient exercise={data.exercise} />}
+      {!isLoading && !isError && data?.exercise && (
+        <AttemptClient exercise={data.exercise} />
+      )}
     </ProtectedRoute>
-  )
+  );
 }

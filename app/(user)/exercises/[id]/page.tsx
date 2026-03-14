@@ -1,25 +1,41 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useParams } from 'next/navigation'
-import { ArrowLeft, BookCheck, CheckCircle2, Clock3, Sparkles, Trophy } from 'lucide-react'
-import { ProtectedRoute } from '@/components/auth/protected-route'
-import { TOPIC_LABELS, TYPE_LABELS } from '../data'
-import { useGetExerciseByIdQuery, useGetExerciseLeaderboardQuery } from '@/lib/api/exercisesApi'
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import {
+  ArrowLeft,
+  BookCheck,
+  CheckCircle2,
+  Clock3,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { TOPIC_LABELS, TYPE_LABELS } from "../data";
+import {
+  useGetExerciseByIdQuery,
+  useGetExerciseLeaderboardQuery,
+} from "@/lib/api/exercisesApi";
 
 export default function ExerciseDetailPage() {
-  const params = useParams<{ id: string }>()
-  const id = params?.id ?? ''
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? "";
 
-  const { data, isLoading, isError } = useGetExerciseByIdQuery(id, { skip: !id })
-  const { data: leaderboardData } = useGetExerciseLeaderboardQuery(id, { skip: !id })
+  const { data, isLoading, isError } = useGetExerciseByIdQuery(id, {
+    skip: !id,
+  });
+  const { data: leaderboardData } = useGetExerciseLeaderboardQuery(id, {
+    skip: !id,
+  });
 
-  const exercise = data?.exercise
-  const relatedExercises = data?.related ?? []
-  const topRank = leaderboardData?.leaderboard?.[0]
+  const exercise = data?.exercise;
+  const relatedExercises = data?.related ?? [];
+  const topRank = leaderboardData?.leaderboard?.[0];
 
-  const getTopicLabel = (topic: string) => TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic
-  const getTypeLabel = (type: string) => TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type
+  const getTopicLabel = (topic: string) =>
+    TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic;
+  const getTypeLabel = (type: string) =>
+    TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type;
 
   return (
     <ProtectedRoute>
@@ -65,7 +81,9 @@ export default function ExerciseDetailPage() {
         {!isLoading && !isError && !exercise && (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <p className="font-semibold">Exercise not found</p>
-            <p className="mt-1 text-sm text-slate-500">The exercise may have been removed or the link is invalid.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              The exercise may have been removed or the link is invalid.
+            </p>
           </div>
         )}
 
@@ -73,14 +91,24 @@ export default function ExerciseDetailPage() {
           <>
             <section className="mb-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="h-44 bg-slate-100">
-                <img src={exercise.coverImage} alt={exercise.title} className="h-full w-full object-cover opacity-90" />
+                <img
+                  src={exercise.coverImage}
+                  alt={exercise.title}
+                  className="h-full w-full object-cover opacity-90"
+                />
               </div>
               <div className="p-6">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-slate-500">{getTopicLabel(exercise.topic)}</p>
-                    <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{exercise.title}</h1>
-                    <p className="mt-2 text-slate-500">{exercise.description}</p>
+                    <p className="text-sm font-semibold text-slate-500">
+                      {getTopicLabel(exercise.topic)}
+                    </p>
+                    <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+                      {exercise.title}
+                    </h1>
+                    <p className="mt-2 text-slate-500">
+                      {exercise.description}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold">
@@ -104,22 +132,34 @@ export default function ExerciseDetailPage() {
                   <h2 className="mb-4 text-xl font-bold">Exercise details</h2>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="rounded-lg bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Type</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{getTypeLabel(exercise.type)}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Type
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {getTypeLabel(exercise.type)}
+                      </p>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Topic</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{getTopicLabel(exercise.topic)}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Topic
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {getTopicLabel(exercise.topic)}
+                      </p>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Questions</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Questions
+                      </p>
                       <p className="mt-1 inline-flex items-center text-sm font-semibold text-slate-900">
                         <BookCheck className="mr-1.5 h-4 w-4" />
                         {exercise.questionCount} questions
                       </p>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Duration</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Duration
+                      </p>
                       <p className="mt-1 inline-flex items-center text-sm font-semibold text-slate-900">
                         <Clock3 className="mr-1.5 h-4 w-4" />
                         {exercise.durationMinutes} mins
@@ -129,11 +169,18 @@ export default function ExerciseDetailPage() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="mb-3 text-lg font-bold">How this exercise works</h3>
+                  <h3 className="mb-3 text-lg font-bold">
+                    How this exercise works
+                  </h3>
                   <ul className="space-y-2 text-sm text-slate-700">
                     <li>1. Open attempt page and answer questions in order.</li>
-                    <li>2. Submit to get score, XP estimation, and speed stats.</li>
-                    <li>3. Enter review page to inspect each explanation in detail.</li>
+                    <li>
+                      2. Submit to get score, XP estimation, and speed stats.
+                    </li>
+                    <li>
+                      3. Enter review page to inspect each explanation in
+                      detail.
+                    </li>
                   </ul>
                   <div className="mt-5 flex flex-wrap gap-2">
                     <Link
@@ -152,16 +199,26 @@ export default function ExerciseDetailPage() {
                   <h3 className="mb-5 text-lg font-bold">Session Goal</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
-                      <span className="text-sm font-medium text-slate-600">Target score</span>
+                      <span className="text-sm font-medium text-slate-600">
+                        Target score
+                      </span>
                       <span className="font-bold">80%+</span>
                     </div>
                     <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
-                      <span className="text-sm font-medium text-slate-600">Reward</span>
-                      <span className="font-bold">+{exercise.rewardsXp} XP</span>
+                      <span className="text-sm font-medium text-slate-600">
+                        Reward
+                      </span>
+                      <span className="font-bold">
+                        +{exercise.rewardsXp} XP
+                      </span>
                     </div>
                     <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
-                      <span className="text-sm font-medium text-slate-600">Questions</span>
-                      <span className="font-bold">{exercise.questionCount}</span>
+                      <span className="text-sm font-medium text-slate-600">
+                        Questions
+                      </span>
+                      <span className="font-bold">
+                        {exercise.questionCount}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -171,8 +228,8 @@ export default function ExerciseDetailPage() {
                   {topRank ? (
                     <div className="rounded-lg bg-slate-50 p-4">
                       <p className="inline-flex items-center text-sm font-semibold text-slate-800">
-                        <Trophy className="mr-1.5 h-4 w-4 text-amber-500" />
-                        #{topRank.rank} {topRank.name}
+                        <Trophy className="mr-1.5 h-4 w-4 text-amber-500" />#
+                        {topRank.rank} {topRank.name}
                       </p>
                       <p className="mt-1 text-sm text-slate-600">
                         Score: {topRank.score}/{exercise.questionCount}
@@ -186,7 +243,9 @@ export default function ExerciseDetailPage() {
             </section>
 
             <section className="mt-10">
-              <h2 className="mb-4 text-lg font-bold tracking-tight">Related exercises</h2>
+              <h2 className="mb-4 text-lg font-bold tracking-tight">
+                Related exercises
+              </h2>
               {relatedExercises.length > 0 && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   {relatedExercises.map((item) => (
@@ -195,9 +254,13 @@ export default function ExerciseDetailPage() {
                       href={`/exercises/${item.id}`}
                       className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-black"
                     >
-                      <p className="mb-1 text-sm font-semibold text-slate-500">{getTopicLabel(item.topic)}</p>
+                      <p className="mb-1 text-sm font-semibold text-slate-500">
+                        {getTopicLabel(item.topic)}
+                      </p>
                       <p className="text-lg font-bold">{item.title}</p>
-                      <p className="mt-2 text-sm text-slate-600">{getTypeLabel(item.type)}</p>
+                      <p className="mt-2 text-sm text-slate-600">
+                        {getTypeLabel(item.type)}
+                      </p>
                     </Link>
                   ))}
                 </div>
@@ -212,5 +275,5 @@ export default function ExerciseDetailPage() {
         )}
       </main>
     </ProtectedRoute>
-  )
+  );
 }

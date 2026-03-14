@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeft, RotateCcw, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowLeft, RotateCcw, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ResultSkeleton } from "../../skeletons";
 import { useGetExerciseByIdQuery } from "@/lib/api/exercisesApi";
@@ -10,6 +10,17 @@ import { useGetExerciseByIdQuery } from "@/lib/api/exercisesApi";
 function toInt(value: string | null, fallback: number) {
   const num = Number.parseInt(value ?? "", 10);
   return Number.isFinite(num) ? num : fallback;
+}
+
+function parseAnswers(raw: string) {
+  if (!raw.trim()) return null;
+
+  const parsed = raw.split(",").map((item) => Number.parseInt(item, 10));
+  if (parsed.some((item) => !Number.isFinite(item) || item < -1)) {
+    return null;
+  }
+
+  return parsed;
 }
 
 export default function ExerciseResultPage() {
@@ -22,14 +33,26 @@ export default function ExerciseResultPage() {
   });
   const exercise = data?.exercise;
 
-  const defaultTotal = exercise?.questionCount ?? 1;
-  const defaultTime = (exercise?.durationMinutes ?? 10) * 60;
-  const defaultScore = Math.ceil(defaultTotal * 0.75);
+  const scoreParam = searchParams.get("score");
+  const totalParam = searchParams.get("total");
+  const timeParam = searchParams.get("time");
+  const answersParam = searchParams.get("answers") ?? "";
 
-  const score = toInt(searchParams.get("score"), defaultScore);
-  const total = toInt(searchParams.get("total"), defaultTotal);
-  const time = toInt(searchParams.get("time"), defaultTime);
-  const answers = searchParams.get("answers") ?? "";
+  const score = toInt(scoreParam, -1);
+  const total = toInt(totalParam, -1);
+  const time = toInt(timeParam, -1);
+  const parsedAnswers = parseAnswers(answersParam);
+  const hasValidPayload =
+    scoreParam !== null &&
+    totalParam !== null &&
+    timeParam !== null &&
+    score >= 0 &&
+    total > 0 &&
+    score <= total &&
+    time >= 0 &&
+    parsedAnswers !== null &&
+    parsedAnswers.length === total;
+  const answers = answersParam;
 
   const percent = Math.max(
     0,
@@ -67,6 +90,30 @@ export default function ExerciseResultPage() {
           </div>
         )}
 
+        {!isLoading && !isError && !hasValidPayload && (
+          <section className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
+            <p className="inline-flex items-center text-sm font-semibold">
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Invalid or missing submit data.
+            </p>
+            <p className="mt-2 text-sm">
+              Please finish an attempt first to view the result page.
+            </p>
+            {exercise && (
+              <div className="mt-4">
+                <Link
+                  href={`/exercises/${exercise.id}/attempt`}
+                  className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  <RotateCcw className="mr-1.5 h-4 w-4" />
+                  Start attempt
+                </Link>
+              </div>
+            )}
+          </section>
+        )}
+
+        {hasValidPayload && (
         <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div>
@@ -137,6 +184,7 @@ export default function ExerciseResultPage() {
             </div>
           )}
         </section>
+        )}
       </main>
     </ProtectedRoute>
   );

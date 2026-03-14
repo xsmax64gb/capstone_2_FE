@@ -1,12 +1,44 @@
+export type ExerciseType = 'mcq' | 'fill_blank' | 'matching'
+export type ExerciseLevel = 'A1' | 'A2' | 'B1' | 'B2'
+export type ExerciseTopic = 'daily-life' | 'work' | 'travel' | 'technology'
+
+export type ExerciseQuestion = {
+  id: string
+  prompt: string
+  options: string[]
+  correctIndex: number
+  explanation: string
+}
+
 export type ExerciseItem = {
   id: string
   title: string
   description: string
-  type: 'mcq' | 'fill_blank' | 'matching'
-  level: 'A1' | 'A2' | 'B1' | 'B2'
-  topic: 'daily-life' | 'work' | 'travel' | 'technology'
+  type: ExerciseType
+  level: ExerciseLevel
+  topic: ExerciseTopic
   questionCount: number
   durationMinutes: number
+  rewardsXp: number
+  coverImage: string
+  skills: string[]
+  questions: ExerciseQuestion[]
+}
+
+export type ExerciseHistoryItem = {
+  attemptId: string
+  exerciseId: string
+  submittedAt: string
+  score: number
+  total: number
+  durationSec: number
+}
+
+export type ExerciseLeaderboardItem = {
+  rank: number
+  name: string
+  score: number
+  durationSec: number
 }
 
 export const EXERCISES: ExerciseItem[] = [
@@ -17,8 +49,56 @@ export const EXERCISES: ExerciseItem[] = [
     type: 'mcq',
     level: 'A1',
     topic: 'daily-life',
-    questionCount: 12,
+    questionCount: 6,
     durationMinutes: 8,
+    rewardsXp: 20,
+    coverImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuD63g8SzYGC_Qj0D_8rLiYR5YLZW3txwqA7GsKUeGyktjpKO4Q6DSoguMh8BmtJGJ47GPtAoUTXR5b0FHhBWOg3GpF7A7mwYtZnYhXbPlirLarrZY-_JhWK3ehXBLWSP6-rKNi1BdoRmYOIsjRtiXMC1cRYNx74_N_HgsvbXGbGUB_seGuULLbSuO5serMXGI83KlH--HZecV6rTqImexRVhEFTevOxFCv9xsPUwSnCdgKs2qYei1ChsIcTSL7yOjDD_iAjmjXFeapd',
+    skills: ['greeting', 'small-talk', 'basic-response'],
+    questions: [
+      {
+        id: 'q1',
+        prompt: 'Choose the best response: "Good morning!"',
+        options: ['Good morning!', 'Good night!', 'See you yesterday.', 'I am table.'],
+        correctIndex: 0,
+        explanation: 'The most natural response is to greet back with "Good morning!".',
+      },
+      {
+        id: 'q2',
+        prompt: 'Pick the correct sentence.',
+        options: ['How are you?', 'How is you?', 'How you are?', 'How be you?'],
+        correctIndex: 0,
+        explanation: 'Correct question form with "to be" is "How are you?".',
+      },
+      {
+        id: 'q3',
+        prompt: 'Fill in: "Nice ___ meet you."',
+        options: ['to', 'for', 'in', 'on'],
+        correctIndex: 0,
+        explanation: 'The fixed phrase is "Nice to meet you."',
+      },
+      {
+        id: 'q4',
+        prompt: 'Choose the formal greeting for afternoon.',
+        options: ['Good afternoon', 'Good dawn', 'Good eveninging', 'Good nooning'],
+        correctIndex: 0,
+        explanation: '"Good afternoon" is the correct formal greeting.',
+      },
+      {
+        id: 'q5',
+        prompt: 'Best reply to "How are you?"',
+        options: ['I am fine, thanks.', 'I am run.', 'I am pencil.', 'I on happy.'],
+        correctIndex: 0,
+        explanation: '"I am fine, thanks." is a natural and grammatically correct response.',
+      },
+      {
+        id: 'q6',
+        prompt: 'Choose the correct goodbye phrase.',
+        options: ['See you later', 'See you now yesterday', 'Look you soonly', 'Meet you never now'],
+        correctIndex: 0,
+        explanation: '"See you later" is a common and correct goodbye phrase.',
+      },
+    ],
   },
   {
     id: 'e2',
@@ -27,8 +107,71 @@ export const EXERCISES: ExerciseItem[] = [
     type: 'mcq',
     level: 'A2',
     topic: 'work',
-    questionCount: 15,
+    questionCount: 6,
     durationMinutes: 12,
+    rewardsXp: 28,
+    coverImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDkHd8UJkk0tKsH-WI92KXxEhjDAj97l5oVuGnrGlRzvqls_sdBENfU7YbC15_QFl2lGHD8koNlLhZ4NB2nAHzUCzC7wMxzsAee6uEBwx2IDNJzA_PkbjOl_TquQrhRC_PwAjSPDRQg5OSbk3k5KgMJIylwsBFSaFaWAu35K2JeKBVwU9XscP5BLq_7BlucwCTIO7-hlgoEynBsa5C8t4ZV8S4s3U-SoITsiu9k_k8YfUmos-YFAkxJKCY9N76gtfRZMgC3-Z678t4M',
+    skills: ['email-writing', 'formal-tone', 'work-communication'],
+    questions: [
+      {
+        id: 'q1',
+        prompt: 'Best email opening for a manager?',
+        options: ['Dear Mr. Brown,', 'Hey bro,', 'Yo manager,', 'Hi random,'],
+        correctIndex: 0,
+        explanation: 'Formal opening with "Dear + title + name" is appropriate.',
+      },
+      {
+        id: 'q2',
+        prompt: 'Choose a polite request sentence.',
+        options: [
+          'Could you please review the attached file?',
+          'Review file now.',
+          'You must check this.',
+          'I order you to read.',
+        ],
+        correctIndex: 0,
+        explanation: '"Could you please..." is polite and professional.',
+      },
+      {
+        id: 'q3',
+        prompt: 'Best email closing phrase?',
+        options: ['Best regards,', 'Bye forever,', 'Over and out,', 'Later alligator,'],
+        correctIndex: 0,
+        explanation: '"Best regards," is a professional closing.',
+      },
+      {
+        id: 'q4',
+        prompt: 'Select the best subject line.',
+        options: ['Meeting Notes - March 14', 'Stuff', 'Hi', 'Read this maybe'],
+        correctIndex: 0,
+        explanation: 'A clear, specific subject line improves communication.',
+      },
+      {
+        id: 'q5',
+        prompt: 'What is a good follow-up sentence?',
+        options: [
+          'Please let me know if you need any further information.',
+          'Reply now.',
+          'Why no answer yet?',
+          'I am waiting, hurry.',
+        ],
+        correctIndex: 0,
+        explanation: 'This sentence is polite and standard in business email.',
+      },
+      {
+        id: 'q6',
+        prompt: 'Choose the grammatically correct sentence.',
+        options: [
+          'I have attached the report for your review.',
+          'I attached report for review your.',
+          'Attached me report your.',
+          'I am attach report.',
+        ],
+        correctIndex: 0,
+        explanation: 'Correct tense and word order: "I have attached the report...".',
+      },
+    ],
   },
   {
     id: 'e3',
@@ -37,8 +180,54 @@ export const EXERCISES: ExerciseItem[] = [
     type: 'fill_blank',
     level: 'A2',
     topic: 'travel',
-    questionCount: 10,
+    questionCount: 5,
     durationMinutes: 10,
+    rewardsXp: 24,
+    coverImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuD--BLKmCk2XERkZsjBk2Knjtbv8AERjUvskv5mAiB31qRGd1P_ViekbdMKjmXuyM0uNk0GGZyIyC9pp2ksPGD_Nc_FHjM_CJkkobhtpkR-phm0OlqZ-GbvKv-D7mqSUPs-hynj9nqRjfU-rBZkSQE81LXgNZX4rPlnzEAF4Vhtfi9w3PCSYRwvy-jDwb90w7WkMpRUwdTQYLc7WlrGq5uDXaFxE6S7SsKFDp7DRB08AXEftsZfJO1bynMGAZP96fx57xUfqbU9LL5j',
+    skills: ['travel-english', 'airport-vocabulary', 'fill-in-context'],
+    questions: [
+      {
+        id: 'q1',
+        prompt: 'Fill in: "May I see your ____ pass?"',
+        options: ['boarding', 'loading', 'flying', 'trip'],
+        correctIndex: 0,
+        explanation: 'At airports, the correct phrase is "boarding pass".',
+      },
+      {
+        id: 'q2',
+        prompt: 'Fill in: "Your gate is number ____."',
+        options: ['twelve', 'doctor', 'window', 'flighting'],
+        correctIndex: 0,
+        explanation: 'Gate numbers are numeric; "twelve" fits naturally.',
+      },
+      {
+        id: 'q3',
+        prompt: 'Choose the best phrase at check-in desk.',
+        options: ['I would like to check in, please.', 'I check me now.', 'Give seat now.', 'Where fly me?'],
+        correctIndex: 0,
+        explanation: 'This is the most polite and correct check-in phrase.',
+      },
+      {
+        id: 'q4',
+        prompt: 'Fill in: "My luggage is too ____."',
+        options: ['heavy', 'bright', 'short', 'silent'],
+        correctIndex: 0,
+        explanation: '"Heavy" is used when baggage exceeds weight limits.',
+      },
+      {
+        id: 'q5',
+        prompt: 'Pick the correct airport announcement sentence.',
+        options: [
+          'The flight to Tokyo is now boarding at Gate 4.',
+          'Tokyo fly now gateing four.',
+          'Boarding Tokyo at flight.',
+          'Gate 4 is fly to now.',
+        ],
+        correctIndex: 0,
+        explanation: 'The first sentence is grammatically correct and realistic.',
+      },
+    ],
   },
   {
     id: 'e4',
@@ -47,8 +236,74 @@ export const EXERCISES: ExerciseItem[] = [
     type: 'matching',
     level: 'B1',
     topic: 'technology',
-    questionCount: 18,
+    questionCount: 5,
     durationMinutes: 14,
+    rewardsXp: 32,
+    coverImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuD63g8SzYGC_Qj0D_8rLiYR5YLZW3txwqA7GsKUeGyktjpKO4Q6DSoguMh8BmtJGJ47GPtAoUTXR5b0FHhBWOg3GpF7A7mwYtZnYhXbPlirLarrZY-_JhWK3ehXBLWSP6-rKNi1BdoRmYOIsjRtiXMC1cRYNx74_N_HgsvbXGbGUB_seGuULLbSuO5serMXGI83KlH--HZecV6rTqImexRVhEFTevOxFCv9xsPUwSnCdgKs2qYei1ChsIcTSL7yOjDD_iAjmjXFeapd',
+    skills: ['tech-vocabulary', 'definition-matching', 'reading-comprehension'],
+    questions: [
+      {
+        id: 'q1',
+        prompt: 'Algorithm means...',
+        options: [
+          'A step-by-step set of instructions for solving a problem',
+          'A hardware cable',
+          'An email signature',
+          'A social media post',
+        ],
+        correctIndex: 0,
+        explanation: 'An algorithm is a sequence of steps to solve a task.',
+      },
+      {
+        id: 'q2',
+        prompt: 'Cloud computing refers to...',
+        options: [
+          'Using remote internet servers to store and process data',
+          'Storing files on paper',
+          'Writing code only on phones',
+          'Drawing diagrams by hand',
+        ],
+        correctIndex: 0,
+        explanation: 'Cloud computing uses remote servers over the internet.',
+      },
+      {
+        id: 'q3',
+        prompt: 'API is best described as...',
+        options: [
+          'A way for software systems to communicate with each other',
+          'A keyboard shortcut',
+          'An image editing filter',
+          'A browser tab',
+        ],
+        correctIndex: 0,
+        explanation: 'APIs are interfaces that let systems exchange data and actions.',
+      },
+      {
+        id: 'q4',
+        prompt: 'Bug in software usually means...',
+        options: [
+          'An error or flaw that causes incorrect behavior',
+          'A new feature',
+          'A server location',
+          'A security certificate',
+        ],
+        correctIndex: 0,
+        explanation: 'A software bug is a defect in the code or logic.',
+      },
+      {
+        id: 'q5',
+        prompt: 'Database is...',
+        options: [
+          'An organized collection of structured data',
+          'A coding language',
+          'A design template',
+          'A video player',
+        ],
+        correctIndex: 0,
+        explanation: 'Databases store and organize data for efficient access.',
+      },
+    ],
   },
   {
     id: 'e5',
@@ -57,20 +312,141 @@ export const EXERCISES: ExerciseItem[] = [
     type: 'mcq',
     level: 'B2',
     topic: 'work',
-    questionCount: 20,
+    questionCount: 5,
     durationMinutes: 16,
+    rewardsXp: 36,
+    coverImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDkHd8UJkk0tKsH-WI92KXxEhjDAj97l5oVuGnrGlRzvqls_sdBENfU7YbC15_QFl2lGHD8koNlLhZ4NB2nAHzUCzC7wMxzsAee6uEBwx2IDNJzA_PkbjOl_TquQrhRC_PwAjSPDRQg5OSbk3k5KgMJIylwsBFSaFaWAu35K2JeKBVwU9XscP5BLq_7BlucwCTIO7-hlgoEynBsa5C8t4ZV8S4s3U-SoITsiu9k_k8YfUmos-YFAkxJKCY9N76gtfRZMgC3-Z678t4M',
+    skills: ['meeting-english', 'professional-speaking', 'decision-language'],
+    questions: [
+      {
+        id: 'q1',
+        prompt: 'Best way to ask for clarification in a meeting?',
+        options: [
+          'Could you clarify what you mean by the final scope?',
+          'I do not understand anything.',
+          'No, this is wrong.',
+          'Whatever you say.',
+        ],
+        correctIndex: 0,
+        explanation: 'This wording is polite and specific for business meetings.',
+      },
+      {
+        id: 'q2',
+        prompt: 'Choose the strongest professional update statement.',
+        options: [
+          'We have completed phase one and are on track for Friday.',
+          'Maybe we can finish, I think.',
+          'No updates really.',
+          'It is hard, not sure.',
+        ],
+        correctIndex: 0,
+        explanation: 'The first sentence is clear, confident, and measurable.',
+      },
+      {
+        id: 'q3',
+        prompt: 'How to disagree politely?',
+        options: [
+          'I see your point, but I suggest an alternative approach.',
+          'That is bad.',
+          'You are wrong always.',
+          'No way.',
+        ],
+        correctIndex: 0,
+        explanation: 'Professional disagreement acknowledges and then proposes.',
+      },
+      {
+        id: 'q4',
+        prompt: 'Best action-oriented closing line?',
+        options: [
+          'Let us summarize next steps and assign owners.',
+          'We can stop now.',
+          'Do whatever.',
+          'Meeting done maybe.',
+        ],
+        correctIndex: 0,
+        explanation: 'Strong meetings end with clear ownership and next steps.',
+      },
+      {
+        id: 'q5',
+        prompt: 'Choose the most concise risk statement.',
+        options: [
+          'The main risk is delayed API delivery from the external vendor.',
+          'There are many risks and things and problems maybe.',
+          'Risk is everything.',
+          'No risk never.',
+        ],
+        correctIndex: 0,
+        explanation: 'Effective risk statements should be concrete and specific.',
+      },
+    ],
   },
 ]
 
-export const TOPIC_LABELS: Record<ExerciseItem['topic'], string> = {
+export const EXERCISE_HISTORY: ExerciseHistoryItem[] = [
+  { attemptId: 'at_001', exerciseId: 'e1', submittedAt: '2026-03-11T09:10:00Z', score: 5, total: 6, durationSec: 330 },
+  { attemptId: 'at_002', exerciseId: 'e3', submittedAt: '2026-03-12T14:05:00Z', score: 4, total: 5, durationSec: 412 },
+  { attemptId: 'at_003', exerciseId: 'e2', submittedAt: '2026-03-13T08:35:00Z', score: 5, total: 6, durationSec: 525 },
+  { attemptId: 'at_004', exerciseId: 'e4', submittedAt: '2026-03-14T03:20:00Z', score: 3, total: 5, durationSec: 690 },
+]
+
+export const EXERCISE_LEADERBOARD: Record<string, ExerciseLeaderboardItem[]> = {
+  e1: [
+    { rank: 1, name: 'Nghia', score: 6, durationSec: 290 },
+    { rank: 2, name: 'Hung', score: 6, durationSec: 302 },
+    { rank: 3, name: 'Dat', score: 5, durationSec: 320 },
+  ],
+  e2: [
+    { rank: 1, name: 'Huy', score: 6, durationSec: 500 },
+    { rank: 2, name: 'Nghia', score: 5, durationSec: 525 },
+    { rank: 3, name: 'Hung', score: 5, durationSec: 540 },
+  ],
+  e3: [
+    { rank: 1, name: 'Dat', score: 5, durationSec: 390 },
+    { rank: 2, name: 'Nghia', score: 4, durationSec: 412 },
+    { rank: 3, name: 'Huy', score: 4, durationSec: 430 },
+  ],
+  e4: [
+    { rank: 1, name: 'Hung', score: 5, durationSec: 645 },
+    { rank: 2, name: 'Nghia', score: 3, durationSec: 690 },
+    { rank: 3, name: 'Dat', score: 3, durationSec: 710 },
+  ],
+  e5: [
+    { rank: 1, name: 'Huy', score: 5, durationSec: 720 },
+    { rank: 2, name: 'Hung', score: 4, durationSec: 750 },
+    { rank: 3, name: 'Nghia', score: 4, durationSec: 780 },
+  ],
+}
+
+export const TOPIC_LABELS: Record<ExerciseTopic, string> = {
   'daily-life': 'Daily Life',
   work: 'Work',
   travel: 'Travel',
   technology: 'Technology',
 }
 
-export const TYPE_LABELS: Record<ExerciseItem['type'], string> = {
+export const TYPE_LABELS: Record<ExerciseType, string> = {
   mcq: 'Multiple Choice',
   fill_blank: 'Fill in the Blank',
   matching: 'Matching',
+}
+
+export function getExerciseById(id: string) {
+  return EXERCISES.find((exercise) => exercise.id === id)
+}
+
+export function getRelatedExercises(id: string, limit = 3) {
+  const current = getExerciseById(id)
+  if (!current) return []
+
+  return EXERCISES.filter((exercise) => exercise.topic === current.topic && exercise.id !== id).slice(
+    0,
+    limit
+  )
+}
+
+export function formatDuration(seconds: number) {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
 }

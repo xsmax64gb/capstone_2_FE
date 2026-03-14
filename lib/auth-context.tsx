@@ -3,9 +3,7 @@
 import React, { createContext, useContext, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '@/lib/store'
-import { setUser, setLoading, setError, logout, setAuthTokens } from '@/lib/slices/authSlice'
-import { useGetMeQuery } from '@/lib/api/authApi'
-import { tokenManager } from '@/lib/token-manager'
+import { setLoading, logout } from '@/lib/slices/authSlice'
 import type { User } from '@/types'
 
 interface AuthContextType {
@@ -21,19 +19,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch()
   const auth = useSelector((state: RootState) => state.auth)
-  const { data: user, isLoading } = useGetMeQuery(undefined, {
-    skip: !tokenManager.hasToken(),
-  })
 
   useEffect(() => {
-    if (user) {
-      dispatch(setUser(user))
-    }
-  }, [user, dispatch])
-
-  useEffect(() => {
-    dispatch(setLoading(isLoading))
-  }, [isLoading, dispatch])
+    dispatch(setLoading(false))
+  }, [dispatch])
 
   const handleLogout = () => {
     dispatch(logout())

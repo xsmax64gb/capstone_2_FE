@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Spinner } from '@/components/ui/spinner'
 import { useI18n } from '@/lib/i18n/context'
@@ -12,14 +12,31 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter()
-  const { isAuthenticated, isLoading } = useAuth()
+  const pathname = usePathname()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const { t } = useI18n()
+  const isOnboardingPath = pathname?.startsWith('/onboarding')
+  const onboardingPending = user?.onboardingDone === false
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login')
+    if (isLoading) {
+      return
     }
-  }, [isAuthenticated, isLoading, router])
+
+    if (!isAuthenticated) {
+      router.replace('/login')
+      return
+    }
+
+    if (onboardingPending && !isOnboardingPath) {
+      router.replace('/onboarding')
+      return
+    }
+
+    if (!onboardingPending && isOnboardingPath) {
+      router.replace('/dashboard')
+    }
+  }, [isAuthenticated, isLoading, isOnboardingPath, onboardingPending, router])
 
   if (isLoading) {
     return (
@@ -33,6 +50,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
+    return null
+  }
+
+  if (onboardingPending && !isOnboardingPath) {
+    return null
+  }
+
+  if (!onboardingPending && isOnboardingPath) {
     return null
   }
 

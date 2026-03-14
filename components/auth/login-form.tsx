@@ -55,7 +55,8 @@ export function LoginForm() {
       dispatch(setUser(response.user))
       
       notifySuccess(t('Đăng nhập thành công'), t('Chào mừng bạn!'))
-      router.push('/dashboard')
+      const onboardingPending = response.user.onboardingDone === false
+      router.push(onboardingPending ? '/onboarding' : '/dashboard')
     } catch (error: any) {
       const message = error?.data?.message || t('Đăng nhập thất bại')
       notifyError(t('Lỗi'), message)

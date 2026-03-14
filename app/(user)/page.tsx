@@ -22,7 +22,7 @@ const coreFeatures = [
   {
     title: "AI Voice Practice",
     description: "Talk with AI in real-time and get instant speaking feedback.",
-    href: "/dashboard",
+    href: "/ai",
     action: "Start speaking",
     icon: Mic,
     image:
@@ -217,7 +217,7 @@ export default function UserHomePage() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/dashboard"
+                  href="/ai"
                   className="rounded-lg bg-black px-7 py-3 text-sm font-semibold text-white transition-all hover:translate-y-[-1px] hover:bg-slate-800"
                 >
                   Start AI Voice
@@ -412,7 +412,7 @@ export default function UserHomePage() {
               </p>
             </div>
             <Link
-              href="/dashboard"
+              href="/ai"
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <Target className="mr-2 h-4 w-4" />
@@ -592,10 +592,10 @@ export default function UserHomePage() {
 
               <div className="flex flex-wrap gap-3">
                 <Link
-                  href="/dashboard"
+                  href="/ai"
                   className="rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800"
                 >
-                  Start In Dashboard
+                  Open AI Map
                 </Link>
                 <Link
                   href="/exercises"

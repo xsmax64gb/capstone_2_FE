@@ -18,7 +18,7 @@ const navItems = [
   { label: "Home", href: "/" },
   { label: "Exercises", href: "/exercises" },
   { label: "Vocabulary", href: "/vocabulary" },
-  { label: "AI Speaking", href: "/dashboard" },
+  { label: "AI Speaking", href: "/ai" },
   { label: "Progress", href: "/dashboard" },
 ];
 

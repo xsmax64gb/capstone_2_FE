@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Send } from 'lucide-react'
-import type { ExerciseItem } from '../../data'
+import type { ExerciseItem } from '@/lib/api/exercisesApi'
+import { useSubmitExerciseAttemptMutation } from '@/lib/api/exercisesApi'
+import { useAuth } from '@/lib/auth-context'
 
 type AttemptClientProps = {
   exercise: ExerciseItem
@@ -12,9 +14,13 @@ type AttemptClientProps = {
 
 export function AttemptClient({ exercise }: AttemptClientProps) {
   const router = useRouter()
+  const { user } = useAuth()
+  const [submitAttempt, { isLoading: isSubmitting }] = useSubmitExerciseAttemptMutation()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [elapsedSec, setElapsedSec] = useState(0)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const questionList = exercise.questions ?? []
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -24,29 +30,50 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
     return () => clearInterval(timer)
   }, [])
 
-  const currentQuestion = exercise.questions[currentIndex]
+  const currentQuestion = questionList[currentIndex]
   const answeredCount = useMemo(
     () => Object.keys(answers).length,
     [answers]
   )
 
-  const submit = () => {
-    let score = 0
-    exercise.questions.forEach((q) => {
-      if (answers[q.id] === q.correctIndex) score += 1
-    })
+  const submit = async () => {
+    setSubmitError(null)
+    const questionList = exercise.questions ?? []
+    const answerIndexes = questionList.map((q) => answers[q.id] ?? -1)
 
-    const answersParam = exercise.questions
-      .map((q) => String(answers[q.id] ?? -1))
-      .join(',')
+    try {
+      const result = await submitAttempt({
+        id: exercise.id,
+        body: {
+          answers: answerIndexes,
+          durationSec: elapsedSec,
+          userName: user?.fullName || user?.name,
+        },
+      }).unwrap()
 
-    router.push(
-      `/exercises/${exercise.id}/result?score=${score}&total=${exercise.questions.length}&time=${elapsedSec}&answers=${encodeURIComponent(answersParam)}`
-    )
+      const answersParam = result.answers.map((item) => String(item)).join(',')
+
+      router.push(
+        `/exercises/${exercise.id}/result?score=${result.score}&total=${result.total}&time=${result.time}&answers=${encodeURIComponent(answersParam)}`
+      )
+    } catch {
+      setSubmitError('Submit failed. Please try again.')
+    }
   }
 
   const selectAnswer = (index: number) => {
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: index }))
+  }
+
+  if (questionList.length === 0 || !currentQuestion) {
+    return (
+      <main className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
+          <p className="font-semibold">No question data available</p>
+          <p className="mt-1 text-sm text-slate-500">This exercise currently has no questions.</p>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -69,19 +96,19 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-slate-500">
-              {exercise.title} - Question {currentIndex + 1}/{exercise.questions.length}
+              {exercise.title} - Question {currentIndex + 1}/{questionList.length}
             </p>
             <h1 className="text-2xl font-bold tracking-tight">Attempt Session</h1>
           </div>
           <p className="text-sm font-semibold text-slate-700">
-            Answered: {answeredCount}/{exercise.questions.length}
+            Answered: {answeredCount}/{questionList.length}
           </p>
         </div>
 
         <div className="h-2 w-full rounded-full bg-slate-100">
           <div
             className="h-2 rounded-full bg-black transition-all"
-            style={{ width: `${((currentIndex + 1) / exercise.questions.length) * 100}%` }}
+            style={{ width: `${((currentIndex + 1) / Math.max(questionList.length, 1)) * 100}%` }}
           />
         </div>
       </section>
@@ -118,10 +145,10 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
           </button>
 
           <div className="flex gap-2">
-            {currentIndex < exercise.questions.length - 1 && (
+            {currentIndex < questionList.length - 1 && (
               <button
                 onClick={() =>
-                  setCurrentIndex((prev) => Math.min(prev + 1, exercise.questions.length - 1))
+                  setCurrentIndex((prev) => Math.min(prev + 1, questionList.length - 1))
                 }
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
@@ -130,18 +157,25 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
               </button>
             )}
 
-            {currentIndex === exercise.questions.length - 1 && (
+            {currentIndex === questionList.length - 1 && (
               <button
                 onClick={submit}
-                className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                disabled={isSubmitting}
+                className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Send className="mr-1.5 h-4 w-4" />
-                Submit
+                {isSubmitting ? 'Submitting...' : 'Submit'}
               </button>
             )}
           </div>
         </div>
       </section>
+
+      {submitError && (
+        <section className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {submitError}
+        </section>
+      )}
 
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <p className="inline-flex items-center text-sm text-slate-600">

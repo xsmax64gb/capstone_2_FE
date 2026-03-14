@@ -1,14 +1,15 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, Sparkles, Trophy } from 'lucide-react'
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import { EXERCISES, TOPIC_LABELS, TYPE_LABELS } from '../data'
-
-const recommendedIds = ['e5', 'e4', 'e2']
+import { TOPIC_LABELS, TYPE_LABELS } from '../data'
+import { useGetRecommendedExercisesQuery } from '@/lib/api/exercisesApi'
 
 export default function RecommendedExercisesPage() {
-  const items = recommendedIds
-    .map((id) => EXERCISES.find((exercise) => exercise.id === id))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+  const { data: items = [], isLoading, isError } = useGetRecommendedExercisesQuery({ limit: 6 })
+  const getTopicLabel = (topic: string) => TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic
+  const getTypeLabel = (type: string) => TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type
 
   return (
     <ProtectedRoute>
@@ -30,6 +31,18 @@ export default function RecommendedExercisesPage() {
           </p>
         </section>
 
+        {isLoading && (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
+            Loading recommendations...
+          </div>
+        )}
+
+        {isError && (
+          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
+            Failed to load recommended exercises.
+          </div>
+        )}
+
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {items.map((item, index) => (
             <article key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -45,10 +58,10 @@ export default function RecommendedExercisesPage() {
                 <p className="mt-2 text-sm text-slate-600">{item.description}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
                   <span className="rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
-                    {TOPIC_LABELS[item.topic]}
+                    {getTopicLabel(item.topic)}
                   </span>
                   <span className="rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
-                    {TYPE_LABELS[item.type]}
+                    {getTypeLabel(item.type)}
                   </span>
                   <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
                     <Trophy className="mr-1 h-3.5 w-3.5" />+{item.rewardsXp} XP
@@ -72,6 +85,13 @@ export default function RecommendedExercisesPage() {
             </article>
           ))}
         </section>
+
+        {!isLoading && !isError && items.length === 0 && (
+          <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
+            <p className="font-semibold">No recommendation available yet</p>
+            <p className="mt-1 text-sm text-slate-500">Complete a few attempts to improve recommendations.</p>
+          </div>
+        )}
       </main>
     </ProtectedRoute>
   )

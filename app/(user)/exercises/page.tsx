@@ -1,39 +1,32 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { BookCheck, Clock3, History, Search, Sparkles, Trophy } from 'lucide-react'
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import {
-  EXERCISES,
-  EXERCISE_HISTORY,
-  TOPIC_LABELS,
-  TYPE_LABELS,
-  type ExerciseItem,
-} from './data'
+import { TOPIC_LABELS, TYPE_LABELS } from './data'
+import { useGetExercisesQuery, useGetExerciseSummaryQuery } from '@/lib/api/exercisesApi'
 
 export default function ExercisesPage() {
   const [query, setQuery] = useState('')
-  const [selectedLevel, setSelectedLevel] = useState<'all' | ExerciseItem['level']>('all')
-  const [selectedType, setSelectedType] = useState<'all' | ExerciseItem['type']>('all')
+  const [selectedLevel, setSelectedLevel] = useState<'all' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'>('all')
+  const [selectedType, setSelectedType] = useState<'all' | 'mcq' | 'fill_blank' | 'matching'>('all')
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return EXERCISES.filter((item) => {
-      const matchLevel = selectedLevel === 'all' || item.level === selectedLevel
-      const matchType = selectedType === 'all' || item.type === selectedType
-      const matchQuery =
-        !q ||
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.skills.some((skill) => skill.includes(q))
+  const { data: listData, isLoading, isError } = useGetExercisesQuery({
+    query,
+    level: selectedLevel,
+    type: selectedType,
+    limit: 50,
+  })
+  const { data: summaryData } = useGetExerciseSummaryQuery()
 
-      return matchLevel && matchType && matchQuery
-    })
-  }, [query, selectedLevel, selectedType])
+  const items = listData?.items ?? []
+  const totalQuestions = summaryData?.totalQuestions ?? 0
+  const totalXp = summaryData?.totalXp ?? 0
+  const pastAttempts = summaryData?.pastAttempts ?? 0
 
-  const totalQuestions = EXERCISES.reduce((sum, item) => sum + item.questionCount, 0)
-  const totalXp = EXERCISES.reduce((sum, item) => sum + item.rewardsXp, 0)
+  const getTopicLabel = (topic: string) => TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic
+  const getTypeLabel = (type: string) => TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type
 
   return (
     <ProtectedRoute>
@@ -75,7 +68,7 @@ export default function ExercisesPage() {
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase text-slate-500">Past Attempts</p>
-              <p className="mt-1 text-xl font-bold">{EXERCISE_HISTORY.length}</p>
+              <p className="mt-1 text-xl font-bold">{pastAttempts}</p>
             </div>
           </div>
 
@@ -115,8 +108,20 @@ export default function ExercisesPage() {
           </div>
         </section>
 
+        {isLoading && (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
+            Loading exercises...
+          </div>
+        )}
+
+        {isError && (
+          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
+            Failed to load exercises. Please check login token or backend connection.
+          </div>
+        )}
+
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {filtered.map((item) => (
+          {items.map((item) => (
             <article key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               <div className="h-36 bg-slate-100">
                 <img
@@ -138,10 +143,10 @@ export default function ExercisesPage() {
 
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
-                    {TYPE_LABELS[item.type]}
+                    {getTypeLabel(item.type)}
                   </span>
                   <span className="rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
-                    {TOPIC_LABELS[item.topic]}
+                    {getTopicLabel(item.topic)}
                   </span>
                   <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
                     <BookCheck className="mr-1 h-3.5 w-3.5" />
@@ -187,7 +192,7 @@ export default function ExercisesPage() {
           ))}
         </section>
 
-        {filtered.length === 0 && (
+        {!isLoading && !isError && items.length === 0 && (
           <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <p className="font-semibold">No exercise found</p>
             <p className="mt-1 text-sm text-slate-500">

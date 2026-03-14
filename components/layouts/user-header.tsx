@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Languages, LogOut, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n/context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LanguageSwitch } from "./language-switch";
 
 const navItems = [
   { label: "Home", href: "/" },
@@ -26,7 +28,8 @@ const DEFAULT_AVATAR_URL =
 export function UserHeader() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const profileName = user?.fullName || user?.name || "Profile";
+  const { t } = useI18n();
+  const profileName = user?.fullName || user?.name || t("Profile");
   const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
 
   const handleLogout = () => {
@@ -57,6 +60,7 @@ export function UserHeader() {
         </nav>
 
         <div className="flex items-center gap-4">
+          <LanguageSwitch />
           <button className="relative rounded-full p-2 text-slate-600 transition-colors hover:bg-slate-100">
             <Bell className="h-5 w-5" />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
@@ -81,12 +85,12 @@ export function UserHeader() {
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <User className="h-4 w-4" />
-                Profile
+                {t("Profile")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
-                Logout
+                {t("Logout")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

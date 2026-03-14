@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import { Languages } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/context'
 
 const footerLinks = [
   { label: 'About', href: '#' },
@@ -9,6 +12,8 @@ const footerLinks = [
 ]
 
 export function UserFooter() {
+  const { t } = useI18n()
+
   return (
     <footer className="border-t border-slate-200 bg-white pb-8 pt-16">
       <div className="mx-auto max-w-7xl px-6">
@@ -22,13 +27,13 @@ export function UserFooter() {
           <div className="flex flex-wrap gap-8 text-sm font-medium text-slate-500">
             {footerLinks.map((link) => (
               <Link key={link.label} href={link.href} className="transition-colors hover:text-black">
-                {link.label}
+                {t(link.label)}
               </Link>
             ))}
           </div>
         </div>
         <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-8 md:flex-row">
-          <p className="text-xs text-slate-400">© 2024 SmartLingo AI. All rights reserved.</p>
+          <p className="text-xs text-slate-400">© 2024 SmartLingo AI. {t('All rights reserved.')}</p>
         </div>
       </div>
     </footer>

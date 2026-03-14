@@ -21,6 +21,7 @@ import { useDispatch } from 'react-redux'
 import { setAuthTokens, setUser } from '@/lib/slices/authSlice'
 import { useNotification } from '@/hooks/use-notification'
 import { Spinner } from '@/components/ui/spinner'
+import { useI18n } from '@/lib/i18n/context'
 
 const loginSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
@@ -34,6 +35,7 @@ export function LoginForm() {
   const dispatch = useDispatch()
   const [login, { isLoading }] = useLoginMutation()
   const { error: notifyError, success: notifySuccess } = useNotification()
+  const { t } = useI18n()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -52,20 +54,20 @@ export function LoginForm() {
       }))
       dispatch(setUser(response.user))
       
-      notifySuccess('Đăng nhập thành công', 'Chào mừng bạn!')
+      notifySuccess(t('Đăng nhập thành công'), t('Chào mừng bạn!'))
       router.push('/dashboard')
     } catch (error: any) {
-      const message = error?.data?.message || 'Đăng nhập thất bại'
-      notifyError('Lỗi', message)
+      const message = error?.data?.message || t('Đăng nhập thất bại')
+      notifyError(t('Lỗi'), message)
     }
   }
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl text-center">Đăng nhập</CardTitle>
+        <CardTitle className="text-2xl text-center">{t('Đăng nhập')}</CardTitle>
         <CardDescription className="text-center">
-          Nhập email và mật khẩu của bạn để đăng nhập
+          {t('Nhập email và mật khẩu của bạn để đăng nhập')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -95,10 +97,10 @@ export function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mật khẩu</FormLabel>
+                  <FormLabel>{t('Mật khẩu')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Nhập mật khẩu"
+                      placeholder={t('Nhập mật khẩu')}
                       type="password"
                       disabled={isLoading}
                       {...field}
@@ -113,19 +115,19 @@ export function LoginForm() {
               {isLoading ? (
                 <>
                   <Spinner className="mr-2" />
-                  Đang đăng nhập...
+                  {t('Đang đăng nhập...')}
                 </>
               ) : (
-                'Đăng nhập'
+                t('Đăng nhập')
               )}
             </Button>
           </form>
         </Form>
 
         <div className="mt-4 text-center text-sm text-muted-foreground">
-          Chưa có tài khoản?{' '}
+          {t('Chưa có tài khoản?')}{' '}
           <Link href="/register" className="text-primary hover:underline font-medium">
-            Đăng ký ngay
+            {t('Đăng ký ngay')}
           </Link>
         </div>
       </CardContent>

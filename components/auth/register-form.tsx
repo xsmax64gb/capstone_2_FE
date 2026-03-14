@@ -21,6 +21,7 @@ import { useDispatch } from 'react-redux'
 import { setAuthTokens, setUser } from '@/lib/slices/authSlice'
 import { useNotification } from '@/hooks/use-notification'
 import { Spinner } from '@/components/ui/spinner'
+import { useI18n } from '@/lib/i18n/context'
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
@@ -39,6 +40,7 @@ export function RegisterForm() {
   const dispatch = useDispatch()
   const [register, { isLoading }] = useRegisterMutation()
   const { error: notifyError, success: notifySuccess } = useNotification()
+  const { t } = useI18n()
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -60,20 +62,20 @@ export function RegisterForm() {
       }))
       dispatch(setUser(response.user))
       
-      notifySuccess('Đăng ký thành công', 'Chào mừng bạn đến với chúng tôi!')
+      notifySuccess(t('Đăng ký thành công'), t('Chào mừng bạn đến với chúng tôi!'))
       router.push('/dashboard')
     } catch (error: any) {
-      const message = error?.data?.message || 'Đăng ký thất bại'
-      notifyError('Lỗi', message)
+      const message = error?.data?.message || t('Đăng ký thất bại')
+      notifyError(t('Lỗi'), message)
     }
   }
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl text-center">Tạo tài khoản</CardTitle>
+        <CardTitle className="text-2xl text-center">{t('Tạo tài khoản')}</CardTitle>
         <CardDescription className="text-center">
-          Điền thông tin để tạo tài khoản mới
+          {t('Điền thông tin để tạo tài khoản mới')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -84,10 +86,10 @@ export function RegisterForm() {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Họ tên</FormLabel>
+                  <FormLabel>{t('Họ tên')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Tên của bạn"
+                      placeholder={t('Tên của bạn')}
                       disabled={isLoading}
                       {...field}
                     />
@@ -121,10 +123,10 @@ export function RegisterForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mật khẩu</FormLabel>
+                  <FormLabel>{t('Mật khẩu')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Nhập mật khẩu"
+                      placeholder={t('Nhập mật khẩu')}
                       type="password"
                       disabled={isLoading}
                       {...field}
@@ -140,10 +142,10 @@ export function RegisterForm() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Xác nhận mật khẩu</FormLabel>
+                  <FormLabel>{t('Xác nhận mật khẩu')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Xác nhận mật khẩu"
+                      placeholder={t('Xác nhận mật khẩu')}
                       type="password"
                       disabled={isLoading}
                       {...field}
@@ -158,19 +160,19 @@ export function RegisterForm() {
               {isLoading ? (
                 <>
                   <Spinner className="mr-2" />
-                  Đang đăng ký...
+                  {t('Đang đăng ký...')}
                 </>
               ) : (
-                'Tạo tài khoản'
+                t('Tạo tài khoản')
               )}
             </Button>
           </form>
         </Form>
 
         <div className="mt-4 text-center text-sm text-muted-foreground">
-          Đã có tài khoản?{' '}
+          {t('Đã có tài khoản?')}{' '}
           <Link href="/login" className="text-primary hover:underline font-medium">
-            Đăng nhập
+            {t('Đăng nhập')}
           </Link>
         </div>
       </CardContent>

@@ -3,6 +3,8 @@ import './globals.css'
 import { ReduxProvider } from '@/lib/providers/redux-provider'
 import { AuthProvider } from '@/lib/auth-context'
 import { NotificationProvider } from '@/lib/providers/notification-provider'
+import { I18nProvider } from '@/lib/i18n/context'
+import { GlobalLanguageFab } from '@/components/layouts/global-language-fab'
 
 export const metadata: Metadata = {
   title: 'My App',
@@ -35,10 +37,13 @@ export default function RootLayout({
     <html lang="vi">
       <body>
         <ReduxProvider>
-          <AuthProvider>
-            {children}
-            <NotificationProvider />
-          </AuthProvider>
+          <I18nProvider>
+            <AuthProvider>
+              {children}
+              <NotificationProvider />
+              <GlobalLanguageFab />
+            </AuthProvider>
+          </I18nProvider>
         </ReduxProvider>
       </body>
     </html>

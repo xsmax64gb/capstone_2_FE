@@ -1,38 +1,38 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Bell, Languages, LogOut, User } from 'lucide-react'
-import { useAuth } from '@/lib/auth-context'
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Bell, Languages, LogOut, User } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 
 const navItems = [
-  { label: 'Home', href: '/' },
-  { label: 'Exercises', href: '/exercises' },
-  { label: 'Vocabulary', href: '/vocabulary' },
-  { label: 'AI Speaking', href: '/dashboard' },
-  { label: 'Progress', href: '/dashboard' },
-]
+  { label: "Home", href: "/" },
+  { label: "Exercises", href: "/exercises" },
+  { label: "Vocabulary", href: "/vocabulary" },
+  { label: "AI Speaking", href: "/dashboard" },
+  { label: "Progress", href: "/dashboard" },
+];
 
 const DEFAULT_AVATAR_URL =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAHrbU6dGptCG-_BbdkQIQBO5sKyHsHQ3kIcpfJM3eQak-gKt79i7-H0EAqM-qIJ14pXancOSo4qvoDgyqlFP0ChUVL3QtU0PnuHjHKU2bDHY80nSC7YfRssSXAl92pMdk1oHHaMF8ae4b8WG8rXwGQRxDYqO6vASZHYmvH7DULLHz1Eq9gnhyUHy0RR3GZ3iltSlU42ZdpZPzGUVRVpvB9HNXAEu887lKJybHw3qVD5SRa8M36W9QQXIGMPrGHF3u8KyVrQM8c2OWB'
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuAHrbU6dGptCG-_BbdkQIQBO5sKyHsHQ3kIcpfJM3eQak-gKt79i7-H0EAqM-qIJ14pXancOSo4qvoDgyqlFP0ChUVL3QtU0PnuHjHKU2bDHY80nSC7YfRssSXAl92pMdk1oHHaMF8ae4b8WG8rXwGQRxDYqO6vASZHYmvH7DULLHz1Eq9gnhyUHy0RR3GZ3iltSlU42ZdpZPzGUVRVpvB9HNXAEu887lKJybHw3qVD5SRa8M36W9QQXIGMPrGHF3u8KyVrQM8c2OWB";
 
 export function UserHeader() {
-  const router = useRouter()
-  const { user, logout } = useAuth()
-  const profileName = user?.fullName || user?.name || 'Profile'
-  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const profileName = user?.fullName || user?.name || "Profile";
+  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
 
   const handleLogout = () => {
-    logout()
-    router.push('/login')
-  }
+    logout();
+    router.push("/login");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
@@ -79,7 +79,7 @@ export function UserHeader() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => router.push('/profile')}>
+              <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <User className="h-4 w-4" />
                 Profile
               </DropdownMenuItem>
@@ -93,5 +93,5 @@ export function UserHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -24,7 +23,7 @@ import { useNotification } from '@/hooks/use-notification'
 import { Spinner } from '@/components/ui/spinner'
 
 const registerSchema = z.object({
-  name: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
+  fullName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
   email: z.string().email('Email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string(),
@@ -44,7 +43,7 @@ export function RegisterForm() {
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: '',
+      fullName: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -58,7 +57,6 @@ export function RegisterForm() {
       
       dispatch(setAuthTokens({
         accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
       }))
       dispatch(setUser(response.user))
       
@@ -83,7 +81,7 @@ export function RegisterForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="fullName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Họ tên</FormLabel>

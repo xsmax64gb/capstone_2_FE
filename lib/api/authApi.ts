@@ -1,6 +1,40 @@
 import { baseApi } from './baseApi'
 import { API_ENDPOINTS } from '@/config/api'
-import type { LoginRequest, RegisterRequest, AuthResponse, User } from '@/types'
+import type {
+  ApiResponse,
+  AuthResponse,
+  ChangePasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+} from '@/types'
+
+interface AuthPayload {
+  token: string
+  user: {
+    id: string
+    fullName: string
+    email: string
+    role?: string
+    currentLevel?: string
+    exp?: number
+    onboardingDone?: boolean
+    placementScore?: number
+    createdAt?: string
+    updatedAt?: string
+  }
+}
+
+const toAuthResponse = (response: ApiResponse<AuthPayload>): AuthResponse => {
+  const payload = response.data as AuthPayload
+
+  return {
+    accessToken: payload.token,
+    user: {
+      ...payload.user,
+      name: payload.user.fullName,
+    },
+  }
+}
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,6 +44,7 @@ export const authApi = baseApi.injectEndpoints({
         method: 'POST',
         body: credentials,
       }),
+      transformResponse: (response: ApiResponse<AuthPayload>) => toAuthResponse(response),
     }),
 
     register: builder.mutation<AuthResponse, RegisterRequest>({
@@ -18,27 +53,14 @@ export const authApi = baseApi.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      transformResponse: (response: ApiResponse<AuthPayload>) => toAuthResponse(response),
     }),
 
-    getMe: builder.query<User, void>({
-      query: () => ({
-        url: API_ENDPOINTS.AUTH.ME,
-        method: 'GET',
-      }),
-    }),
-
-    logout: builder.mutation<void, void>({
-      query: () => ({
-        url: API_ENDPOINTS.AUTH.LOGOUT,
+    changePassword: builder.mutation<ApiResponse, ChangePasswordRequest>({
+      query: (data) => ({
+        url: API_ENDPOINTS.AUTH.CHANGE_PASSWORD,
         method: 'POST',
-      }),
-    }),
-
-    refreshToken: builder.mutation<AuthResponse, string>({
-      query: (refreshToken) => ({
-        url: API_ENDPOINTS.AUTH.REFRESH,
-        method: 'POST',
-        body: { refreshToken },
+        body: data,
       }),
     }),
   }),
@@ -47,7 +69,5 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useLoginMutation,
   useRegisterMutation,
-  useGetMeQuery,
-  useLogoutMutation,
-  useRefreshTokenMutation,
+  useChangePasswordMutation,
 } = authApi

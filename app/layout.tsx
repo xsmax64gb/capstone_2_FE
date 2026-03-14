@@ -1,18 +1,12 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { ReduxProvider } from '@/lib/providers/redux-provider'
 import { AuthProvider } from '@/lib/auth-context'
 import { NotificationProvider } from '@/lib/providers/notification-provider'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
   title: 'My App',
   description: 'Frontend Application with RTK Query & Authentication',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
@@ -39,14 +33,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className="font-sans antialiased">
+      <body>
         <ReduxProvider>
           <AuthProvider>
             {children}
             <NotificationProvider />
           </AuthProvider>
         </ReduxProvider>
-        <Analytics />
       </body>
     </html>
   )

@@ -39,57 +39,75 @@ function StageNode({ stage, side }: { stage: Stage; side: 'left' | 'right' }) {
   const isCurrent = stage.status === 'current'
   const isCompleted = stage.status === 'completed'
 
-  return (
-    <div className={`relative flex w-full ${side === 'left' ? 'justify-start' : 'justify-end'}`}>
+  const content = (
+    <div
+      className={`ai-node-card inline-flex max-w-[220px] flex-col items-center rounded-2xl border border-transparent px-3 py-2 transition-all duration-300 ${
+        side === 'left' ? 'md:translate-x-4' : 'md:-translate-x-4'
+      } ${
+        isLocked
+          ? 'cursor-not-allowed opacity-80'
+          : 'cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:border-slate-200 hover:bg-white hover:shadow-xl'
+      }`}
+    >
       <div
-        className={`inline-flex max-w-[220px] flex-col items-center ${
-          side === 'left' ? 'md:translate-x-4' : 'md:-translate-x-4'
+        className={`ai-node-glow relative flex h-16 w-16 items-center justify-center rounded-full border text-white shadow-xl transition-transform duration-500 ${
+          isCompleted
+            ? 'border-black bg-black'
+            : isCurrent
+              ? 'border-black bg-white text-black'
+              : 'border-slate-200 bg-slate-100 text-slate-400'
+        } ${isCurrent ? 'animate-float' : ''} ${!isLocked ? 'group-hover:scale-110' : ''}`}
+      >
+        {isCompleted && <Check className="h-6 w-6" />}
+        {isCurrent && <Play className="h-6 w-6 fill-current" />}
+        {isLocked && <Lock className="h-5 w-5" />}
+      </div>
+
+      <h3 className="mt-3 text-center text-base font-bold tracking-tight text-slate-900">{stage.title}</h3>
+      <p className="mt-1 text-xs text-slate-500">{stage.subtitle}</p>
+      <p
+        className={`mt-1 text-[11px] font-bold ${
+          isCompleted ? 'text-emerald-600' : isCurrent ? 'text-amber-600' : 'text-slate-400'
         }`}
       >
-        <div
-          className={`ai-node-glow relative flex h-16 w-16 items-center justify-center rounded-full border text-white shadow-xl transition-transform duration-500 ${
-            isCompleted
-              ? 'border-black bg-black'
-              : isCurrent
-                ? 'border-black bg-white text-black'
-                : 'border-slate-200 bg-slate-100 text-slate-400'
-          } ${isCurrent ? 'animate-float' : ''}`}
-        >
-          {isCompleted && <Check className="h-6 w-6" />}
-          {isCurrent && <Play className="h-6 w-6 fill-current" />}
-          {isLocked && <Lock className="h-5 w-5" />}
-        </div>
+        {stageBadge(stage.status)}
+      </p>
+      <p className="text-[10px] font-semibold text-slate-400">+{stage.xp} XP</p>
 
-        <h3 className="mt-3 text-center text-base font-bold tracking-tight text-slate-900">{stage.title}</h3>
-        <p className="mt-1 text-xs text-slate-500">{stage.subtitle}</p>
-        <p
-          className={`mt-1 text-[11px] font-bold ${
-            isCompleted ? 'text-emerald-600' : isCurrent ? 'text-amber-600' : 'text-slate-400'
-          }`}
-        >
-          {stageBadge(stage.status)}
-        </p>
-        <p className="text-[10px] font-semibold text-slate-400">+{stage.xp} XP</p>
-
-        <div className="mt-3">
-          {isLocked ? (
-            <span className="inline-flex rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-400">
-              Locked
-            </span>
-          ) : (
-            <Link
-              href={`/ai/${stage.id}`}
-              className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
-                isCurrent
-                  ? 'bg-black text-white hover:bg-slate-800'
-                  : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              {isCurrent ? 'Continue' : 'Review'}
-            </Link>
-          )}
-        </div>
+      <div className="mt-3">
+        {isLocked ? (
+          <span className="inline-flex rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-400">
+            Locked
+          </span>
+        ) : (
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
+              isCurrent
+                ? 'bg-black text-white group-hover:bg-slate-800'
+                : 'border border-slate-200 text-slate-700 group-hover:bg-slate-50'
+            }`}
+          >
+            {isCurrent ? 'Continue' : 'Review'}
+          </span>
+        )}
       </div>
+    </div>
+  )
+
+  return (
+    <div className={`relative flex w-full ${side === 'left' ? 'justify-start' : 'justify-end'}`}>
+      {isLocked ? (
+        content
+      ) : (
+        <Link
+          href={`/ai/${stage.id}`}
+          className="group rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/70 focus-visible:ring-offset-2"
+          aria-label={`Open stage ${stage.title}`}
+          title={`Open ${stage.title}`}
+        >
+          {content}
+        </Link>
+      )}
     </div>
   )
 }

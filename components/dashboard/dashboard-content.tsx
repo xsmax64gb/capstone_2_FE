@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
-import { useLogoutMutation } from '@/lib/api/authApi'
 import { useDispatch } from 'react-redux'
 import { logout } from '@/lib/slices/authSlice'
 import { Button } from '@/components/ui/button'
@@ -12,20 +11,13 @@ import { useNotification } from '@/hooks/use-notification'
 export function DashboardContent() {
   const router = useRouter()
   const { user } = useAuth()
-  const [logoutApi] = useLogoutMutation()
   const dispatch = useDispatch()
   const { success: notifySuccess } = useNotification()
 
   const handleLogout = async () => {
-    try {
-      await logoutApi().unwrap()
-      dispatch(logout())
-      notifySuccess('Đã đăng xuất', 'Tạm biệt!')
-      router.push('/login')
-    } catch (error) {
-      dispatch(logout())
-      router.push('/login')
-    }
+    dispatch(logout())
+    notifySuccess('Đã đăng xuất', 'Tạm biệt!')
+    router.push('/login')
   }
 
   return (
@@ -37,7 +29,7 @@ export function DashboardContent() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              Chào, <span className="font-semibold text-foreground">{user?.name}</span>
+              Chào, <span className="font-semibold text-foreground">{user?.name || user?.fullName}</span>
             </span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               Đăng xuất
@@ -57,7 +49,7 @@ export function DashboardContent() {
               <div className="space-y-2">
                 <div>
                   <p className="text-sm text-muted-foreground">Tên</p>
-                  <p className="font-medium">{user?.name}</p>
+                  <p className="font-medium">{user?.name || user?.fullName}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>

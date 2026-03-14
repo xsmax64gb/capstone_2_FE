@@ -10,7 +10,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: null,
+  user: tokenManager.getUser(),
   isAuthenticated: tokenManager.hasToken(),
   isLoading: false,
   error: null,
@@ -24,6 +24,7 @@ const authSlice = createSlice({
       state.user = action.payload
       state.isAuthenticated = true
       state.error = null
+      tokenManager.setUser(action.payload)
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload

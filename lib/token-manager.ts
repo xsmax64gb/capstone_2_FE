@@ -1,6 +1,9 @@
+import type { User } from '@/types'
+
 // Token Manager cho JWT Authentication
 const TOKEN_KEY = 'access_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
+const USER_PROFILE_KEY = 'user_profile'
 
 export const tokenManager = {
   setTokens: (accessToken: string, refreshToken?: string) => {
@@ -26,10 +29,35 @@ export const tokenManager = {
     return null
   },
 
+  setUser: (user: User) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(user))
+    }
+  },
+
+  getUser: (): User | null => {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem(USER_PROFILE_KEY)
+      if (!raw) {
+        return null
+      }
+
+      try {
+        return JSON.parse(raw) as User
+      } catch {
+        localStorage.removeItem(USER_PROFILE_KEY)
+        return null
+      }
+    }
+
+    return null
+  },
+
   clearTokens: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(REFRESH_TOKEN_KEY)
+      localStorage.removeItem(USER_PROFILE_KEY)
     }
   },
 

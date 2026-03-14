@@ -2,9 +2,16 @@
 export interface User {
   id: string
   email: string
-  name: string
+  fullName: string
+  name?: string
   role?: string
+  currentLevel?: string
+  exp?: number
+  onboardingDone?: boolean
+  placementScore?: number
+  avatarUrl?: string
   createdAt?: string
+  updatedAt?: string
 }
 
 export interface LoginRequest {
@@ -15,17 +22,18 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string
   password: string
-  name: string
+  fullName: string
 }
 
 export interface AuthResponse {
   accessToken: string
-  refreshToken?: string
   user: User
 }
 
-export interface RefreshTokenRequest {
-  refreshToken: string
+export interface ChangePasswordRequest {
+  email: string
+  oldPassword: string
+  newPassword: string
 }
 
 // API Response Types

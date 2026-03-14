@@ -114,76 +114,77 @@ export default function ExerciseResultPage() {
         )}
 
         {hasValidPayload && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-            <div>
-              <p className="text-sm font-semibold text-slate-500">
-                {exercise?.title ?? "Exercise result"}
-              </p>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Result Summary
-              </h1>
-              <p className="mt-1 text-slate-500">{resultLabel}</p>
+          <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">
+                  {exercise?.title ?? "Exercise result"}
+                </p>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  Result Summary
+                </h1>
+                <p className="mt-1 text-slate-500">{resultLabel}</p>
+              </div>
+              <div className="rounded-xl bg-black px-5 py-4 text-white">
+                <p className="text-xs uppercase tracking-wide text-slate-300">
+                  Score
+                </p>
+                <p className="text-2xl font-bold">
+                  {score}/{total}
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl bg-black px-5 py-4 text-white">
-              <p className="text-xs uppercase tracking-wide text-slate-300">
-                Score
-              </p>
-              <p className="text-2xl font-bold">
-                {score}/{total}
-              </p>
-            </div>
-          </div>
 
-          <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-lg bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">
-                Accuracy
-              </p>
-              <p className="mt-1 text-lg font-bold">{percent}%</p>
+            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-lg bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  Accuracy
+                </p>
+                <p className="mt-1 text-lg font-bold">{percent}%</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  Time Spent
+                </p>
+                <p className="mt-1 text-lg font-bold">
+                  {Math.floor(time / 60)}:{String(time % 60).padStart(2, "0")}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  Earned XP
+                </p>
+                <p className="mt-1 inline-flex items-center text-lg font-bold">
+                  <Trophy className="mr-1.5 h-4 w-4 text-amber-500" />+
+                  {earnedXp}
+                </p>
+              </div>
             </div>
-            <div className="rounded-lg bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">
-                Time Spent
-              </p>
-              <p className="mt-1 text-lg font-bold">
-                {Math.floor(time / 60)}:{String(time % 60).padStart(2, "0")}
-              </p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">
-                Earned XP
-              </p>
-              <p className="mt-1 inline-flex items-center text-lg font-bold">
-                <Trophy className="mr-1.5 h-4 w-4 text-amber-500" />+{earnedXp}
-              </p>
-            </div>
-          </div>
 
-          {exercise && (
-            <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-5">
-              <Link
-                href={`/exercises/${exercise.id}/attempt`}
-                className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-              >
-                <RotateCcw className="mr-1.5 h-4 w-4" />
-                Retry attempt
-              </Link>
-              <Link
-                href={`/exercises/${exercise.id}/result/review?score=${score}&total=${total}&answers=${encodeURIComponent(answers)}`}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Review answers
-              </Link>
-              <Link
-                href={`/exercises/${exercise.id}/leaderboard`}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Open leaderboard
-              </Link>
-            </div>
-          )}
-        </section>
+            {exercise && (
+              <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-5">
+                <Link
+                  href={`/exercises/${exercise.id}/attempt`}
+                  className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  <RotateCcw className="mr-1.5 h-4 w-4" />
+                  Retry attempt
+                </Link>
+                <Link
+                  href={`/exercises/${exercise.id}/result/review?score=${score}&total=${total}&answers=${encodeURIComponent(answers)}`}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Review answers
+                </Link>
+                <Link
+                  href={`/exercises/${exercise.id}/leaderboard`}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Open leaderboard
+                </Link>
+              </div>
+            )}
+          </section>
         )}
       </main>
     </ProtectedRoute>

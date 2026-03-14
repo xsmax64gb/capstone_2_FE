@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, BookOpen, CheckCircle2, Volume2 } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle2, Flame, Sparkles, Volume2 } from 'lucide-react'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { TOPIC_LABELS, VOCABULARIES } from '../data'
 
@@ -20,61 +20,143 @@ export default async function VocabularyDetailPage({ params }: VocabularyDetailP
     (item) => item.topic === vocabulary.topic && item.id !== vocabulary.id
   ).slice(0, 3)
 
+  const estimatedMinutes = Math.max(6, Math.min(14, vocabulary.word.length + 4))
+  const masteryPercent = Math.max(65, Math.min(95, vocabulary.word.length * 8))
+
   return (
     <ProtectedRoute>
       <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
-        <div className="mb-6">
+        <section className="mb-8">
           <Link
             href="/vocabulary"
-            className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-black"
+            className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Vocabulary Lab
           </Link>
-        </div>
+        </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-500">{TOPIC_LABELS[vocabulary.topic]}</p>
-              <h1 className="mt-2 text-4xl font-bold tracking-tight">{vocabulary.word}</h1>
-              <p className="mt-2 text-base text-slate-500">{vocabulary.phonetic}</p>
+        <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100">
+                <BookOpen className="h-8 w-8 text-slate-700" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-500">{TOPIC_LABELS[vocabulary.topic]}</p>
+                <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{vocabulary.word}</h1>
+                <p className="mt-1 text-slate-500">{vocabulary.phonetic}</p>
+              </div>
             </div>
-            <span className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold">
-              {vocabulary.level}
-            </span>
-          </div>
-
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Meaning</p>
-              <p className="text-lg font-semibold text-slate-900">{vocabulary.meaning}</p>
+            <div className="flex items-center gap-3">
+              <span className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold">
+                {vocabulary.level}
+              </span>
+              <button className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Mark as mastered
+              </button>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Example</p>
-              <p className="text-sm leading-6 text-slate-700">{vocabulary.example}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5">
-            <button className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-              <Volume2 className="mr-2 h-4 w-4" />
-              Listen pronunciation
-            </button>
-            <button className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Mark as mastered
-            </button>
           </div>
         </section>
 
-        <section className="mt-8 grid grid-cols-1 gap-4">
-          <h2 className="text-lg font-bold tracking-tight">Related words</h2>
-          {relatedWords.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
-              No related words yet for this topic.
+        <section className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <div className="mb-8 border-b border-slate-200">
+              <nav className="flex gap-8 overflow-x-auto pb-px">
+                <span className="border-b-2 border-black pb-4 text-sm font-semibold text-black">Word Info</span>
+                <span className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
+                  Practice
+                </span>
+                <span className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
+                  Quiz
+                </span>
+                <span className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
+                  Related
+                </span>
+              </nav>
             </div>
-          ) : (
+
+            <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-700">Word</p>
+                <input
+                  readOnly
+                  value={vocabulary.word}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-700">Meaning</p>
+                <input
+                  readOnly
+                  value={vocabulary.meaning}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-700">Example sentence</p>
+                <textarea
+                  readOnly
+                  value={vocabulary.example}
+                  rows={4}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4">
+                <button className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <Volume2 className="mr-2 h-4 w-4" />
+                  Listen pronunciation
+                </button>
+                <button className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Practice with AI
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <aside className="space-y-6 lg:col-span-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-5 text-lg font-bold">Learning Stats</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
+                  <span className="text-sm font-medium text-slate-600">Level</span>
+                  <span className="font-bold">{vocabulary.level}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    <span className="text-sm font-medium text-slate-600">Session streak</span>
+                  </div>
+                  <span className="font-bold">7 days</span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
+                  <span className="text-sm font-medium text-slate-600">Estimated time</span>
+                  <span className="font-bold">{estimatedMinutes} mins</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-black p-6 text-white shadow-lg">
+              <h3 className="mb-2 text-lg font-bold">Mastery Progress</h3>
+              <p className="mb-5 text-sm text-slate-300">
+                Complete more practice rounds to lock this word into long-term memory.
+              </p>
+              <div className="h-2 w-full rounded-full bg-white/20">
+                <div className="h-2 rounded-full bg-white" style={{ width: `${masteryPercent}%` }} />
+              </div>
+              <p className="mt-2 text-xs font-semibold text-slate-300">{masteryPercent}% progress</p>
+            </div>
+          </aside>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="mb-4 text-lg font-bold tracking-tight">Related words</h2>
+          {relatedWords.length > 0 && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {relatedWords.map((item) => (
                 <Link
@@ -91,6 +173,11 @@ export default async function VocabularyDetailPage({ params }: VocabularyDetailP
                   </p>
                 </Link>
               ))}
+            </div>
+          )}
+          {relatedWords.length === 0 && (
+            <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+              No related words yet for this topic.
             </div>
           )}
         </section>

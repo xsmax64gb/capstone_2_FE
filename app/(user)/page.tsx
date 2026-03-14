@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Flame, Mic, Sparkles } from 'lucide-react'
 
 const quickAccessItems = [
@@ -5,21 +6,25 @@ const quickAccessItems = [
     title: 'Placement Test',
     description: 'Assess your current level and get a tailored roadmap.',
     action: 'Start',
+    href: '/dashboard',
   },
   {
     title: 'Practice Exercises',
     description: 'Interactive drills to master grammar and sentence structure.',
     action: 'Go',
+    href: '/exercises',
   },
   {
     title: 'Vocabulary',
     description: 'Expand your lexicon with context-aware flashcards.',
     action: 'Start',
+    href: '/vocabulary',
   },
   {
     title: 'AI Speaking',
     description: 'Real-time conversations with instant pronunciation feedback.',
     action: 'Go',
+    href: '/dashboard',
   },
 ]
 
@@ -106,8 +111,9 @@ export default function UserHomePage() {
         </h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {quickAccessItems.map((item) => (
-            <div
+            <Link
               key={item.title}
+              href={item.href}
               className="group cursor-pointer rounded-xl border border-slate-200 p-6 transition-all hover:border-black"
             >
               <Sparkles className="mb-4 h-8 w-8 text-slate-400 transition-colors group-hover:text-black" />
@@ -116,7 +122,7 @@ export default function UserHomePage() {
               <span className="flex items-center gap-1 text-sm font-semibold group-hover:underline">
                 {item.action}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       </section>

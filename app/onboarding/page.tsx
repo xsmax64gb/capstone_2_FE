@@ -2,10 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ChevronLeft, ChevronRight, Languages, Rocket, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Languages,
+  Rocket,
+  Sparkles,
+} from "lucide-react";
 import { useDispatch } from "react-redux";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { setUser } from "@/lib/slices/authSlice";
 import { useNotification } from "@/hooks/use-notification";
@@ -100,7 +113,10 @@ export default function OnboardingPage() {
     };
 
     try {
-      localStorage.setItem("mock_onboarding_profile", JSON.stringify(mockPayload));
+      localStorage.setItem(
+        "mock_onboarding_profile",
+        JSON.stringify(mockPayload),
+      );
 
       dispatch(
         setUser({
@@ -109,10 +125,13 @@ export default function OnboardingPage() {
           name: displayName.trim() || user.name,
           currentLevel: selectedLevel,
           onboardingDone: true,
-        })
+        }),
       );
 
-      success("Onboarding hoan tat", "Ban da san sang de bat dau bai test dau vao.");
+      success(
+        "Onboarding hoan tat",
+        "Ban da san sang de bat dau bai test dau vao.",
+      );
       info("Mock mode", "Dang dung du lieu mock. Co the noi API that sau.");
 
       setTimeout(() => {
@@ -136,7 +155,8 @@ export default function OnboardingPage() {
               Chao mung ban den voi lo trinh hoc ca nhan hoa
             </h1>
             <p className="mt-2 text-slate-600">
-              Chi can 3 buoc ngan de he thong de xuat bai test dau vao phu hop voi muc tieu cua ban.
+              Chi can 3 buoc ngan de he thong de xuat bai test dau vao phu hop
+              voi muc tieu cua ban.
             </p>
           </div>
 
@@ -173,7 +193,9 @@ export default function OnboardingPage() {
                         }`}
                       >
                         <p className="font-semibold">{option.label}</p>
-                        <p className={`mt-1 text-sm ${selected ? "text-slate-200" : "text-slate-500"}`}>
+                        <p
+                          className={`mt-1 text-sm ${selected ? "text-slate-200" : "text-slate-500"}`}
+                        >
                           {option.description}
                         </p>
                       </button>
@@ -187,7 +209,9 @@ export default function OnboardingPage() {
           {step === 1 && (
             <Card className="animate-fade-up border-slate-200 bg-white/95 backdrop-blur">
               <CardHeader>
-                <CardTitle className="text-2xl">Thong tin hoc tap co ban</CardTitle>
+                <CardTitle className="text-2xl">
+                  Thong tin hoc tap co ban
+                </CardTitle>
                 <CardDescription>
                   Du lieu nay dang la mock data de mo phong onboarding flow.
                 </CardDescription>
@@ -195,7 +219,9 @@ export default function OnboardingPage() {
               <CardContent className="space-y-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">Ten hien thi</span>
+                    <span className="text-sm font-semibold text-slate-700">
+                      Ten hien thi
+                    </span>
                     <input
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
@@ -205,7 +231,9 @@ export default function OnboardingPage() {
                   </label>
 
                   <label className="space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">Nghe nghiep (tuy chon)</span>
+                    <span className="text-sm font-semibold text-slate-700">
+                      Nghe nghiep (tuy chon)
+                    </span>
                     <input
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
@@ -217,7 +245,9 @@ export default function OnboardingPage() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">Uoc tinh trinh do hien tai</span>
+                    <span className="text-sm font-semibold text-slate-700">
+                      Uoc tinh trinh do hien tai
+                    </span>
                     <select
                       value={selectedLevel}
                       onChange={(e) => setSelectedLevel(e.target.value)}
@@ -232,7 +262,9 @@ export default function OnboardingPage() {
                   </label>
 
                   <label className="space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">So gio hoc moi tuan</span>
+                    <span className="text-sm font-semibold text-slate-700">
+                      So gio hoc moi tuan
+                    </span>
                     <select
                       value={weeklyHours}
                       onChange={(e) => setWeeklyHours(Number(e.target.value))}
@@ -248,7 +280,9 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2 text-sm font-semibold text-slate-700">Muc tieu uu tien</p>
+                  <p className="mb-2 text-sm font-semibold text-slate-700">
+                    Muc tieu uu tien
+                  </p>
                   <div className="grid gap-2 md:grid-cols-2">
                     {ONBOARDING_GOAL_OPTIONS.map((goal) => {
                       const selected = selectedGoals.includes(goal.id);
@@ -285,10 +319,14 @@ export default function OnboardingPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-700">Tom tat nhanh</p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    Tom tat nhanh
+                  </p>
                   <ul className="mt-2 space-y-1 text-sm text-slate-600">
                     <li>Ten hien thi: {displayName || "(chua nhap)"}</li>
-                    <li>Ngon ngu huong dan: {selectedLanguage.toUpperCase()}</li>
+                    <li>
+                      Ngon ngu huong dan: {selectedLanguage.toUpperCase()}
+                    </li>
                     <li>Level du kien: {selectedLevel}</li>
                     <li>Lich hoc: {weeklyHours} gio/ tuan</li>
                     <li>Muc tieu: {selectedGoals.length} lua chon</li>
@@ -296,7 +334,9 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-sm font-semibold text-emerald-900">Bai test se bao gom</p>
+                  <p className="text-sm font-semibold text-emerald-900">
+                    Bai test se bao gom
+                  </p>
                   <ul className="mt-2 space-y-1 text-sm text-emerald-800">
                     {ONBOARDING_TEST_PREVIEW.map((item) => (
                       <li key={item} className="inline-flex items-center">
@@ -312,7 +352,9 @@ export default function OnboardingPage() {
                   disabled={isStartingTest}
                   className="h-11 w-full text-sm font-semibold"
                 >
-                  {isStartingTest ? "Dang khoi tao bai test..." : "Bat dau bai test dau vao"}
+                  {isStartingTest
+                    ? "Dang khoi tao bai test..."
+                    : "Bat dau bai test dau vao"}
                 </Button>
               </CardContent>
             </Card>
@@ -332,7 +374,10 @@ export default function OnboardingPage() {
             {step < 2 && (
               <Button
                 onClick={nextStep}
-                disabled={(step === 0 && !canGoNextStep0) || (step === 1 && !canGoNextStep1)}
+                disabled={
+                  (step === 0 && !canGoNextStep0) ||
+                  (step === 1 && !canGoNextStep1)
+                }
                 className="min-w-[120px]"
               >
                 Tiep tuc

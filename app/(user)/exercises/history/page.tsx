@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock3, FileClock, RotateCcw } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, formatDuration } from "../data";
+import { HistorySkeleton } from "../skeletons";
 import { useGetExerciseHistoryQuery } from "@/lib/api/exercisesApi";
 
 export default function ExerciseHistoryPage() {
@@ -35,11 +36,7 @@ export default function ExerciseHistoryPage() {
           </p>
         </section>
 
-        {isLoading && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
-            Loading attempt history...
-          </div>
-        )}
+        {isLoading && <HistorySkeleton />}
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">

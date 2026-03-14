@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, TYPE_LABELS } from "../data";
+import { ExerciseDetailSkeleton } from "../skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseLeaderboardQuery,
@@ -66,11 +67,7 @@ export default function ExerciseDetailPage() {
           )}
         </section>
 
-        {isLoading && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
-            Loading exercise detail...
-          </div>
-        )}
+        {isLoading && <ExerciseDetailSkeleton />}
 
         {isError && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">

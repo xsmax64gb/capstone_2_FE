@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, TYPE_LABELS } from "../data";
+import { RecommendedSkeleton } from "../skeletons";
 import { useGetRecommendedExercisesQuery } from "@/lib/api/exercisesApi";
 
 export default function RecommendedExercisesPage() {
@@ -40,11 +41,7 @@ export default function RecommendedExercisesPage() {
           </p>
         </section>
 
-        {isLoading && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
-            Loading recommendations...
-          </div>
-        )}
+        {isLoading && <RecommendedSkeleton />}
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">

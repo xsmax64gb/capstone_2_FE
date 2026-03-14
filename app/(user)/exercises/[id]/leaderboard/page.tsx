@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Medal, Timer, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { formatDuration } from "../../data";
+import { LeaderboardSkeleton } from "../../skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseLeaderboardQuery,
@@ -42,11 +43,7 @@ export default function ExerciseLeaderboardPage() {
           <p className="mt-1 text-slate-500">{exercise?.title ?? "Exercise"}</p>
         </section>
 
-        {isLoading && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
-            Loading leaderboard...
-          </div>
-        )}
+        {isLoading && <LeaderboardSkeleton />}
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">

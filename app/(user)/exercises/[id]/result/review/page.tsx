@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, X } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ReviewSkeleton } from "../../../skeletons";
 import { useGetExerciseReviewQuery } from "@/lib/api/exercisesApi";
 
 export default function ExerciseReviewPage() {
@@ -41,11 +42,7 @@ export default function ExerciseReviewPage() {
           </p>
         </section>
 
-        {isLoading && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
-            Loading review details...
-          </div>
-        )}
+        {isLoading && <ReviewSkeleton />}
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">

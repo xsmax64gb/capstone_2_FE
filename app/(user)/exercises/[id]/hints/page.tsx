@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Lightbulb, WandSparkles } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TYPE_LABELS } from "../../data";
+import { HintsSkeleton } from "../../skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseHintsQuery,
@@ -51,11 +52,7 @@ export default function ExerciseHintsPage() {
           </p>
         </section>
 
-        {isLoading && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
-            Loading hints...
-          </div>
-        )}
+        {isLoading && <HintsSkeleton />}
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">

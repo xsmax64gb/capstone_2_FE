@@ -1,10 +1,18 @@
 import type { Metadata } from 'next'
+import { Poppins } from 'next/font/google'
 import './globals.css'
 import { ReduxProvider } from '@/lib/providers/redux-provider'
 import { AuthProvider } from '@/lib/auth-context'
 import { NotificationProvider } from '@/lib/providers/notification-provider'
 import { I18nProvider } from '@/lib/i18n/context'
 import { GlobalLanguageFab } from '@/components/layouts/global-language-fab'
+
+const poppins = Poppins({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-poppins',
+})
 
 export const metadata: Metadata = {
   title: 'My App',
@@ -35,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body>
+      <body className={poppins.variable}>
         <ReduxProvider>
           <I18nProvider>
             <AuthProvider>

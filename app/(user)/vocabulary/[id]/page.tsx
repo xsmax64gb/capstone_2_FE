@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, BookOpen, CheckCircle2, Flame, Sparkles, Volume2 } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle2, Flame, Layers3, Sparkles } from 'lucide-react'
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import { TOPIC_LABELS, VOCABULARIES } from '../data'
+import { TOPIC_LABELS, getRelatedVocabulary, getVocabularyById } from '../data'
 
 type VocabularyDetailPageProps = {
   params: Promise<{ id: string }>
@@ -10,29 +10,33 @@ type VocabularyDetailPageProps = {
 
 export default async function VocabularyDetailPage({ params }: VocabularyDetailPageProps) {
   const { id } = await params
-  const vocabulary = VOCABULARIES.find((item) => item.id === id)
+  const vocabulary = getVocabularyById(id)
 
   if (!vocabulary) {
     notFound()
   }
 
-  const relatedWords = VOCABULARIES.filter(
-    (item) => item.topic === vocabulary.topic && item.id !== vocabulary.id
-  ).slice(0, 3)
-
+  const relatedWords = getRelatedVocabulary(vocabulary.id, 3)
   const estimatedMinutes = Math.max(6, Math.min(14, vocabulary.word.length + 4))
   const masteryPercent = Math.max(65, Math.min(95, vocabulary.word.length * 8))
 
   return (
     <ProtectedRoute>
       <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
-        <section className="mb-8">
+        <section className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/vocabulary"
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Vocabulary Lab
+          </Link>
+          <Link
+            href="/vocabulary/overview"
+            className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <Layers3 className="mr-1.5 h-4 w-4" />
+            Overview Table
           </Link>
         </section>
 
@@ -63,17 +67,14 @@ export default async function VocabularyDetailPage({ params }: VocabularyDetailP
         <section className="grid grid-cols-1 gap-10 lg:grid-cols-12">
           <div className="lg:col-span-8">
             <div className="mb-8 border-b border-slate-200">
-              <nav className="flex gap-8 overflow-x-auto pb-px">
-                <span className="border-b-2 border-black pb-4 text-sm font-semibold text-black">Word Info</span>
-                <span className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
-                  Practice
-                </span>
-                <span className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
+              <nav className="flex gap-4 overflow-x-auto pb-px text-sm font-medium">
+                <span className="border-b-2 border-black pb-4 text-black">Word Info</span>
+                <Link href={`/vocabulary/${vocabulary.id}/flashcards`} className="pb-4 text-slate-500 hover:text-black">
+                  Flashcards
+                </Link>
+                <Link href={`/vocabulary/${vocabulary.id}/quiz`} className="pb-4 text-slate-500 hover:text-black">
                   Quiz
-                </span>
-                <span className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
-                  Related
-                </span>
+                </Link>
               </nav>
             </div>
 
@@ -106,15 +107,35 @@ export default async function VocabularyDetailPage({ params }: VocabularyDetailP
                 />
               </div>
 
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">Part of speech</p>
+                  <p className="mt-1 text-sm font-semibold capitalize">{vocabulary.partOfSpeech}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">Synonyms</p>
+                  <p className="mt-1 text-sm font-semibold">{vocabulary.synonyms.join(', ') || '-'}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">Antonyms</p>
+                  <p className="mt-1 text-sm font-semibold">{vocabulary.antonyms.join(', ') || '-'}</p>
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4">
-                <button className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                  <Volume2 className="mr-2 h-4 w-4" />
-                  Listen pronunciation
-                </button>
-                <button className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <Link
+                  href={`/vocabulary/${vocabulary.id}/flashcards`}
+                  className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Practice with AI
-                </button>
+                  Study with Flashcards
+                </Link>
+                <Link
+                  href={`/vocabulary/${vocabulary.id}/quiz`}
+                  className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  Start Quiz
+                </Link>
               </div>
             </div>
           </div>
@@ -144,7 +165,7 @@ export default async function VocabularyDetailPage({ params }: VocabularyDetailP
             <div className="rounded-xl bg-black p-6 text-white shadow-lg">
               <h3 className="mb-2 text-lg font-bold">Mastery Progress</h3>
               <p className="mb-5 text-sm text-slate-300">
-                Complete more practice rounds to lock this word into long-term memory.
+                Complete flashcards and quiz mode to lock this word into memory.
               </p>
               <div className="h-2 w-full rounded-full bg-white/20">
                 <div className="h-2 rounded-full bg-white" style={{ width: `${masteryPercent}%` }} />

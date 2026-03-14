@@ -2,15 +2,23 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { BookOpen, CheckCircle2, Search, Volume2 } from 'lucide-react'
+import { BookOpen, CheckCircle2, Layers3, Search, Sparkles } from 'lucide-react'
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import { TOPIC_LABELS, type VocabularyItem, VOCABULARIES } from './data'
+import {
+  STATUS_LABELS,
+  TOPIC_LABELS,
+  VOCABULARIES,
+  VOCABULARY_PROGRESS,
+  type VocabularyItem,
+} from './data'
 
 export default function VocabularyPage() {
   const [query, setQuery] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<'all' | VocabularyItem['level']>('all')
   const [selectedTopic, setSelectedTopic] = useState<'all' | VocabularyItem['topic']>('all')
-  const [masteredIds, setMasteredIds] = useState<string[]>([])
+  const [masteredIds, setMasteredIds] = useState<string[]>(
+    VOCABULARY_PROGRESS.filter((item) => item.status === 'mastered').map((item) => item.vocabularyId)
+  )
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -43,16 +51,26 @@ export default function VocabularyPage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Vocabulary Lab</h1>
               <p className="mt-1 text-slate-500">
-                Learn words by topic, save mastered words, and track daily progress.
+                Two practice modes available: Flashcards and Quiz, plus full overview table.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <p className="font-semibold">
-                {masteredCount}/{VOCABULARIES.length} mastered ({progress}%)
-              </p>
-              <div className="mt-2 h-2 w-44 rounded-full bg-slate-200">
-                <div className="h-2 rounded-full bg-black" style={{ width: `${progress}%` }} />
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/vocabulary/overview"
+                className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <Layers3 className="mr-1.5 h-4 w-4" />
+                Overview Table
+              </Link>
+            </div>
+          </div>
+
+          <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            <p className="font-semibold">
+              {masteredCount}/{VOCABULARIES.length} mastered ({progress}%)
+            </p>
+            <div className="mt-2 h-2 w-52 rounded-full bg-slate-200">
+              <div className="h-2 rounded-full bg-black" style={{ width: `${progress}%` }} />
             </div>
           </div>
 
@@ -93,6 +111,22 @@ export default function VocabularyPage() {
           </div>
         </section>
 
+        <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {VOCABULARY_PROGRESS.map((item) => {
+            const word = VOCABULARIES.find((vocab) => vocab.id === item.vocabularyId)
+            if (!word) return null
+            return (
+              <article key={item.vocabularyId} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold">{word.word}</p>
+                <p className="mt-1 text-xs text-slate-500">{STATUS_LABELS[item.status]}</p>
+                <p className="mt-2 text-xs text-slate-600">
+                  Correct rate: <span className="font-semibold">{item.correctRate}%</span>
+                </p>
+              </article>
+            )
+          })}
+        </section>
+
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filtered.map((item) => {
             const mastered = masteredIds.includes(item.id)
@@ -116,35 +150,44 @@ export default function VocabularyPage() {
                   <span className="font-semibold text-slate-900">Example:</span> {item.example}
                 </p>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                      <BookOpen className="mr-1 h-3.5 w-3.5" />
-                      {TOPIC_LABELS[item.topic]}
-                    </span>
-                    <button className="inline-flex items-center rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                      <Volume2 className="mr-1 h-3.5 w-3.5" />
-                      Listen
-                    </button>
-                  </div>
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                    <BookOpen className="mr-1 h-3.5 w-3.5" />
+                    {TOPIC_LABELS[item.topic]}
+                  </span>
+                  <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                    {item.partOfSpeech}
+                  </span>
+                </div>
 
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <Link
+                    href={`/vocabulary/${item.id}`}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Detail
+                  </Link>
+                  <Link
+                    href={`/vocabulary/${item.id}/flashcards`}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Flashcard
+                  </Link>
+                  <Link
+                    href={`/vocabulary/${item.id}/quiz`}
+                    className="inline-flex items-center justify-center rounded-lg bg-black px-2 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                  >
+                    Quiz
+                  </Link>
                   <button
                     onClick={() => toggleMastered(item.id)}
-                    className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    className={`inline-flex items-center justify-center rounded-lg px-2 py-2 text-xs font-semibold transition-colors ${
                       mastered ? 'bg-black text-white' : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                    {mastered ? 'Mastered' : 'Mark mastered'}
+                    {mastered ? 'Mastered' : 'Mark'}
                   </button>
-                </div>
-                <div className="mt-3 border-t border-slate-100 pt-3">
-                  <Link
-                    href={`/vocabulary/${item.id}`}
-                    className="text-xs font-semibold text-slate-700 underline-offset-2 hover:underline"
-                  >
-                    Open lesson detail
-                  </Link>
                 </div>
               </article>
             )
@@ -159,6 +202,18 @@ export default function VocabularyPage() {
             </p>
           </div>
         )}
+
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="inline-flex items-center text-lg font-bold">
+            <Sparkles className="mr-2 h-4 w-4" />
+            Suggested Route
+          </h3>
+          <p className="mt-2 text-sm text-slate-600">
+            Open <span className="font-semibold">Overview Table</span> to scan all words, then study
+            with <span className="font-semibold">Flashcards</span>, and finish with{' '}
+            <span className="font-semibold">Quiz</span>.
+          </p>
+        </section>
       </main>
     </ProtectedRoute>
   )

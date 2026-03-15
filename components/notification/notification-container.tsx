@@ -1,13 +1,15 @@
-'use client'
+"use client";
 
-import type { Notification } from '@/types'
-import { NotificationItem } from './notification-item'
+import type { Notification } from "@/types";
+import { NotificationItem } from "./notification-item";
 
 interface NotificationContainerProps {
-  notifications: Notification[]
+  notifications: Notification[];
 }
 
-export function NotificationContainer({ notifications }: NotificationContainerProps) {
+export function NotificationContainer({
+  notifications,
+}: NotificationContainerProps) {
   return (
     <div className="fixed top-4 right-4 z-[120] flex max-w-sm flex-col gap-2 pointer-events-none">
       {notifications.map((notification) => (
@@ -16,5 +18,5 @@ export function NotificationContainer({ notifications }: NotificationContainerPr
         </div>
       ))}
     </div>
-  )
+  );
 }

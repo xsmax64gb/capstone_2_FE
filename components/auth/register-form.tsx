@@ -286,22 +286,48 @@ export function RegisterForm() {
           <DialogHeader>
             <DialogTitle>{t("Xác thực OTP")}</DialogTitle>
             <DialogDescription>
-              {t("Nhập mã OTP đã gửi đến email")} <strong>{pendingRegisterData.email}</strong>
+              {t("Nhập mã OTP đã gửi đến email")}{" "}
+              <strong>{pendingRegisterData.email}</strong>
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
-            <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} disabled={isLoading}>
+            <InputOTP
+              maxLength={6}
+              value={otpCode}
+              onChange={setOtpCode}
+              disabled={isLoading}
+            >
               <InputOTPGroup className="w-full justify-center">
-                <InputOTPSlot index={0} className="h-11 w-11 rounded-md border" />
-                <InputOTPSlot index={1} className="h-11 w-11 rounded-md border" />
-                <InputOTPSlot index={2} className="h-11 w-11 rounded-md border" />
-                <InputOTPSlot index={3} className="h-11 w-11 rounded-md border" />
-                <InputOTPSlot index={4} className="h-11 w-11 rounded-md border" />
-                <InputOTPSlot index={5} className="h-11 w-11 rounded-md border" />
+                <InputOTPSlot
+                  index={0}
+                  className="h-11 w-11 rounded-md border"
+                />
+                <InputOTPSlot
+                  index={1}
+                  className="h-11 w-11 rounded-md border"
+                />
+                <InputOTPSlot
+                  index={2}
+                  className="h-11 w-11 rounded-md border"
+                />
+                <InputOTPSlot
+                  index={3}
+                  className="h-11 w-11 rounded-md border"
+                />
+                <InputOTPSlot
+                  index={4}
+                  className="h-11 w-11 rounded-md border"
+                />
+                <InputOTPSlot
+                  index={5}
+                  className="h-11 w-11 rounded-md border"
+                />
               </InputOTPGroup>
             </InputOTP>
-            <p className="text-center text-xs text-slate-500">{t("OTP có hiệu lực trong 10 phút")}</p>
+            <p className="text-center text-xs text-slate-500">
+              {t("OTP có hiệu lực trong 10 phút")}
+            </p>
           </div>
 
           <DialogFooter className="flex-col gap-2 sm:flex-col">

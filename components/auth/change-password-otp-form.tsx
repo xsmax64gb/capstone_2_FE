@@ -175,16 +175,36 @@ export function ChangePasswordOtpForm() {
                       disabled={isLoading}
                     >
                       <InputOTPGroup className="w-full justify-center">
-                        <InputOTPSlot index={0} className="h-11 w-11 rounded-md border" />
-                        <InputOTPSlot index={1} className="h-11 w-11 rounded-md border" />
-                        <InputOTPSlot index={2} className="h-11 w-11 rounded-md border" />
-                        <InputOTPSlot index={3} className="h-11 w-11 rounded-md border" />
-                        <InputOTPSlot index={4} className="h-11 w-11 rounded-md border" />
-                        <InputOTPSlot index={5} className="h-11 w-11 rounded-md border" />
+                        <InputOTPSlot
+                          index={0}
+                          className="h-11 w-11 rounded-md border"
+                        />
+                        <InputOTPSlot
+                          index={1}
+                          className="h-11 w-11 rounded-md border"
+                        />
+                        <InputOTPSlot
+                          index={2}
+                          className="h-11 w-11 rounded-md border"
+                        />
+                        <InputOTPSlot
+                          index={3}
+                          className="h-11 w-11 rounded-md border"
+                        />
+                        <InputOTPSlot
+                          index={4}
+                          className="h-11 w-11 rounded-md border"
+                        />
+                        <InputOTPSlot
+                          index={5}
+                          className="h-11 w-11 rounded-md border"
+                        />
                       </InputOTPGroup>
                     </InputOTP>
                   </FormControl>
-                  <p className="mt-2 text-xs text-slate-500">Mã OTP có hiệu lực trong 10 phút.</p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Mã OTP có hiệu lực trong 10 phút.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

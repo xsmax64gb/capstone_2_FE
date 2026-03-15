@@ -23,6 +23,11 @@ export interface RegisterRequest {
   email: string
   password: string
   fullName: string
+  otp: string
+}
+
+export interface SendOtpRequest {
+  email: string
 }
 
 export interface AuthResponse {
@@ -32,8 +37,8 @@ export interface AuthResponse {
 
 export interface ChangePasswordRequest {
   email: string
-  oldPassword: string
   newPassword: string
+  otp: string
 }
 
 // API Response Types

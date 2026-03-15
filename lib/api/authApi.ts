@@ -6,6 +6,7 @@ import type {
   ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
+  SendOtpRequest,
 } from '@/types'
 
 interface AuthPayload {
@@ -56,9 +57,25 @@ export const authApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<AuthPayload>) => toAuthResponse(response),
     }),
 
+    sendRegisterOtp: builder.mutation<ApiResponse, SendOtpRequest>({
+      query: (data) => ({
+        url: API_ENDPOINTS.AUTH.REGISTER_SEND_OTP,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
     changePassword: builder.mutation<ApiResponse, ChangePasswordRequest>({
       query: (data) => ({
         url: API_ENDPOINTS.AUTH.CHANGE_PASSWORD,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
+    sendChangePasswordOtp: builder.mutation<ApiResponse, SendOtpRequest>({
+      query: (data) => ({
+        url: API_ENDPOINTS.AUTH.CHANGE_PASSWORD_SEND_OTP,
         method: 'POST',
         body: data,
       }),
@@ -70,4 +87,6 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useChangePasswordMutation,
+  useSendRegisterOtpMutation,
+  useSendChangePasswordOtpMutation,
 } = authApi

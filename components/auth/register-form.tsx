@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -16,18 +17,20 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useRegisterMutation } from '@/lib/api/authApi'
+import { useRegisterMutation, useSendRegisterOtpMutation } from '@/lib/api/authApi'
 import { useDispatch } from 'react-redux'
 import { setAuthTokens, setUser } from '@/lib/slices/authSlice'
 import { useNotification } from '@/hooks/use-notification'
 import { Spinner } from '@/components/ui/spinner'
 import { useI18n } from '@/lib/i18n/context'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
   email: z.string().email('Email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string(),
+  otp: z.string().length(6, 'OTP gồm 6 chữ số'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Mật khẩu không khớp',
   path: ['confirmPassword'],
@@ -39,6 +42,8 @@ export function RegisterForm() {
   const router = useRouter()
   const dispatch = useDispatch()
   const [register, { isLoading }] = useRegisterMutation()
+  const [sendRegisterOtp, { isLoading: isSendingOtp }] = useSendRegisterOtpMutation()
+  const [isOtpSent, setIsOtpSent] = useState(false)
   const { error: notifyError, success: notifySuccess } = useNotification()
   const { t } = useI18n()
 
@@ -49,8 +54,26 @@ export function RegisterForm() {
       email: '',
       password: '',
       confirmPassword: '',
+      otp: '',
     },
   })
+
+  async function onSendOtp() {
+    const isEmailValid = await form.trigger('email')
+    if (!isEmailValid) {
+      return
+    }
+
+    try {
+      const email = form.getValues('email')
+      await sendRegisterOtp({ email }).unwrap()
+      setIsOtpSent(true)
+      notifySuccess(t('Đã gửi OTP'), t('Vui lòng kiểm tra email để lấy mã OTP'))
+    } catch (error: any) {
+      const message = error?.data?.message || t('Không thể gửi OTP')
+      notifyError(t('Lỗi'), message)
+    }
+  }
 
   async function onSubmit(values: RegisterFormValues) {
     try {
@@ -112,6 +135,53 @@ export function RegisterForm() {
                       disabled={isLoading}
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={isLoading || isSendingOtp}
+              onClick={onSendOtp}
+            >
+              {isSendingOtp ? (
+                <>
+                  <Spinner className="mr-2" />
+                  {t('Đang gửi OTP...')}
+                </>
+              ) : isOtpSent ? (
+                t('Gửi lại OTP')
+              ) : (
+                t('Gửi OTP')
+              )}
+            </Button>
+
+            <FormField
+              control={form.control}
+              name="otp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Mã OTP')}</FormLabel>
+                  <FormControl>
+                    <InputOTP
+                      maxLength={6}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoading}
+                    >
+                      <InputOTPGroup className="w-full justify-center">
+                        <InputOTPSlot index={0} className="h-11 w-11" />
+                        <InputOTPSlot index={1} className="h-11 w-11" />
+                        <InputOTPSlot index={2} className="h-11 w-11" />
+                        <InputOTPSlot index={3} className="h-11 w-11" />
+                        <InputOTPSlot index={4} className="h-11 w-11" />
+                        <InputOTPSlot index={5} className="h-11 w-11" />
+                      </InputOTPGroup>
+                    </InputOTP>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

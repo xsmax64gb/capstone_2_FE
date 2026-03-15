@@ -2,6 +2,7 @@
 
 import { Flame, Gift, Medal, Trophy } from 'lucide-react'
 import { ProtectedRoute } from '@/components/auth/protected-route'
+import { ChangePasswordOtpForm } from '@/components/auth/change-password-otp-form'
 import { useAuth } from '@/lib/auth-context'
 
 const DEFAULT_AVATAR_URL =
@@ -64,6 +65,8 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-8">
+              <ChangePasswordOtpForm />
+
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Full Name</label>

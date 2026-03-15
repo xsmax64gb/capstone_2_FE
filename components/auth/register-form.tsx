@@ -9,6 +9,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -44,7 +52,6 @@ const registerSchema = z
     email: z.string().email("Email không hợp lệ"),
     password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
     confirmPassword: z.string(),
-    otp: z.string().length(6, "OTP gồm 6 chữ số"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Mật khẩu không khớp",
@@ -59,7 +66,16 @@ export function RegisterForm() {
   const [register, { isLoading }] = useRegisterMutation();
   const [sendRegisterOtp, { isLoading: isSendingOtp }] =
     useSendRegisterOtpMutation();
+  const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
+  const [pendingRegisterData, setPendingRegisterData] = useState<
+    Omit<RegisterFormValues, "confirmPassword">
+  >({
+    fullName: "",
+    email: "",
+    password: "",
+  });
   const { error: notifyError, success: notifySuccess } = useNotification();
   const { t } = useI18n();
 
@@ -70,20 +86,26 @@ export function RegisterForm() {
       email: "",
       password: "",
       confirmPassword: "",
-      otp: "",
     },
   });
 
-  async function onSendOtp() {
-    const isEmailValid = await form.trigger("email");
-    if (!isEmailValid) {
+  async function onStartOtpFlow() {
+    const isFormValid = await form.trigger();
+    if (!isFormValid) {
       return;
     }
 
     try {
-      const email = form.getValues("email");
-      await sendRegisterOtp({ email }).unwrap();
+      const formValues = form.getValues();
+      await sendRegisterOtp({ email: formValues.email }).unwrap();
+      setPendingRegisterData({
+        fullName: formValues.fullName,
+        email: formValues.email,
+        password: formValues.password,
+      });
       setIsOtpSent(true);
+      setOtpCode("");
+      setIsOtpDialogOpen(true);
       notifySuccess(
         t("Đã gửi OTP"),
         t("Vui lòng kiểm tra email để lấy mã OTP"),
@@ -94,10 +116,19 @@ export function RegisterForm() {
     }
   }
 
-  async function onSubmit(values: RegisterFormValues) {
+  async function onSubmitRegister() {
+    if (otpCode.length !== 6) {
+      notifyError(t("Lỗi"), t("OTP gồm 6 chữ số"));
+      return;
+    }
+
     try {
-      const { confirmPassword, ...registerData } = values;
-      const response = await register(registerData).unwrap();
+      const response = await register({
+        fullName: pendingRegisterData.fullName,
+        email: pendingRegisterData.email,
+        password: pendingRegisterData.password,
+        otp: otpCode,
+      }).unwrap();
 
       dispatch(
         setAuthTokens({
@@ -105,6 +136,7 @@ export function RegisterForm() {
         }),
       );
       dispatch(setUser(response.user));
+      setIsOtpDialogOpen(false);
 
       notifySuccess(
         t("Đăng ký thành công"),
@@ -115,6 +147,21 @@ export function RegisterForm() {
       const message = error?.data?.message || t("Đăng ký thất bại");
       notifyError(t("Lỗi"), message);
     }
+  }
+
+  async function onResendOtp() {
+    try {
+      await sendRegisterOtp({ email: pendingRegisterData.email }).unwrap();
+      notifySuccess(t("Đã gửi lại OTP"), t("Vui lòng kiểm tra email của bạn"));
+    } catch (error: any) {
+      const message = error?.data?.message || t("Không thể gửi OTP");
+      notifyError(t("Lỗi"), message);
+    }
+  }
+
+  function onBackToEditInfo() {
+    setIsOtpDialogOpen(false);
+    setOtpCode("");
   }
 
   return (
@@ -129,7 +176,7 @@ export function RegisterForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4">
             <FormField
               control={form.control}
               name="fullName"
@@ -161,53 +208,6 @@ export function RegisterForm() {
                       disabled={isLoading}
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              disabled={isLoading || isSendingOtp}
-              onClick={onSendOtp}
-            >
-              {isSendingOtp ? (
-                <>
-                  <Spinner className="mr-2" />
-                  {t("Đang gửi OTP...")}
-                </>
-              ) : isOtpSent ? (
-                t("Gửi lại OTP")
-              ) : (
-                t("Gửi OTP")
-              )}
-            </Button>
-
-            <FormField
-              control={form.control}
-              name="otp"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("Mã OTP")}</FormLabel>
-                  <FormControl>
-                    <InputOTP
-                      maxLength={6}
-                      value={field.value}
-                      onChange={field.onChange}
-                      disabled={isLoading}
-                    >
-                      <InputOTPGroup className="w-full justify-center">
-                        <InputOTPSlot index={0} className="h-11 w-11" />
-                        <InputOTPSlot index={1} className="h-11 w-11" />
-                        <InputOTPSlot index={2} className="h-11 w-11" />
-                        <InputOTPSlot index={3} className="h-11 w-11" />
-                        <InputOTPSlot index={4} className="h-11 w-11" />
-                        <InputOTPSlot index={5} className="h-11 w-11" />
-                      </InputOTPGroup>
-                    </InputOTP>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -252,14 +252,19 @@ export function RegisterForm() {
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
+            <Button
+              type="button"
+              className="w-full"
+              disabled={isLoading || isSendingOtp}
+              onClick={onStartOtpFlow}
+            >
+              {isSendingOtp ? (
                 <>
                   <Spinner className="mr-2" />
-                  {t("Đang đăng ký...")}
+                  {t("Đang gửi OTP...")}
                 </>
               ) : (
-                t("Tạo tài khoản")
+                t("Tiếp tục xác thực OTP")
               )}
             </Button>
           </form>
@@ -275,6 +280,67 @@ export function RegisterForm() {
           </Link>
         </div>
       </CardContent>
+
+      <Dialog open={isOtpDialogOpen} onOpenChange={setIsOtpDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("Xác thực OTP")}</DialogTitle>
+            <DialogDescription>
+              {t("Nhập mã OTP đã gửi đến email")} <strong>{pendingRegisterData.email}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} disabled={isLoading}>
+              <InputOTPGroup className="w-full justify-center">
+                <InputOTPSlot index={0} className="h-11 w-11 rounded-md border" />
+                <InputOTPSlot index={1} className="h-11 w-11 rounded-md border" />
+                <InputOTPSlot index={2} className="h-11 w-11 rounded-md border" />
+                <InputOTPSlot index={3} className="h-11 w-11 rounded-md border" />
+                <InputOTPSlot index={4} className="h-11 w-11 rounded-md border" />
+                <InputOTPSlot index={5} className="h-11 w-11 rounded-md border" />
+              </InputOTPGroup>
+            </InputOTP>
+            <p className="text-center text-xs text-slate-500">{t("OTP có hiệu lực trong 10 phút")}</p>
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              type="button"
+              className="w-full"
+              onClick={onSubmitRegister}
+              disabled={isLoading || otpCode.length !== 6}
+            >
+              {isLoading ? (
+                <>
+                  <Spinner className="mr-2" />
+                  {t("Đang đăng ký...")}
+                </>
+              ) : (
+                t("Xác thực OTP và tạo tài khoản")
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={onResendOtp}
+              disabled={isSendingOtp || isLoading}
+            >
+              {isSendingOtp ? t("Đang gửi lại OTP...") : t("Gửi lại OTP")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={onBackToEditInfo}
+              disabled={isLoading}
+            >
+              {t("Quay lại chỉnh thông tin")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

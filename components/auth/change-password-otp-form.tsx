@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Mail, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -108,8 +109,11 @@ export function ChangePasswordOtpForm() {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h3 className="mb-5 text-lg font-bold">Bảo mật tài khoản</h3>
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h3 className="mb-1 text-lg font-bold">Bảo mật tài khoản</h3>
+      <p className="mb-5 text-sm text-slate-500">
+        Xác thực OTP trước khi đổi mật khẩu để bảo vệ tài khoản.
+      </p>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -131,50 +135,61 @@ export function ChangePasswordOtpForm() {
             )}
           />
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={onSendOtp}
-            disabled={isLoading}
-          >
-            {isSendingOtp ? (
-              <>
-                <Spinner className="mr-2" />
-                Đang gửi OTP...
-              </>
-            ) : (
-              "Gửi OTP đổi mật khẩu"
-            )}
-          </Button>
+          <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
+              <ShieldCheck className="h-4 w-4" />
+              Xác thực OTP email
+            </div>
 
-          <FormField
-            control={form.control}
-            name="otp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mã OTP</FormLabel>
-                <FormControl>
-                  <InputOTP
-                    maxLength={6}
-                    value={field.value}
-                    onChange={field.onChange}
-                    disabled={isLoading}
-                  >
-                    <InputOTPGroup className="w-full justify-center">
-                      <InputOTPSlot index={0} className="h-11 w-11" />
-                      <InputOTPSlot index={1} className="h-11 w-11" />
-                      <InputOTPSlot index={2} className="h-11 w-11" />
-                      <InputOTPSlot index={3} className="h-11 w-11" />
-                      <InputOTPSlot index={4} className="h-11 w-11" />
-                      <InputOTPSlot index={5} className="h-11 w-11" />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <Button
+              type="button"
+              variant="outline"
+              className="mb-4 w-full border-slate-300 bg-white hover:bg-slate-100"
+              onClick={onSendOtp}
+              disabled={isLoading}
+            >
+              {isSendingOtp ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Đang gửi OTP...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Gửi OTP đổi mật khẩu
+                </>
+              )}
+            </Button>
+
+            <FormField
+              control={form.control}
+              name="otp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mã OTP</FormLabel>
+                  <FormControl>
+                    <InputOTP
+                      maxLength={6}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoading}
+                    >
+                      <InputOTPGroup className="w-full justify-center">
+                        <InputOTPSlot index={0} className="h-11 w-11 rounded-md border" />
+                        <InputOTPSlot index={1} className="h-11 w-11 rounded-md border" />
+                        <InputOTPSlot index={2} className="h-11 w-11 rounded-md border" />
+                        <InputOTPSlot index={3} className="h-11 w-11 rounded-md border" />
+                        <InputOTPSlot index={4} className="h-11 w-11 rounded-md border" />
+                        <InputOTPSlot index={5} className="h-11 w-11 rounded-md border" />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </FormControl>
+                  <p className="mt-2 text-xs text-slate-500">Mã OTP có hiệu lực trong 10 phút.</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}

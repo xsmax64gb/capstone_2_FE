@@ -1,4 +1,9 @@
-import { BookOpen, ClipboardCheck, FileClock, Layers3 } from "lucide-react";
+"use client";
+
+import { BookOpen, FileClock, Layers3 } from "lucide-react";
+import { useGetAdminContentQuery } from "@/lib/api/adminApi";
+import { formatDateTime, formatNumber } from "@/lib/admin";
+import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -7,41 +12,52 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-const metrics = [
-  {
-    label: "Module đã publish",
-    value: "128",
-    hint: "Bao gồm bài học, vocabulary và exercise packs",
-    icon: BookOpen,
-  },
-  {
-    label: "Bản nháp đang chờ duyệt",
-    value: "21",
-    hint: "Tập trung ở unit B1 và speaking prompts",
-    icon: FileClock,
-  },
-  {
-    label: "Asset cần đối soát",
-    value: "46",
-    hint: "Image, audio, và metadata cần verify",
-    icon: Layers3,
-  },
-] as const;
-
-const pipeline = [
-  "Danh sách draft với status rõ: drafting, review, approved, published.",
-  "Preview card cho bài học để admin xem nhanh title, level và owner.",
-  "Action panel cho approve, reject, duplicate và schedule publish.",
-] as const;
-
-const reviewNotes = [
-  "Nội dung admin nên ưu tiên bố trí theo pipeline thay vì chỉ là list phẳng.",
-  "Nên có bộ lọc theo cấp độ, kỹ năng, owner và ngày cập nhật.",
-  "Có thể thêm panel phụ để hiện media assets liên quan và lịch sử chỉnh sửa.",
-] as const;
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function AdminContentPage() {
+  const { data, isLoading, isError, error } = useGetAdminContentQuery();
+
+  if (isLoading) {
+    return <AdminPageLoading />;
+  }
+
+  if (isError || !data) {
+    const message =
+      typeof error === "object" && error && "status" in error
+        ? `Yêu cầu thất bại (${String(error.status)}).`
+        : undefined;
+
+    return <AdminPageError message={message} />;
+  }
+
+  const metrics = [
+    {
+      label: "Exercise modules",
+      value: formatNumber(data.summary.totalExercises),
+      hint: `${formatNumber(data.summary.totalQuestions)} câu hỏi trong ngân hàng`,
+      icon: BookOpen,
+    },
+    {
+      label: "Vocabulary items",
+      value: formatNumber(data.summary.totalVocabulary),
+      hint: "Đọc trực tiếp từ collection vocabularies",
+      icon: FileClock,
+    },
+    {
+      label: "Loại bài tập",
+      value: formatNumber(data.summary.exerciseTypeBreakdown.length),
+      hint: "Phân bố theo type đang có trong hệ thống",
+      icon: Layers3,
+    },
+  ];
+
   return (
     <>
       <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
@@ -52,12 +68,11 @@ export default function AdminContentPage() {
           Content Desk
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-          Quản lý pipeline nội dung học tập.
+          Pipeline nội dung đang lấy từ API thật.
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-          Đây là khu để thêm moderation flow, preview, schedule và release note
-          cho bài học. Layout hiện tại ưu tiên việc chuyển draft thành publish
-          nhanh và dễ quan sát.
+          Màn này đang tổng hợp exercises và vocabulary mới nhất thay cho dữ
+          liệu mẫu trước đó.
         </p>
       </section>
 
@@ -87,45 +102,90 @@ export default function AdminContentPage() {
       <section className="grid gap-6 xl:grid-cols-2">
         <Card className="border-slate-200 py-5">
           <CardHeader>
-            <CardTitle>Pipeline xuất bản để xây tiếp</CardTitle>
+            <CardTitle>Exercises mới nhất</CardTitle>
             <CardDescription>
-              Khung này phù hợp cho board hoặc list moderation sau này.
+              Danh sách lấy từ collection `exercises`.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {pipeline.map((item, index) => (
-              <div
-                key={item}
-                className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
-                  {index + 1}
-                </div>
-                <p className="text-sm leading-6 text-slate-600">{item}</p>
-              </div>
-            ))}
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tiêu đề</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Topic</TableHead>
+                  <TableHead>Câu hỏi</TableHead>
+                  <TableHead>Cập nhật</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.recentExercises.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium text-slate-900">
+                      {item.title}
+                    </TableCell>
+                    <TableCell>{item.type}</TableCell>
+                    <TableCell>{item.level}</TableCell>
+                    <TableCell>{item.topic}</TableCell>
+                    <TableCell>{formatNumber(item.questionCount)}</TableCell>
+                    <TableCell className="text-slate-500">
+                      {formatDateTime(item.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 py-5">
           <CardHeader>
-            <CardTitle>Gợi ý triển khai</CardTitle>
+            <CardTitle>Vocabulary mới nhất</CardTitle>
             <CardDescription>
-              Những điểm nên ưu tiên để màn content không bị rối khi lớn dần.
+              Danh sách lấy từ collection `vocabularies`.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {reviewNotes.map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
-              >
-                <p className="text-sm leading-6 text-slate-600">{item}</p>
-              </div>
-            ))}
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-              <ClipboardCheck className="h-4 w-4" />
-              Hợp lý để gắn editor status, owner và release history.
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Từ vựng</TableHead>
+                  <TableHead>Nghĩa</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Topic</TableHead>
+                  <TableHead>Cập nhật</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.recentVocabulary.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium text-slate-900">
+                      {item.word}
+                    </TableCell>
+                    <TableCell className="text-slate-600">{item.meaning}</TableCell>
+                    <TableCell>{item.level}</TableCell>
+                    <TableCell>{item.topic}</TableCell>
+                    <TableCell className="text-slate-500">
+                      {formatDateTime(item.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className="mt-6 grid gap-3">
+              {data.summary.exerciseTypeBreakdown.map((item) => (
+                <div
+                  key={item.type}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                >
+                  <span className="text-sm text-slate-600">{item.type}</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {formatNumber(item.count)}
+                  </span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

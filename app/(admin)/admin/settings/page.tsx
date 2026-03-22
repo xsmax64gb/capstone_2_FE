@@ -1,4 +1,9 @@
+"use client";
+
 import { BellRing, Lock, Settings2, ShieldCheck } from "lucide-react";
+import { useGetAdminSettingsQuery } from "@/lib/api/adminApi";
+import { formatNumber } from "@/lib/admin";
+import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -8,40 +13,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const metrics = [
-  {
-    label: "Rule đang bật",
-    value: "24",
-    hint: "Bao gồm auth, moderation và notifications",
-    icon: Settings2,
-  },
-  {
-    label: "Integration đang dùng",
-    value: "07",
-    hint: "Email, storage, analytics, AI services",
-    icon: ShieldCheck,
-  },
-  {
-    label: "Notification flow",
-    value: "05",
-    hint: "Cảnh báo queue, hệ thống và báo cáo ngày",
-    icon: BellRing,
-  },
-] as const;
-
-const configAreas = [
-  "Role và quyền hạn theo từng khu vực admin.",
-  "Các giá trị cấu hình cho queue, retry và moderation.",
-  "Toggle cho feature flags, release gate va external integrations.",
-] as const;
-
-const securityNotes = [
-  "Nhóm settings nên tách thành tabs: general, security, integrations, notifications.",
-  "Nên có audit trail cho các thay đổi quan trọng để dễ truy vết.",
-  "Có thể thêm confirm dialog cho thao tác nhạy cảm như rotate key hay đổi rule auth.",
-] as const;
-
 export default function AdminSettingsPage() {
+  const { data, isLoading, isError, error } = useGetAdminSettingsQuery();
+
+  if (isLoading) {
+    return <AdminPageLoading />;
+  }
+
+  if (isError || !data) {
+    const message =
+      typeof error === "object" && error && "status" in error
+        ? `Yêu cầu thất bại (${String(error.status)}).`
+        : undefined;
+
+    return <AdminPageError message={message} />;
+  }
+
+  const metrics = [
+    {
+      label: "Roles",
+      value: formatNumber(data.catalogs.roles.length),
+      hint: data.catalogs.roles.join(", "),
+      icon: Settings2,
+    },
+    {
+      label: "Exercise types",
+      value: formatNumber(data.catalogs.exerciseTypes.length),
+      hint: data.catalogs.exerciseTypes.join(", "),
+      icon: ShieldCheck,
+    },
+    {
+      label: "AI statuses",
+      value: formatNumber(data.catalogs.aiSessionStatuses.length),
+      hint: data.catalogs.aiSessionStatuses.join(", "),
+      icon: BellRing,
+    },
+  ];
+
   return (
     <>
       <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
@@ -52,12 +60,11 @@ export default function AdminSettingsPage() {
           System Settings
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-          Cấu hình hệ thống, quyền hạn và integrations.
+          Cấu hình và catalog hệ thống từ backend admin.
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-          Layout settings đã để sẵn cho việc tách section, thêm tabs và những
-          thao tác nhạy cảm. Đây là nơi phù hợp để gom các config một cách gọn
-          và an toàn.
+          Màn này không còn text mẫu nữa; dữ liệu đang phản ánh môi trường chạy,
+          current admin và các enum đang được backend sử dụng.
         </p>
       </section>
 
@@ -87,45 +94,72 @@ export default function AdminSettingsPage() {
       <section className="grid gap-6 xl:grid-cols-2">
         <Card className="border-slate-200 py-5">
           <CardHeader>
-            <CardTitle>Những khối settings nên có</CardTitle>
+            <CardTitle>Môi trường và quyền truy cập</CardTitle>
             <CardDescription>
-              Đây là bố cục hợp lý để admin tìm config nhanh và ít nhầm lẫn.
+              Snapshot hiện tại của backend admin.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {configAreas.map((item, index) => (
-              <div
-                key={item}
-                className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
-                  {index + 1}
-                </div>
-                <p className="text-sm leading-6 text-slate-600">{item}</p>
-              </div>
-            ))}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Node env</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {data.environment.nodeEnv}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Port</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {data.environment.port}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">API base path</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {data.environment.apiBasePath}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Current admin</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {data.access.currentAdmin?.fullName || "N/A"}
+              </p>
+              <p className="text-sm text-slate-500">
+                {data.access.currentAdmin?.email || "N/A"}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 py-5">
           <CardHeader>
-            <CardTitle>Chú ý bảo mật và vận hành</CardTitle>
+            <CardTitle>Catalog hệ thống</CardTitle>
             <CardDescription>
-              Nên giữ những flow nhạy cảm rõ ràng và có xác nhận.
+              Các enum backend đang expose để admin kiểm tra nhanh.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {securityNotes.map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
-              >
-                <p className="text-sm leading-6 text-slate-600">{item}</p>
-              </div>
-            ))}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <p className="text-sm font-semibold text-slate-900">Levels</p>
+              <p className="mt-2 text-sm text-slate-600">
+                {data.catalogs.levels.join(", ")}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p className="text-sm font-semibold text-slate-900">Roles</p>
+              <p className="mt-2 text-sm text-slate-600">
+                {data.catalogs.roles.join(", ")}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p className="text-sm font-semibold text-slate-900">Accounts</p>
+              <p className="mt-2 text-sm text-slate-600">
+                {formatNumber(data.access.totalUsers)} users,{" "}
+                {formatNumber(data.access.adminUsers)} admins
+              </p>
+            </div>
             <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
               <Lock className="h-4 w-4" />
-              Có thể thêm confirm step và audit log cho action nhạy cảm.
+              Swagger enabled: {data.environment.swaggerEnabled ? "Yes" : "No"}
             </div>
           </CardContent>
         </Card>

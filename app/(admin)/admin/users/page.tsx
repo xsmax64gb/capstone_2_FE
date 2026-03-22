@@ -1,4 +1,9 @@
-import { Clock3, ShieldAlert, UserPlus, Users2 } from "lucide-react";
+"use client";
+
+import { ShieldAlert, UserPlus, Users2 } from "lucide-react";
+import { useGetAdminUsersQuery } from "@/lib/api/adminApi";
+import { formatDateTime, formatNumber, formatPercent } from "@/lib/admin";
+import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -7,41 +12,52 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-const metrics = [
-  {
-    label: "Hồ sơ đang hoạt động",
-    value: "12,420",
-    hint: "Tăng nhẹ trong 7 ngày qua",
-    icon: Users2,
-  },
-  {
-    label: "Moi onboard",
-    value: "214",
-    hint: "Cần theo dõi tỉ lệ hoàn tất onboarding",
-    icon: UserPlus,
-  },
-  {
-    label: "Tài khoản cần xem xét",
-    value: "09",
-    hint: "Bao gồm role và trạng thái bất thường",
-    icon: ShieldAlert,
-  },
-] as const;
-
-const queueItems = [
-  "Danh sách có bộ lọc theo role, level, onboardingDone và last active.",
-  "Bulk action cho lock, unlock, cấp quyền và gán nhóm học viên.",
-  "Drawer hoặc side panel để xem nhanh profile mà không rời khỏi bảng.",
-] as const;
-
-const nextSteps = [
-  "Nối API danh sách người dùng và thông tin phân trang.",
-  "Thêm badge role, trạng thái, và cảnh báo onboarding.",
-  "Tích hợp tìm kiếm realtime để giảm thao tác của admin.",
-] as const;
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function AdminUsersPage() {
+  const { data, isLoading, isError, error } = useGetAdminUsersQuery();
+
+  if (isLoading) {
+    return <AdminPageLoading />;
+  }
+
+  if (isError || !data) {
+    const message =
+      typeof error === "object" && error && "status" in error
+        ? `Yêu cầu thất bại (${String(error.status)}).`
+        : undefined;
+
+    return <AdminPageError message={message} />;
+  }
+
+  const metrics = [
+    {
+      label: "Tổng hồ sơ",
+      value: formatNumber(data.summary.totalUsers),
+      hint: `${formatNumber(data.summary.adminUsers)} tài khoản admin`,
+      icon: Users2,
+    },
+    {
+      label: "Đã onboard",
+      value: formatNumber(data.summary.onboardingCompleted),
+      hint: `${formatNumber(data.summary.onboardingPending)} còn pending`,
+      icon: UserPlus,
+    },
+    {
+      label: "Placement trung bình",
+      value: formatPercent(data.summary.averagePlacementScore),
+      hint: "Tính từ toàn bộ tài khoản hiện có",
+      icon: ShieldAlert,
+    },
+  ];
+
   return (
     <>
       <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
@@ -52,12 +68,11 @@ export default function AdminUsersPage() {
           User Operations
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-          Khu vận hành học viên và tài khoản.
+          Vận hành học viên và tài khoản bằng dữ liệu thật.
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-          Trang này đã có khung để gắn bảng user, filter, search, role badge và
-          các thao tác hàng loạt. Bạn có thể xem nó như khu operations desk cho
-          toàn bộ lifecycle của người học.
+          Bảng dưới đây đang đọc trực tiếp từ collection `users`, kèm phân bố
+          level, role và trạng thái onboarding.
         </p>
       </section>
 
@@ -84,49 +99,104 @@ export default function AdminUsersPage() {
         })}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
+      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="border-slate-200 py-5">
           <CardHeader>
-            <CardTitle>Những khối nên có trong màn quản lý user</CardTitle>
+            <CardTitle>Phân bố người dùng</CardTitle>
             <CardDescription>
-              Đây là bố cục hợp lý để tiếp tục lấp đầy dữ liệu thật.
+              Thống kê này phản ánh ngay dữ liệu level và role hiện tại.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {queueItems.map((item, index) => (
-              <div
-                key={item}
-                className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
-                  {index + 1}
-                </div>
-                <p className="text-sm leading-6 text-slate-600">{item}</p>
+          <CardContent className="space-y-6">
+            <div>
+              <p className="mb-3 text-sm font-semibold text-slate-900">Theo level</p>
+              <div className="space-y-3">
+                {data.breakdowns.byLevel.map((item) => (
+                  <div
+                    key={item.level}
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                  >
+                    <span className="text-sm text-slate-600">{item.level}</span>
+                    <span className="text-sm font-semibold text-slate-900">
+                      {formatNumber(item.count)}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div>
+              <p className="mb-3 text-sm font-semibold text-slate-900">Theo role</p>
+              <div className="space-y-3">
+                {data.breakdowns.byRole.map((item) => (
+                  <div
+                    key={item.role}
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3"
+                  >
+                    <span className="text-sm capitalize text-slate-600">{item.role}</span>
+                    <span className="text-sm font-semibold text-slate-900">
+                      {formatNumber(item.count)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 py-5">
           <CardHeader>
-            <CardTitle>Hướng mở rộng tiếp theo</CardTitle>
+            <CardTitle>Danh sách người dùng</CardTitle>
             <CardDescription>
-              Có thể thao tác tiếp từ shell này mà không phải sửa lại layout.
+              Hiển thị tài khoản mới nhất cùng trạng thái onboarding và role.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {nextSteps.map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
-              >
-                <p className="text-sm leading-6 text-slate-600">{item}</p>
-              </div>
-            ))}
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-              <Clock3 className="h-4 w-4" />
-              Khu này phù hợp để đặt bảng data table ở sprint tiếp theo.
-            </div>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Họ tên</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Onboarding</TableHead>
+                  <TableHead>Placement</TableHead>
+                  <TableHead>Tạo lúc</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium text-slate-900">
+                      {user.fullName}
+                    </TableCell>
+                    <TableCell className="text-slate-600">{user.email}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className="rounded-full border-slate-200 bg-slate-50 capitalize text-slate-600"
+                      >
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{user.currentLevel || "N/A"}</TableCell>
+                    <TableCell>
+                      <span
+                        className={
+                          user.onboardingDone ? "text-emerald-600" : "text-amber-600"
+                        }
+                      >
+                        {user.onboardingDone ? "Done" : "Pending"}
+                      </span>
+                    </TableCell>
+                    <TableCell>{formatPercent(user.placementScore || 0)}</TableCell>
+                    <TableCell className="text-slate-500">
+                      {formatDateTime(user.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </section>

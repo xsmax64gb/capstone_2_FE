@@ -64,3 +64,135 @@ export interface Notification {
   type: NotificationType;
   duration?: number;
 }
+
+export interface MetricBreakdownItem {
+  count: number;
+  level?: string;
+  role?: string;
+  status?: string;
+  type?: string;
+}
+
+export interface AdminOverviewResponse {
+  summary: {
+    totalUsers: number;
+    onboardingCompleted: number;
+    onboardingPending: number;
+    adminUsers: number;
+    totalAttempts: number;
+    attemptsLast7Days: number;
+    activeAiSessions: number;
+    totalContentItems: number;
+  };
+  systemSnapshot: {
+    uptime: number;
+    status: string;
+    apiTimestamp: string;
+    totals: {
+      exercises: number;
+      vocabularies: number;
+    };
+  };
+  recentActivity: Array<{
+    type: string;
+    title: string;
+    detail: string;
+    timestamp: string | null;
+  }>;
+}
+
+export interface AdminUsersResponse {
+  summary: {
+    totalUsers: number;
+    onboardingCompleted: number;
+    onboardingPending: number;
+    adminUsers: number;
+    averagePlacementScore: number;
+  };
+  breakdowns: {
+    byLevel: MetricBreakdownItem[];
+    byRole: MetricBreakdownItem[];
+  };
+  users: User[];
+}
+
+export interface AdminContentExerciseItem {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  type: string;
+  topic: string;
+  questionCount: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface AdminContentVocabularyItem {
+  id: string;
+  word: string;
+  meaning: string;
+  level: string;
+  topic: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface AdminContentResponse {
+  summary: {
+    totalExercises: number;
+    totalVocabulary: number;
+    totalQuestions: number;
+    exerciseTypeBreakdown: MetricBreakdownItem[];
+  };
+  recentExercises: AdminContentExerciseItem[];
+  recentVocabulary: AdminContentVocabularyItem[];
+}
+
+export interface AdminReportsResponse {
+  summary: {
+    totalUsers: number;
+    totalExerciseAttempts: number;
+    averageExercisePercent: number;
+    totalSpeakingMinutes: number;
+    aiSessionStatusBreakdown: MetricBreakdownItem[];
+  };
+  weeklyActivity: Array<{
+    date: string;
+    label: string;
+    attempts: number;
+    aiSessions: number;
+  }>;
+  levelDistribution: MetricBreakdownItem[];
+  topExercises: Array<{
+    exerciseId: string;
+    title: string;
+    attempts: number;
+    averagePercent: number;
+  }>;
+}
+
+export interface AdminSettingsResponse {
+  environment: {
+    nodeEnv: string;
+    port: string;
+    apiBasePath: string;
+    swaggerEnabled: boolean;
+  };
+  access: {
+    currentAdmin: {
+      id: string;
+      email: string;
+      fullName: string;
+      role: string;
+    } | null;
+    totalUsers: number;
+    adminUsers: number;
+  };
+  catalogs: {
+    roles: string[];
+    levels: string[];
+    exerciseTypes: string[];
+    aiSessionStatuses: string[];
+  };
+}

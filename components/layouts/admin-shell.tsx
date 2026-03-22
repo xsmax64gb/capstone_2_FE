@@ -16,6 +16,8 @@ import {
   Users2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useGetAdminOverviewQuery } from "@/lib/api/adminApi";
+import { formatCompactNumber, formatUptime } from "@/lib/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,12 +77,6 @@ const quickLinks = [
   { title: "Exercises", href: "/exercises", icon: ArrowUpRight },
 ] as const;
 
-const systemHighlights = [
-  { label: "Uptime", value: "99.94%" },
-  { label: "Tasks today", value: "18 items" },
-  { label: "Pending reviews", value: "03 queues" },
-] as const;
-
 function isActivePath(pathname: string, href: string) {
   if (href === "/admin") {
     return pathname === href;
@@ -111,10 +107,33 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/admin";
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { data: overviewData } = useGetAdminOverviewQuery(undefined, {
+    skip: user?.role !== "admin",
+  });
   const currentItem = getCurrentItem(pathname);
   const displayName = user?.fullName || user?.name || "Administrator";
   const roleLabel = (user?.role || "admin").toUpperCase();
   const initials = getInitials(displayName);
+  const systemHighlights = [
+    {
+      label: "Uptime",
+      value: overviewData?.systemSnapshot
+        ? formatUptime(overviewData.systemSnapshot.uptime)
+        : "N/A",
+    },
+    {
+      label: "Attempts 7d",
+      value: overviewData
+        ? formatCompactNumber(overviewData.summary.attemptsLast7Days)
+        : "N/A",
+    },
+    {
+      label: "AI active",
+      value: overviewData
+        ? formatCompactNumber(overviewData.summary.activeAiSessions)
+        : "N/A",
+    },
+  ];
 
   const handleLogout = () => {
     logout();

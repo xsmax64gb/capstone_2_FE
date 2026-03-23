@@ -9,4 +9,8 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: '/auth/password/change',
     CHANGE_PASSWORD_SEND_OTP: '/auth/password/send-otp',
   },
+  USER: {
+    PROFILE: '/me/profile',
+    PROFILE_AVATAR: '/me/profile/avatar',
+  },
 }

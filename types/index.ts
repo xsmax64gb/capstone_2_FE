@@ -4,6 +4,9 @@ export interface User {
   email: string;
   fullName: string;
   name?: string;
+  bio?: string;
+  nativeLanguage?: string;
+  timezone?: string;
   role?: string;
   currentLevel?: string;
   exp?: number;
@@ -39,6 +42,14 @@ export interface ChangePasswordRequest {
   email: string;
   newPassword: string;
   otp: string;
+}
+
+export interface UpdateProfileRequest {
+  fullName: string;
+  bio?: string;
+  nativeLanguage?: string;
+  timezone?: string;
+  avatarFile?: File | null;
 }
 
 // API Response Types

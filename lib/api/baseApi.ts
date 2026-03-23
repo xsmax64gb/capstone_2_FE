@@ -60,6 +60,7 @@ export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithAuthGuard,
   tagTypes: [
+    "Profile",
     "AdminOverview",
     "AdminUsers",
     "AdminReports",

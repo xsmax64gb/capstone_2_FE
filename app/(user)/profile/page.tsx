@@ -1,203 +1,402 @@
 "use client";
 
-import { Flame, Gift, Medal, Trophy } from "lucide-react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AtSign, Mail, MapPin, Plus, Save, Trash2 } from "lucide-react";
+
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ChangePasswordOtpForm } from "@/components/auth/change-password-otp-form";
-import { useAuth } from "@/lib/auth-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  useDeleteAvatarMutation,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useUploadAvatarMutation,
+} from "@/lib/api/authApi";
+import { notify } from "@/lib/admin";
 
-const DEFAULT_AVATAR_URL =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAHrbU6dGptCG-_BbdkQIQBO5sKyHsHQ3kIcpfJM3eQak-gKt79i7-H0EAqM-qIJ14pXancOSo4qvoDgyqlFP0ChUVL3QtU0PnuHjHKU2bDHY80nSC7YfRssSXAl92pMdk1oHHaMF8ae4b8WG8rXwGQRxDYqO6vASZHYmvH7DULLHz1Eq9gnhyUHy0RR3GZ3iltSlU42ZdpZPzGUVRVpvB9HNXAEu887lKJybHw3qVD5SRa8M36W9QQXIGMPrGHF3u8KyVrQM8c2OWB";
+const DEFAULT_AVATAR_URL = "/placeholder-user.jpg";
+
+const DEFAULT_NATIVE_LANGUAGE_OPTIONS = [
+  "Vietnamese",
+  "English",
+  "Japanese",
+  "Korean",
+  "Chinese",
+  "French",
+];
+
+type ProfileFormState = {
+  fullName: string;
+  bio: string;
+  nativeLanguage: string;
+  timezone: string;
+};
+
+const emptyForm: ProfileFormState = {
+  fullName: "",
+  bio: "",
+  nativeLanguage: "",
+  timezone: "",
+};
+
+const appendVersion = (url: string, version?: string) => {
+  if (!url) {
+    return DEFAULT_AVATAR_URL;
+  }
+
+  if (!version) {
+    return url;
+  }
+
+  return `${url}${url.includes("?") ? "&" : "?"}v=${encodeURIComponent(version)}`;
+};
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const securitySectionRef = useRef<HTMLDivElement | null>(null);
 
-  const profileName = user?.fullName || user?.name || "Learner";
-  const profileEmail = user?.email || "No email";
-  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  const { data: profile, isLoading, isError } = useGetProfileQuery();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+  const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();
+  const [deleteAvatar, { isLoading: isDeletingAvatar }] = useDeleteAvatarMutation();
+  const [form, setForm] = useState<ProfileFormState>(emptyForm);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    setForm({
+      fullName: profile.fullName || "",
+      bio: profile.bio || "",
+      nativeLanguage: profile.nativeLanguage || "",
+      timezone: profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    });
+  }, [profile]);
+
+  const profileHandle = useMemo(() => {
+    if (!profile?.email) {
+      return "learner";
+    }
+
+    return profile.email.split("@")[0]?.replace(/\s+/g, "_") || "learner";
+  }, [profile?.email]);
+
+  const remoteAvatarUrl = profile?.avatarUrl
+    ? appendVersion(profile.avatarUrl, profile.updatedAt)
+    : DEFAULT_AVATAR_URL;
+  const avatarUrl = avatarPreviewUrl || remoteAvatarUrl;
+  const profileName = form.fullName || profile?.fullName || "Người dùng";
+
+  const stats = [
+    {
+      label: "Email",
+      value: profile?.email || "Chưa có",
+    },
+    {
+      label: "Ngôn ngữ",
+      value: form.nativeLanguage || "Chưa cập nhật",
+    },
+    {
+      label: "Múi giờ",
+      value: form.timezone || "Chưa cập nhật",
+    },
+  ];
+
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0];
+
+    if (!nextFile) {
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(nextFile);
+    setAvatarPreviewUrl(objectUrl);
+
+    try {
+      await uploadAvatar(nextFile).unwrap();
+      notify({
+        title: "Đã cập nhật avatar",
+        message: "Ảnh đại diện đã được lưu ngay.",
+        type: "success",
+      });
+    } catch (error) {
+      notify({
+        title: "Không thể cập nhật avatar",
+        message: error instanceof Error ? error.message : "Vui lòng thử lại.",
+        type: "error",
+      });
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setAvatarPreviewUrl("");
+      event.target.value = "";
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateProfile(form).unwrap();
+      notify({
+        title: "Đã cập nhật profile",
+        message: "Thông tin của bạn đã được lưu.",
+        type: "success",
+      });
+    } catch (error) {
+      notify({
+        title: "Không thể cập nhật profile",
+        message:
+          error instanceof Error ? error.message : "Vui lòng kiểm tra lại dữ liệu.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await deleteAvatar().unwrap();
+      notify({
+        title: "Đã xóa avatar",
+        message: "Avatar của bạn đã được gỡ.",
+        type: "success",
+      });
+    } catch (error) {
+      notify({
+        title: "Không thể xóa avatar",
+        message: error instanceof Error ? error.message : "Vui lòng thử lại.",
+        type: "error",
+      });
+    }
+  };
 
   return (
     <ProtectedRoute>
       <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
-        <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-6">
-            <div
-              className="relative h-24 w-24 rounded-full border-4 border-white bg-slate-200 shadow-sm"
-              style={{
-                backgroundImage: `url('${avatarUrl}')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            >
-              <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-black text-xs font-bold text-white shadow-lg ring-2 ring-white">
-                +
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <div className="relative mx-auto lg:mx-0">
+              <Avatar className="h-36 w-36 border-4 border-white shadow-[0_20px_45px_-24px_rgba(15,23,42,0.55)] sm:h-40 sm:w-40">
+                <AvatarImage src={avatarUrl} alt={profileName} className="object-cover" />
+                <AvatarFallback className="bg-slate-100 text-3xl font-semibold text-slate-500">
+                  {profileName.slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-1 right-1 flex h-11 w-11 items-center justify-center rounded-full border-4 border-white bg-slate-950 text-white shadow-lg transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Đổi avatar"
+                disabled={isUploadingAvatar}
+              >
+                <Plus className="h-5 w-5" />
               </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => void handleAvatarChange(event)}
+              />
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-3xl font-bold tracking-tight">
-                {profileName}
-              </h1>
-              <p className="text-slate-500">{profileEmail}</p>
+
+            <div className="min-w-0 flex-1 space-y-4">
+              <div className="space-y-2 text-center lg:text-left">
+                <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+                    {profileHandle}
+                  </h1>
+                </div>
+                <p className="text-lg text-slate-900">{profileName}</p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-700 lg:justify-start">
+                {stats.map((item) => (
+                  <p key={item.label}>
+                    <span className="font-semibold text-slate-950">{item.value}</span>{" "}
+                    {item.label}
+                  </p>
+                ))}
+              </div>
+
+              <div className="space-y-2 text-sm text-slate-600">
+                <div className="flex items-center justify-center gap-2 lg:justify-start">
+                  <AtSign className="h-4 w-4" />
+                  <span>{profileHandle}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 lg:justify-start">
+                  <Mail className="h-4 w-4" />
+                  <span>{profile?.email || "Chưa có email"}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 lg:justify-start">
+                  <MapPin className="h-4 w-4" />
+                  <span>{form.timezone || "Chưa cập nhật múi giờ"}</span>
+                </div>
+              </div>
+
+              {form.bio ? (
+                <p className="max-w-2xl text-sm leading-7 text-slate-600">{form.bio}</p>
+              ) : null}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 rounded-2xl border-slate-200 bg-slate-100 text-slate-950 hover:bg-slate-200"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                >
+                  {isUploadingAvatar ? "Đang cập nhật ảnh..." : "Đổi ảnh đại diện"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 rounded-2xl border-slate-200 bg-slate-100 text-slate-950 hover:bg-slate-200"
+                  onClick={() =>
+                    securitySectionRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }
+                >
+                  Đổi mật khẩu
+                </Button>
+              </div>
             </div>
           </div>
-          <button className="inline-flex h-11 items-center justify-center rounded-lg bg-black px-6 text-sm font-semibold text-white transition-all hover:bg-slate-800">
-            Edit Profile
-          </button>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-8">
-            <div className="mb-8 border-b border-slate-200">
-              <nav className="flex gap-8 overflow-x-auto pb-px">
-                <button className="border-b-2 border-black pb-4 text-sm font-semibold text-black">
-                  Personal Info
-                </button>
-                <button className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
-                  Security
-                </button>
-                <button className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
-                  Learning Preferences
-                </button>
-                <button className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
-                  Subscription
-                </button>
-                <button className="border-b-2 border-transparent pb-4 text-sm font-medium text-slate-500">
-                  Achievements
-                </button>
-              </nav>
+        <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-950">Chỉnh sửa thông tin</h2>
+                </div>
+                <Avatar className="h-14 w-14 border border-slate-200">
+                <AvatarImage src={avatarUrl} alt={profileName} className="object-cover" />
+                <AvatarFallback className="bg-slate-100 text-slate-500">
+                  {profileName.slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
             </div>
 
-            <div className="space-y-8">
-              <ChangePasswordOtpForm />
+            <div className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Họ và tên
+                </label>
+                <Input
+                  value={form.fullName}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, fullName: event.target.value }))
+                  }
+                  placeholder="Nhập họ và tên"
+                />
+              </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Full Name
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Bio</label>
+                <Textarea
+                  rows={4}
+                  value={form.bio}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, bio: event.target.value }))
+                  }
+                  placeholder="Viết vài dòng giới thiệu về bạn"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Ngôn ngữ mẹ đẻ
                   </label>
-                  <input
-                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-black focus:ring-1 focus:ring-black"
-                    type="text"
-                    defaultValue={profileName}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Email Address
-                  </label>
-                  <input
-                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-black focus:ring-1 focus:ring-black"
-                    type="email"
-                    defaultValue={profileEmail}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Bio
-                  </label>
-                  <textarea
-                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-black focus:ring-1 focus:ring-black"
-                    rows={4}
-                    defaultValue="Passionate about linguistics and AI-powered learning."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Native Language
-                  </label>
-                  <select className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-black focus:ring-1 focus:ring-black">
-                    <option>English (US)</option>
-                    <option>English (UK)</option>
-                    <option>Spanish</option>
-                    <option>French</option>
+                  <select
+                    value={form.nativeLanguage}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        nativeLanguage: event.target.value,
+                      }))
+                    }
+                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  >
+                    <option value="">Chọn ngôn ngữ</option>
+                    {DEFAULT_NATIVE_LANGUAGE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
                     Timezone
                   </label>
-                  <select className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-black focus:ring-1 focus:ring-black">
-                    <option>Pacific Time (PT)</option>
-                    <option>Eastern Time (ET)</option>
-                    <option>Greenwich Mean Time (GMT)</option>
-                    <option>Central European Time (CET)</option>
-                  </select>
+                  <Input
+                    value={form.timezone}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, timezone: event.target.value }))
+                    }
+                    placeholder="Asia/Ho_Chi_Minh"
+                  />
                 </div>
               </div>
-              <div className="flex justify-end border-t border-slate-200 pt-6">
-                <button className="inline-flex h-10 items-center justify-center rounded-lg bg-black px-8 text-sm font-semibold text-white shadow transition-all hover:bg-slate-800">
-                  Save Changes
-                </button>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  {profile?.email || "Chưa có email"}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  className="rounded-xl"
+                  onClick={() => void handleSave()}
+                  disabled={isUpdating || isLoading || !profile}
+                >
+                  <Save className="h-4 w-4" />
+                  {isUpdating ? "Đang lưu..." : "Lưu thay đổi"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                  onClick={() => void handleRemoveAvatar()}
+                  disabled={isDeletingAvatar || !profile?.avatarUrl}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {isDeletingAvatar ? "Đang xóa..." : "Xóa avatar"}
+                </Button>
               </div>
             </div>
           </div>
 
-          <div className="space-y-8 lg:col-span-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-6 text-lg font-bold">Learning Stats</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
-                  <div className="flex items-center gap-3">
-                    <Medal className="h-5 w-5 text-black" />
-                    <span className="text-sm font-medium">Level</span>
-                  </div>
-                  <span className="font-bold">
-                    {user?.currentLevel || "A1 Beginner"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
-                  <div className="flex items-center gap-3">
-                    <Flame className="h-5 w-5 text-black" />
-                    <span className="text-sm font-medium">Streak</span>
-                  </div>
-                  <span className="font-bold">15 Days</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="h-5 w-5 text-black" />
-                    <span className="text-sm font-medium">Points</span>
-                  </div>
-                  <span className="font-bold">{user?.exp ?? 0} XP</span>
-                </div>
-              </div>
+          <div
+            ref={securitySectionRef}
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-xl font-semibold text-slate-950">Bảo mật tài khoản</h2>
             </div>
-
-            <div className="group relative overflow-hidden rounded-xl bg-black p-6 text-white shadow-lg">
-              <div className="relative z-10">
-                <h3 className="mb-2 text-lg font-bold">Refer a Friend</h3>
-                <p className="mb-6 text-sm text-slate-300">
-                  Invite your friends to SmartLingo and both of you get 1 month
-                  of Premium free.
-                </p>
-                <button className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-white px-4 text-sm font-bold text-black transition-colors hover:bg-slate-100">
-                  <Gift className="mr-2 h-4 w-4" />
-                  Share Invite Link
-                </button>
-              </div>
-              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-all group-hover:bg-white/20" />
-              <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/5 blur-3xl transition-all group-hover:bg-white/10" />
-            </div>
-
-            <div className="rounded-xl border border-dashed border-slate-300 p-6">
-              <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-500">
-                Upcoming Milestone
-              </h4>
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-                  <Trophy className="h-5 w-5 text-black" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold">Polyglot Master</p>
-                  <p className="text-xs text-slate-500">
-                    550 XP remaining for next badge
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 h-2 w-full rounded-full bg-slate-100">
-                <div className="h-2 w-3/4 rounded-full bg-black" />
-              </div>
+            <div className="pt-5">
+              <ChangePasswordOtpForm />
             </div>
           </div>
-        </div>
+        </section>
+
+        {isError ? (
+          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            Không thể tải hồ sơ của bạn. Vui lòng thử lại sau.
+          </div>
+        ) : null}
       </main>
     </ProtectedRoute>
   );

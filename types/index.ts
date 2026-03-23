@@ -116,7 +116,7 @@ export interface AdminUsersResponse {
   users: User[];
 }
 
-export interface AdminContentExerciseItem {
+export interface AdminExerciseItem {
   id: string;
   title: string;
   description: string;
@@ -124,29 +124,59 @@ export interface AdminContentExerciseItem {
   type: string;
   topic: string;
   questionCount: number;
+  durationMinutes: number;
+  rewardsXp: number;
+  coverImage: string;
+  skills: string[];
   createdAt: string | null;
   updatedAt: string | null;
 }
 
-export interface AdminContentVocabularyItem {
+export interface AdminVocabularyItem {
   id: string;
   word: string;
   meaning: string;
+  phonetic: string;
+  example: string;
   level: string;
   topic: string;
+  imageUrl: string;
+  audioUrl: string;
   createdAt: string | null;
   updatedAt: string | null;
 }
 
-export interface AdminContentResponse {
-  summary: {
-    totalExercises: number;
-    totalVocabulary: number;
-    totalQuestions: number;
-    exerciseTypeBreakdown: MetricBreakdownItem[];
+export interface AdminAiStage {
+  stageId: string;
+  name: string;
+  order: number;
+  type: string;
+  context: string;
+  aiRole: string;
+  objective: string;
+  systemPrompt: string;
+  suggestedVocabulary: string[];
+  passRules: {
+    minScore: number;
+    minTurns: number;
   };
-  recentExercises: AdminContentExerciseItem[];
-  recentVocabulary: AdminContentVocabularyItem[];
+  rewards: {
+    exp: number;
+    unlockNextLevel: string | null;
+  };
+}
+
+export interface AdminAiLevelItem {
+  id: string;
+  level: string;
+  title: string;
+  description: string;
+  minPlacementLevel: string;
+  isActive: boolean;
+  stageCount: number;
+  stages: AdminAiStage[];
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface AdminReportsResponse {
@@ -172,27 +202,55 @@ export interface AdminReportsResponse {
   }>;
 }
 
-export interface AdminSettingsResponse {
-  environment: {
-    nodeEnv: string;
-    port: string;
-    apiBasePath: string;
-    swaggerEnabled: boolean;
-  };
-  access: {
-    currentAdmin: {
-      id: string;
-      email: string;
-      fullName: string;
-      role: string;
-    } | null;
-    totalUsers: number;
-    adminUsers: number;
-  };
-  catalogs: {
-    roles: string[];
-    levels: string[];
-    exerciseTypes: string[];
-    aiSessionStatuses: string[];
-  };
+export interface AdminExercisesResponse {
+  items: AdminExerciseItem[];
+}
+
+export interface AdminVocabularyResponse {
+  items: AdminVocabularyItem[];
+}
+
+export interface AdminAiLevelsResponse {
+  items: AdminAiLevelItem[];
+}
+
+export interface AdminExercisePayload {
+  title: string;
+  description: string;
+  type: string;
+  level: string;
+  topic: string;
+  coverImage: string;
+  durationMinutes: number;
+  rewardsXp: number;
+  skills: string[];
+  questions: Array<{
+    prompt: string;
+    question?: string;
+    options: string[];
+    correctAnswer: string | number;
+    correctIndex?: number | null;
+    explanation?: string;
+    score?: number;
+  }>;
+}
+
+export interface AdminVocabularyPayload {
+  word: string;
+  meaning: string;
+  phonetic: string;
+  example: string;
+  level: string;
+  topic: string;
+  imageUrl: string;
+  audioUrl: string;
+}
+
+export interface AdminAiLevelPayload {
+  level: string;
+  title: string;
+  description: string;
+  minPlacementLevel: string;
+  isActive: boolean;
+  stages: AdminAiStage[];
 }

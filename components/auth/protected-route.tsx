@@ -34,7 +34,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
 
     if (!onboardingPending && isOnboardingPath) {
-      router.replace("/dashboard");
+      router.replace("/exercises");
     }
   }, [isAuthenticated, isLoading, isOnboardingPath, onboardingPending, router]);
 

@@ -60,5 +60,13 @@ const baseQueryWithAuthGuard: BaseQueryFn<
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithAuthGuard,
+  tagTypes: [
+    "AdminOverview",
+    "AdminUsers",
+    "AdminReports",
+    "AdminExercises",
+    "AdminVocabulary",
+    "AdminAiLevels",
+  ],
   endpoints: () => ({}),
 });

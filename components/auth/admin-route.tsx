@@ -20,7 +20,7 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     }
 
     if (user?.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/exercises");
     }
   }, [isAuthenticated, isLoading, router, user?.role]);
 

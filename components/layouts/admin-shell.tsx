@@ -9,8 +9,8 @@ import {
   BookOpen,
   ChevronRight,
   LayoutDashboard,
+  Languages,
   LogOut,
-  Settings2,
   ShieldCheck,
   Sparkles,
   Users2,
@@ -52,10 +52,22 @@ const adminNavigation = [
     icon: Users2,
   },
   {
-    title: "Nội dung",
-    heading: "Quản lý bài học và tài nguyên",
-    href: "/admin/content",
+    title: "Exercises",
+    heading: "Quản trị ngân hàng bài tập",
+    href: "/admin/exercises",
     icon: BookOpen,
+  },
+  {
+    title: "Vocabulary",
+    heading: "Quản trị ngân hàng từ vựng",
+    href: "/admin/vocabulary",
+    icon: Languages,
+  },
+  {
+    title: "AI",
+    heading: "Quản trị hành trình AI speaking",
+    href: "/admin/ai",
+    icon: Sparkles,
   },
   {
     title: "Báo cáo",
@@ -63,18 +75,12 @@ const adminNavigation = [
     href: "/admin/reports",
     icon: BarChart3,
   },
-  {
-    title: "Cài đặt",
-    heading: "Cấu hình hệ thống và quyền hạn",
-    href: "/admin/settings",
-    icon: Settings2,
-  },
 ] as const;
 
 const quickLinks = [
-  { title: "Learner Dashboard", href: "/dashboard", icon: ArrowUpRight },
-  { title: "AI Speaking", href: "/ai", icon: Sparkles },
   { title: "Exercises", href: "/exercises", icon: ArrowUpRight },
+  { title: "Vocabulary", href: "/vocabulary", icon: Languages },
+  { title: "AI Speaking", href: "/ai", icon: Sparkles },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {
@@ -162,17 +168,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <p className="truncate text-sm font-semibold">Admin Center</p>
             </div>
           </Link>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 group-data-[collapsible=icon]:hidden">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <Sparkles className="h-4 w-4 text-sky-500" />
-              Sẵn sàng cho workflow quản trị
-            </div>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              Layout này đã tách riêng sidebar, topbar và content area để mở
-              rộng nhanh các màn admin.
-            </p>
-          </div>
         </SidebarHeader>
 
         <SidebarContent className="px-2 pb-4">
@@ -325,7 +320,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 variant="outline"
                 className="hidden rounded-xl border-slate-200 bg-white sm:inline-flex"
               >
-                <Link href="/dashboard">Xem learner</Link>
+                <Link href="/exercises">Xem learner</Link>
               </Button>
               <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm md:flex">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">

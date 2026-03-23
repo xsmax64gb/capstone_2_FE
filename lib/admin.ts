@@ -5,6 +5,9 @@ export function formatCompactNumber(value: number) {
   }).format(value);
 }
 
+export const ADMIN_LEVEL_OPTIONS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+export const ADMIN_EXERCISE_TYPE_OPTIONS = ["mcq", "fill_blank", "matching"];
+
 export function formatNumber(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);
 }
@@ -42,4 +45,23 @@ export function formatUptime(seconds: number) {
   }
 
   return `${hours}h ${minutes}m`;
+}
+
+export function notify(message: {
+  title: string;
+  type?: "success" | "error" | "warning" | "info" | "default";
+  message?: string;
+}) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("elapp:notify", {
+      detail: {
+        duration: 2500,
+        ...message,
+      },
+    })
+  );
 }

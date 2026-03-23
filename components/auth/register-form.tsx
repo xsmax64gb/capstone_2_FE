@@ -142,7 +142,7 @@ export function RegisterForm() {
         t("Đăng ký thành công"),
         t("Chào mừng bạn đến với chúng tôi!"),
       );
-      router.push("/dashboard");
+      router.push("/exercises");
     } catch (error: any) {
       const message = error?.data?.message || t("Đăng ký thất bại");
       notifyError(t("Lỗi"), message);

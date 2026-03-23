@@ -64,7 +64,7 @@ export function LoginForm() {
 
       notifySuccess(t("Đăng nhập thành công"), t("Chào mừng bạn!"));
       const onboardingPending = response.user.onboardingDone === false;
-      router.push(onboardingPending ? "/onboarding" : "/dashboard");
+      router.push(onboardingPending ? "/onboarding" : "/exercises");
     } catch (error: any) {
       const message = error?.data?.message || t("Đăng nhập thất bại");
       notifyError(t("Lỗi"), message);

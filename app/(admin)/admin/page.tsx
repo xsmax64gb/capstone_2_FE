@@ -30,19 +30,24 @@ const quickActions = [
     href: "/admin/users",
   },
   {
-    title: "Nội dung học tập",
-    description: "Theo dõi exercise bank và vocabulary mới tạo.",
-    href: "/admin/content",
+    title: "Quản trị exercises",
+    description: "Duyệt ngân hàng bài tập với preview lớn và CRUD đầy đủ.",
+    href: "/admin/exercises",
+  },
+  {
+    title: "Quản trị vocabulary",
+    description: "Quản lý từ vựng, ví dụ, phonetic và media.",
+    href: "/admin/vocabulary",
+  },
+  {
+    title: "Quản trị AI",
+    description: "Điều chỉnh level AI, stage flow và activation.",
+    href: "/admin/ai",
   },
   {
     title: "Báo cáo vận hành",
     description: "Xem attempts, speaking minutes và phân bố level.",
     href: "/admin/reports",
-  },
-  {
-    title: "Cài đặt hệ thống",
-    description: "Kiểm tra catalog hệ thống và môi trường đang chạy.",
-    href: "/admin/settings",
   },
 ] as const;
 
@@ -95,33 +100,64 @@ export default function AdminDashboardPage() {
     `API snapshot cập nhật lúc ${formatDateTime(data.systemSnapshot.apiTimestamp)}.`,
   ];
 
+  const heroHighlights = [
+    {
+      label: "Người dùng",
+      value: formatCompactNumber(data.summary.totalUsers),
+    },
+    {
+      label: "Attempts 7 ngày",
+      value: formatCompactNumber(data.summary.attemptsLast7Days),
+    },
+    {
+      label: "AI active",
+      value: formatCompactNumber(data.summary.activeAiSessions),
+    },
+  ];
+
   return (
     <>
       <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-6 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8 lg:py-8">
-          <div className="relative overflow-hidden rounded-[28px] bg-slate-950 px-6 py-7 text-white">
-            <div className="pointer-events-none absolute -right-16 top-0 h-44 w-44 rounded-full bg-sky-400/20 blur-3xl" />
-            <div className="pointer-events-none absolute left-0 top-12 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[28px] border border-sky-100 bg-[linear-gradient(135deg,_#f8fbff_0%,_#eef6ff_48%,_#f8fafc_100%)] px-6 py-7 text-slate-900">
+            <div className="pointer-events-none absolute -right-16 top-0 h-44 w-44 rounded-full bg-sky-200/70 blur-3xl" />
+            <div className="pointer-events-none absolute left-0 top-12 h-32 w-32 rounded-full bg-white/80 blur-3xl" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0.55))]" />
             <div className="relative">
-              <Badge className="rounded-full bg-white/10 px-3 py-1 text-white hover:bg-white/10">
+              <Badge className="rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-sky-700 shadow-sm hover:bg-white">
                 SmartLingo Admin
               </Badge>
               <h2 className="mt-5 max-w-2xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-                Dashboard quản trị đã chạy bằng dữ liệu thật từ API.
+                Dashboard quản trị tổng hợp toàn cảnh hệ thống.
               </h2>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
                 Toàn bộ số liệu dưới đây được tổng hợp trực tiếp từ users,
                 exercises, exercise attempts, AI sessions và vocabulary đang có
                 trong hệ thống.
               </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                {heroHighlights.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-white/80 bg-white/75 px-4 py-3 shadow-sm backdrop-blur"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Button asChild className="rounded-xl bg-white text-slate-950 hover:bg-slate-100">
+                <Button asChild className="rounded-xl bg-slate-950 text-white hover:bg-slate-800">
                   <Link href="/admin/users">Mở khu người dùng</Link>
                 </Button>
                 <Button
                   asChild
                   variant="outline"
-                  className="rounded-xl border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                  className="rounded-xl border-slate-200 bg-white/80 text-slate-700 hover:bg-white hover:text-slate-950"
                 >
                   <Link href="/admin/reports">Theo dõi báo cáo</Link>
                 </Button>
@@ -134,7 +170,7 @@ export default function AdminDashboardPage() {
               <CardHeader className="pb-0">
                 <CardTitle className="text-base">Nhịp vận hành hiện tại</CardTitle>
                 <CardDescription>
-                  Snapshot này được đọc trực tiếp từ backend admin.
+                  Tóm tắt nhanh những chỉ số cần theo dõi trong ngày.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
@@ -272,7 +308,7 @@ export default function AdminDashboardPage() {
             <CardHeader>
               <CardTitle>Đi nhanh tới module</CardTitle>
               <CardDescription>
-                Các màn admin đã được nối dữ liệu thật theo từng module.
+                Các khu vực quản trị chính của hệ thống.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">

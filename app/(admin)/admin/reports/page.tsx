@@ -72,7 +72,7 @@ export default function AdminReportsPage() {
           Reporting
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-          Báo cáo hiệu suất và sử dụng từ dữ liệu thật.
+          Báo cáo hiệu suất, sử dụng và vận hành.
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
           Các card và bảng dưới đây được dựng từ `exercise_attempts`,

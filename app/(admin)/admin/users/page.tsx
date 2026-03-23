@@ -68,11 +68,11 @@ export default function AdminUsersPage() {
           User Operations
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-          Vận hành học viên và tài khoản bằng dữ liệu thật.
+          Vận hành học viên và tài khoản.
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-          Bảng dưới đây đang đọc trực tiếp từ collection `users`, kèm phân bố
-          level, role và trạng thái onboarding.
+          Theo dõi danh sách tài khoản, phân bố level, role và trạng thái
+          onboarding trong cùng một màn.
         </p>
       </section>
 

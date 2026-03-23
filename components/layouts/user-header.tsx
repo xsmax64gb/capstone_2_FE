@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Languages, LogOut, User } from "lucide-react";
+import {
+  Bell,
+  Languages,
+  LogOut,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
 import {
@@ -19,7 +25,6 @@ const navItems = [
   { label: "Exercises", href: "/exercises" },
   { label: "Vocabulary", href: "/vocabulary" },
   { label: "AI Speaking", href: "/ai" },
-  { label: "Progress", href: "/dashboard" },
 ];
 
 const DEFAULT_AVATAR_URL =
@@ -31,6 +36,10 @@ export function UserHeader() {
   const { t } = useI18n();
   const profileName = user?.fullName || user?.name || t("Profile");
   const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  const navLinks =
+    user?.role === "admin"
+      ? [...navItems, { label: "Quản trị", href: "/admin" }]
+      : navItems;
 
   const handleLogout = () => {
     logout();
@@ -48,7 +57,7 @@ export function UserHeader() {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-          {navItems.map((item) => (
+          {navLinks.map((item) => (
             <Link
               key={item.label}
               href={item.href}
@@ -87,6 +96,12 @@ export function UserHeader() {
                 <User className="h-4 w-4" />
                 {t("Profile")}
               </DropdownMenuItem>
+              {user?.role === "admin" && (
+                <DropdownMenuItem onClick={() => router.push("/admin")}>
+                  <ShieldCheck className="h-4 w-4" />
+                  Quản trị
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />

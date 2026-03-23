@@ -51,7 +51,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (user?.onboardingDone) {
-      router.replace("/dashboard");
+      router.replace("/exercises");
     }
   }, [router, user?.onboardingDone]);
 
@@ -135,7 +135,7 @@ export default function OnboardingPage() {
       info("Mock mode", "Dang dung du lieu mock. Co the noi API that sau.");
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/exercises");
       }, 500);
     } finally {
       setIsStartingTest(false);

@@ -17,6 +17,7 @@ import {
 import type { AdminVocabularyItem, AdminVocabularyPayload } from "@/types";
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { DeleteConfirmButton } from "@/components/admin/delete-confirm-button";
+import { ImageUploadPreview } from "@/components/admin/image-upload-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +54,7 @@ type VocabularyFormState = {
   level: string;
   topic: string;
   imageUrl: string;
+  imageFile: File | null;
   audioUrl: string;
 };
 
@@ -64,6 +66,7 @@ const emptyForm: VocabularyFormState = {
   level: "A1",
   topic: "general",
   imageUrl: "",
+  imageFile: null,
   audioUrl: "",
 };
 
@@ -76,6 +79,7 @@ function mapItemToForm(item: AdminVocabularyItem): VocabularyFormState {
     level: item.level,
     topic: item.topic,
     imageUrl: item.imageUrl,
+    imageFile: null,
     audioUrl: item.audioUrl,
   };
 }
@@ -89,6 +93,7 @@ function buildPayload(form: VocabularyFormState): AdminVocabularyPayload {
     level: form.level,
     topic: form.topic.trim() || "general",
     imageUrl: form.imageUrl.trim(),
+    imageFile: form.imageFile,
     audioUrl: form.audioUrl.trim(),
   };
 }
@@ -477,14 +482,34 @@ export default function AdminVocabularyPage() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Image URL
+                Image
               </label>
               <Input
-                value={form.imageUrl}
+                type="file"
+                accept="image/*"
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, imageUrl: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    imageFile: event.target.files?.[0] ?? null,
+                  }))
                 }
               />
+              <div className="mt-3 max-w-xs">
+                <ImageUploadPreview
+                  file={form.imageFile}
+                  currentUrl={form.imageUrl}
+                  alt="Vocabulary image preview"
+                  emptyText="Chọn ảnh minh họa để xem trước trước khi upload."
+                  ratio={4 / 3}
+                />
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                {form.imageFile
+                  ? `Đã chọn: ${form.imageFile.name}`
+                  : form.imageUrl
+                    ? "Giữ ảnh hiện tại nếu không chọn file mới."
+                    : "Chọn ảnh để upload lên Cloudinary."}
+              </p>
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">

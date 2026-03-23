@@ -15,6 +15,57 @@ import type {
   ApiResponse,
 } from "@/types";
 
+const appendFormDataValue = (
+  formData: FormData,
+  key: string,
+  value: string | number | boolean | File | null | undefined,
+) => {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  if (value instanceof File) {
+    formData.append(key, value);
+    return;
+  }
+
+  formData.append(key, String(value));
+};
+
+const toExerciseFormData = (payload: AdminExercisePayload) => {
+  const formData = new FormData();
+
+  appendFormDataValue(formData, "title", payload.title);
+  appendFormDataValue(formData, "description", payload.description);
+  appendFormDataValue(formData, "type", payload.type);
+  appendFormDataValue(formData, "level", payload.level);
+  appendFormDataValue(formData, "topic", payload.topic);
+  appendFormDataValue(formData, "coverImage", payload.coverImage);
+  appendFormDataValue(formData, "durationMinutes", payload.durationMinutes);
+  appendFormDataValue(formData, "rewardsXp", payload.rewardsXp);
+  appendFormDataValue(formData, "skills", JSON.stringify(payload.skills ?? []));
+  appendFormDataValue(formData, "questions", JSON.stringify(payload.questions ?? []));
+  appendFormDataValue(formData, "coverImageFile", payload.coverImageFile);
+
+  return formData;
+};
+
+const toVocabularyFormData = (payload: AdminVocabularyPayload) => {
+  const formData = new FormData();
+
+  appendFormDataValue(formData, "word", payload.word);
+  appendFormDataValue(formData, "meaning", payload.meaning);
+  appendFormDataValue(formData, "phonetic", payload.phonetic);
+  appendFormDataValue(formData, "example", payload.example);
+  appendFormDataValue(formData, "level", payload.level);
+  appendFormDataValue(formData, "topic", payload.topic);
+  appendFormDataValue(formData, "imageUrl", payload.imageUrl);
+  appendFormDataValue(formData, "audioUrl", payload.audioUrl);
+  appendFormDataValue(formData, "imageFile", payload.imageFile);
+
+  return formData;
+};
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAdminOverview: builder.query<AdminOverviewResponse, void>({
@@ -61,7 +112,7 @@ export const adminApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: "/admin/exercises",
         method: "POST",
-        body,
+        body: toExerciseFormData(body),
       }),
       invalidatesTags: ["AdminExercises", "AdminOverview"],
       transformResponse: (response: ApiResponse<AdminExerciseItem>) =>
@@ -75,7 +126,19 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ id, body }) => ({
         url: `/admin/exercises/${id}`,
         method: "PUT",
-        body,
+        body: toExerciseFormData({
+          title: body.title ?? "",
+          description: body.description ?? "",
+          type: body.type ?? "",
+          level: body.level ?? "",
+          topic: body.topic ?? "",
+          coverImage: body.coverImage ?? "",
+          coverImageFile: body.coverImageFile ?? null,
+          durationMinutes: body.durationMinutes ?? 0,
+          rewardsXp: body.rewardsXp ?? 0,
+          skills: body.skills ?? [],
+          questions: body.questions ?? [],
+        }),
       }),
       invalidatesTags: ["AdminExercises", "AdminOverview"],
       transformResponse: (response: ApiResponse<AdminExerciseItem>) =>
@@ -107,7 +170,7 @@ export const adminApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: "/admin/vocabulary",
         method: "POST",
-        body,
+        body: toVocabularyFormData(body),
       }),
       invalidatesTags: ["AdminVocabulary", "AdminOverview"],
       transformResponse: (response: ApiResponse<AdminVocabularyItem>) =>
@@ -121,7 +184,17 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ id, body }) => ({
         url: `/admin/vocabulary/${id}`,
         method: "PUT",
-        body,
+        body: toVocabularyFormData({
+          word: body.word ?? "",
+          meaning: body.meaning ?? "",
+          phonetic: body.phonetic ?? "",
+          example: body.example ?? "",
+          level: body.level ?? "",
+          topic: body.topic ?? "",
+          imageUrl: body.imageUrl ?? "",
+          imageFile: body.imageFile ?? null,
+          audioUrl: body.audioUrl ?? "",
+        }),
       }),
       invalidatesTags: ["AdminVocabulary", "AdminOverview"],
       transformResponse: (response: ApiResponse<AdminVocabularyItem>) =>

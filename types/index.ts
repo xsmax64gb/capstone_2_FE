@@ -221,6 +221,7 @@ export interface AdminExercisePayload {
   level: string;
   topic: string;
   coverImage: string;
+  coverImageFile?: File | null;
   durationMinutes: number;
   rewardsXp: number;
   skills: string[];
@@ -243,6 +244,7 @@ export interface AdminVocabularyPayload {
   level: string;
   topic: string;
   imageUrl: string;
+  imageFile?: File | null;
   audioUrl: string;
 }
 

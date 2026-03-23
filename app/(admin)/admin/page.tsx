@@ -36,7 +36,7 @@ const quickActions = [
   },
   {
     title: "Quản trị vocabulary",
-    description: "Quản lý từ vựng, ví dụ, phonetic và media.",
+    description: "Quản lý bộ từ vựng và các từ (word, meaning, example), hỗ trợ import hàng loạt.",
     href: "/admin/vocabulary",
   },
   {

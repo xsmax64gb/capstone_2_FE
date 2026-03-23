@@ -8,8 +8,12 @@ import type {
   AdminExercisesResponse,
   AdminOverviewResponse,
   AdminReportsResponse,
-  AdminVocabularyItem,
+  AdminVocabularySetItem,
+  AdminVocabularyWordItem,
   AdminVocabularyPayload,
+  AdminVocabularyWordsBulkPayload,
+  AdminVocabularyWordsBulkResponse,
+  AdminVocabularyWordPayload,
   AdminVocabularyResponse,
   AdminUsersResponse,
   ApiResponse,
@@ -50,21 +54,25 @@ const toExerciseFormData = (payload: AdminExercisePayload) => {
   return formData;
 };
 
-const toVocabularyFormData = (payload: AdminVocabularyPayload) => {
+const toVocabularySetFormData = (payload: Partial<AdminVocabularyPayload>) => {
   const formData = new FormData();
 
-  appendFormDataValue(formData, "word", payload.word);
-  appendFormDataValue(formData, "meaning", payload.meaning);
-  appendFormDataValue(formData, "phonetic", payload.phonetic);
-  appendFormDataValue(formData, "example", payload.example);
+  appendFormDataValue(formData, "name", payload.name);
+  appendFormDataValue(formData, "description", payload.description);
   appendFormDataValue(formData, "level", payload.level);
   appendFormDataValue(formData, "topic", payload.topic);
-  appendFormDataValue(formData, "imageUrl", payload.imageUrl);
-  appendFormDataValue(formData, "audioUrl", payload.audioUrl);
-  appendFormDataValue(formData, "imageFile", payload.imageFile);
+  appendFormDataValue(formData, "coverImageFile", payload.coverImageFile);
+  appendFormDataValue(formData, "isActive", payload.isActive);
+  appendFormDataValue(formData, "sortOrder", payload.sortOrder);
 
   return formData;
 };
+
+const toVocabularyWordBody = (payload: Partial<AdminVocabularyWordPayload>) => ({
+  word: payload.word,
+  meaning: payload.meaning,
+  example: payload.example,
+});
 
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -153,7 +161,7 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ["AdminExercises", "AdminOverview"],
     }),
 
-    getAdminVocabulary: builder.query<AdminVocabularyItem[], void>({
+    getAdminVocabulary: builder.query<AdminVocabularySetItem[], void>({
       query: () => ({
         url: "/admin/vocabulary",
         method: "GET",
@@ -164,46 +172,86 @@ export const adminApi = baseApi.injectEndpoints({
     }),
 
     createAdminVocabulary: builder.mutation<
-      AdminVocabularyItem,
+      AdminVocabularySetItem,
       AdminVocabularyPayload
     >({
       query: (body) => ({
         url: "/admin/vocabulary",
         method: "POST",
-        body: toVocabularyFormData(body),
+        body: toVocabularySetFormData(body),
       }),
       invalidatesTags: ["AdminVocabulary", "AdminOverview"],
-      transformResponse: (response: ApiResponse<AdminVocabularyItem>) =>
-        response.data as AdminVocabularyItem,
+      transformResponse: (response: ApiResponse<AdminVocabularySetItem>) =>
+        response.data as AdminVocabularySetItem,
     }),
 
     updateAdminVocabulary: builder.mutation<
-      AdminVocabularyItem,
+      AdminVocabularySetItem,
       { id: string; body: Partial<AdminVocabularyPayload> }
     >({
       query: ({ id, body }) => ({
         url: `/admin/vocabulary/${id}`,
         method: "PUT",
-        body: toVocabularyFormData({
-          word: body.word ?? "",
-          meaning: body.meaning ?? "",
-          phonetic: body.phonetic ?? "",
-          example: body.example ?? "",
-          level: body.level ?? "",
-          topic: body.topic ?? "",
-          imageUrl: body.imageUrl ?? "",
-          imageFile: body.imageFile ?? null,
-          audioUrl: body.audioUrl ?? "",
-        }),
+        body: toVocabularySetFormData(body),
       }),
       invalidatesTags: ["AdminVocabulary", "AdminOverview"],
-      transformResponse: (response: ApiResponse<AdminVocabularyItem>) =>
-        response.data as AdminVocabularyItem,
+      transformResponse: (response: ApiResponse<AdminVocabularySetItem>) =>
+        response.data as AdminVocabularySetItem,
     }),
 
     deleteAdminVocabulary: builder.mutation<void, string>({
       query: (id) => ({
         url: `/admin/vocabulary/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminVocabulary", "AdminOverview"],
+    }),
+
+    createAdminVocabularyWord: builder.mutation<
+      AdminVocabularyWordItem,
+      { setId: string; body: AdminVocabularyWordPayload }
+    >({
+      query: ({ setId, body }) => ({
+        url: `/admin/vocabulary/${setId}/words`,
+        method: "POST",
+        body: toVocabularyWordBody(body),
+      }),
+      invalidatesTags: ["AdminVocabulary", "AdminOverview"],
+      transformResponse: (response: ApiResponse<AdminVocabularyWordItem>) =>
+        response.data as AdminVocabularyWordItem,
+    }),
+
+    createAdminVocabularyWordsBulk: builder.mutation<
+      AdminVocabularyWordsBulkResponse,
+      { setId: string; body: AdminVocabularyWordsBulkPayload }
+    >({
+      query: ({ setId, body }) => ({
+        url: `/admin/vocabulary/${setId}/words/bulk`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminVocabulary", "AdminOverview"],
+      transformResponse: (response: ApiResponse<AdminVocabularyWordsBulkResponse>) =>
+        response.data as AdminVocabularyWordsBulkResponse,
+    }),
+
+    updateAdminVocabularyWord: builder.mutation<
+      AdminVocabularyWordItem,
+      { setId: string; wordId: string; body: Partial<AdminVocabularyWordPayload> }
+    >({
+      query: ({ setId, wordId, body }) => ({
+        url: `/admin/vocabulary/${setId}/words/${wordId}`,
+        method: "PUT",
+        body: toVocabularyWordBody(body),
+      }),
+      invalidatesTags: ["AdminVocabulary", "AdminOverview"],
+      transformResponse: (response: ApiResponse<AdminVocabularyWordItem>) =>
+        response.data as AdminVocabularyWordItem,
+    }),
+
+    deleteAdminVocabularyWord: builder.mutation<void, { setId: string; wordId: string }>({
+      query: ({ setId, wordId }) => ({
+        url: `/admin/vocabulary/${setId}/words/${wordId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["AdminVocabulary", "AdminOverview"],
@@ -258,9 +306,12 @@ export const {
   useCreateAdminAiLevelMutation,
   useCreateAdminExerciseMutation,
   useCreateAdminVocabularyMutation,
+  useCreateAdminVocabularyWordMutation,
+  useCreateAdminVocabularyWordsBulkMutation,
   useDeleteAdminAiLevelMutation,
   useDeleteAdminExerciseMutation,
   useDeleteAdminVocabularyMutation,
+  useDeleteAdminVocabularyWordMutation,
   useGetAdminAiLevelsQuery,
   useGetAdminExercisesQuery,
   useGetAdminOverviewQuery,
@@ -270,4 +321,5 @@ export const {
   useUpdateAdminAiLevelMutation,
   useUpdateAdminExerciseMutation,
   useUpdateAdminVocabularyMutation,
+  useUpdateAdminVocabularyWordMutation,
 } = adminApi;

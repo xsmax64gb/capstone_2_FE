@@ -143,19 +143,32 @@ export interface AdminExerciseItem {
   updatedAt: string | null;
 }
 
-export interface AdminVocabularyItem {
+export interface AdminVocabularyWordItem {
   id: string;
+  setId: string;
   word: string;
   meaning: string;
-  phonetic: string;
   example: string;
-  level: string;
-  topic: string;
-  imageUrl: string;
-  audioUrl: string;
   createdAt: string | null;
   updatedAt: string | null;
 }
+
+export interface AdminVocabularySetItem {
+  id: string;
+  name: string;
+  description: string;
+  level: string;
+  topic: string;
+  coverImageUrl: string;
+  isActive: boolean;
+  sortOrder: number;
+  wordCount: number;
+  words: AdminVocabularyWordItem[];
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export type AdminVocabularyItem = AdminVocabularySetItem;
 
 export interface AdminAiStage {
   stageId: string;
@@ -218,7 +231,7 @@ export interface AdminExercisesResponse {
 }
 
 export interface AdminVocabularyResponse {
-  items: AdminVocabularyItem[];
+  items: AdminVocabularySetItem[];
 }
 
 export interface AdminAiLevelsResponse {
@@ -248,15 +261,30 @@ export interface AdminExercisePayload {
 }
 
 export interface AdminVocabularyPayload {
-  word: string;
-  meaning: string;
-  phonetic: string;
-  example: string;
+  name: string;
+  description: string;
   level: string;
   topic: string;
-  imageUrl: string;
-  imageFile?: File | null;
-  audioUrl: string;
+  coverImageFile?: File | null;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface AdminVocabularyWordPayload {
+  word: string;
+  meaning: string;
+  example: string;
+}
+
+export interface AdminVocabularyWordsBulkPayload {
+  mode: "append" | "replace";
+  items: AdminVocabularyWordPayload[];
+}
+
+export interface AdminVocabularyWordsBulkResponse {
+  insertedCount: number;
+  replacedDeletedCount: number;
+  items: AdminVocabularyWordItem[];
 }
 
 export interface AdminAiLevelPayload {

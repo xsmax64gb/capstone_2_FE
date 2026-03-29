@@ -171,6 +171,16 @@ export const adminApi = baseApi.injectEndpoints({
         response.data?.items ?? [],
     }),
 
+    getAdminVocabularyById: builder.query<AdminVocabularySetItem, string>({
+      query: (id) => ({
+        url: `/admin/vocabulary/${id}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "AdminVocabulary", id }],
+      transformResponse: (response: ApiResponse<AdminVocabularySetItem>) =>
+        response.data as AdminVocabularySetItem,
+    }),
+
     createAdminVocabulary: builder.mutation<
       AdminVocabularySetItem,
       AdminVocabularyPayload
@@ -317,6 +327,7 @@ export const {
   useGetAdminOverviewQuery,
   useGetAdminReportsQuery,
   useGetAdminUsersQuery,
+  useGetAdminVocabularyByIdQuery,
   useGetAdminVocabularyQuery,
   useUpdateAdminAiLevelMutation,
   useUpdateAdminExerciseMutation,

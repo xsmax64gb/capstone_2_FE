@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Languages,
@@ -23,8 +24,8 @@ import { LanguageSwitch } from "./language-switch";
 const navItems = [
   { label: "Home", href: "/" },
   { label: "Exercises", href: "/exercises" },
-  { label: "Vocabulary", href: "/vocabulary" },
-  { label: "AI Speaking", href: "/ai" },
+  { label: "Vocabulary", href: "/vocabularies" },
+  { label: "AI Speaking", href: "/learn" },
 ];
 
 const DEFAULT_AVATAR_URL =
@@ -34,10 +35,18 @@ export function UserHeader() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { t } = useI18n();
-  const profileName = user?.fullName || user?.name || t("Profile");
-  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  /** Tránh hydration mismatch: Redux đọc user từ localStorage chỉ phía client. */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const profileName = mounted
+    ? user?.fullName || user?.name || t("Profile")
+    : t("Profile");
+  const avatarUrl = mounted && user?.avatarUrl ? user.avatarUrl : DEFAULT_AVATAR_URL;
   const navLinks =
-    user?.role === "admin"
+    mounted && user?.role === "admin"
       ? [...navItems, { label: "Quản trị", href: "/admin" }]
       : navItems;
 
@@ -96,7 +105,7 @@ export function UserHeader() {
                 <User className="h-4 w-4" />
                 {t("Profile")}
               </DropdownMenuItem>
-              {user?.role === "admin" && (
+              {mounted && user?.role === "admin" && (
                 <DropdownMenuItem onClick={() => router.push("/admin")}>
                   <ShieldCheck className="h-4 w-4" />
                   Quản trị

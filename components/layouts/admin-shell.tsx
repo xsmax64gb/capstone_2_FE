@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Languages,
   LogOut,
+  Map as MapIcon,
   ShieldCheck,
   Sparkles,
   Users2,
@@ -60,7 +61,7 @@ const adminNavigation = [
   {
     title: "Vocabulary",
     heading: "Quản trị ngân hàng từ vựng",
-    href: "/admin/vocabulary",
+    href: "/admin/vocabularies",
     icon: Languages,
   },
   {
@@ -68,6 +69,12 @@ const adminNavigation = [
     heading: "Quản trị hành trình AI speaking",
     href: "/admin/ai",
     icon: Sparkles,
+  },
+  {
+    title: "Learn maps",
+    heading: "Bản đồ hội thoại & boss",
+    href: "/admin/learn/maps",
+    icon: MapIcon,
   },
   {
     title: "Báo cáo",
@@ -79,8 +86,8 @@ const adminNavigation = [
 
 const quickLinks = [
   { title: "Exercises", href: "/exercises", icon: ArrowUpRight },
-  { title: "Vocabulary", href: "/vocabulary", icon: Languages },
-  { title: "AI Speaking", href: "/ai", icon: Sparkles },
+  { title: "Vocabulary", href: "/vocabularies", icon: Languages },
+  { title: "AI Speaking", href: "/learn", icon: Sparkles },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {

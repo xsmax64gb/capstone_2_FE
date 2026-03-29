@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, GraduationCap } from "lucide-react";
-import { useDispatch } from "react-redux";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
@@ -14,41 +13,166 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { setUser } from "@/lib/slices/authSlice";
 import { useNotification } from "@/hooks/use-notification";
-import { useAuth } from "@/lib/auth-context";
 import {
-  buildOnboardingCompletedUser,
-  formatLevelLabel,
-  formatSkillLabel,
-  getLevelsAtOrBelow,
+  useConfirmPlacementResultMutation,
+  useGetPlacementAttemptByIdQuery,
+} from "@/lib/api/placementApi";
+import { useI18n } from "@/lib/i18n/context";
+import type { AppLang } from "@/lib/i18n/messages";
+import { getLevelsAtOrBelow } from "@/lib/placement";
+import {
+  clearOnboardingProfileDraft,
   loadOnboardingProfileDraft,
-  loadPlacementResult,
-  savePlacementResult,
-  type CefrLevel,
-  type PlacementResult,
-} from "@/lib/mock/placement-tests";
+} from "@/lib/onboarding";
+import type { CefrLevel, PlacementSkillType } from "@/types";
+
+type PlacementResultCopy = {
+  badge: string;
+  title: string;
+  subtitle: string;
+  loadingResult: string;
+  missingResult: string;
+  summaryTitle: string;
+  testLabel: string;
+  detectedLevelLabel: string;
+  rawLabel: string;
+  percentLabel: string;
+  selfEstimateLabel: string;
+  nextStepTitle: string;
+  nextStepDescription: string;
+  chooseLevelTitle: string;
+  chooseLevelDescription: string;
+  recommendedLevel: string;
+  saferLevel: string;
+  breakdownTitle: string;
+  continueButton: (level: CefrLevel) => string;
+  confirmSuccessTitle: string;
+  confirmSuccessDescription: (level: CefrLevel) => string;
+  confirmErrorTitle: string;
+  tryAgain: string;
+  pointsLabel: (earnedScore: number, maxScore: number) => string;
+  skillLabel: (skill: PlacementSkillType) => string;
+};
+
+const PAGE_COPY: Record<AppLang, PlacementResultCopy> = {
+  vi: {
+    badge: "Kết quả xếp trình độ",
+    title: "Xác nhận trình độ để bắt đầu học",
+    subtitle:
+      "Hệ thống chỉ chấm điểm phần objective. Quyết định cuối cùng vẫn thuộc về bạn.",
+    loadingResult: "Đang tải kết quả placement...",
+    missingResult: "Không tìm thấy kết quả placement.",
+    summaryTitle: "Tóm tắt kết quả",
+    testLabel: "Bài test",
+    detectedLevelLabel: "Hệ thống đang đánh giá bạn ở trình độ",
+    rawLabel: "Điểm thô",
+    percentLabel: "Tỷ lệ đúng",
+    selfEstimateLabel: "Tự đánh giá",
+    nextStepTitle: "Bạn có thể:",
+    nextStepDescription:
+      "Tiếp tục với level hệ thống đề xuất hoặc chọn một level thấp hơn nếu muốn học chắc nền tảng.",
+    chooseLevelTitle: "Chọn level cuối cùng",
+    chooseLevelDescription:
+      "Chỉ cho phép chọn level bằng hoặc thấp hơn mức hệ thống detect được.",
+    recommendedLevel: "Đề xuất từ hệ thống",
+    saferLevel: "Học chắc hơn",
+    breakdownTitle: "Breakdown theo kỹ năng",
+    continueButton: (level) => `Tiếp tục với level ${level}`,
+    confirmSuccessTitle: "Đã xác nhận trình độ",
+    confirmSuccessDescription: (level) =>
+      `Bạn sẽ tiếp tục lộ trình học với level ${level}.`,
+    confirmErrorTitle: "Không thể xác nhận trình độ",
+    tryAgain: "Vui lòng thử lại.",
+    pointsLabel: (earnedScore, maxScore) => `${earnedScore}/${maxScore} điểm`,
+    skillLabel: (skill) => {
+      switch (skill) {
+        case "grammar":
+          return "Ngữ pháp";
+        case "vocab":
+          return "Từ vựng";
+        case "reading":
+          return "Đọc";
+        case "listening":
+          return "Nghe";
+        default:
+          return skill;
+      }
+    },
+  },
+  en: {
+    badge: "Placement Result",
+    title: "Confirm your level to start learning",
+    subtitle:
+      "The system only scores the objective section. The final decision is still yours.",
+    loadingResult: "Loading placement result...",
+    missingResult: "Placement result not found.",
+    summaryTitle: "Result summary",
+    testLabel: "Test",
+    detectedLevelLabel: "The system currently estimates your level as",
+    rawLabel: "Raw score",
+    percentLabel: "Accuracy",
+    selfEstimateLabel: "Self-estimate",
+    nextStepTitle: "You can:",
+    nextStepDescription:
+      "Continue with the suggested level or choose a lower one if you want to strengthen your foundation first.",
+    chooseLevelTitle: "Choose your final level",
+    chooseLevelDescription:
+      "You can only choose a level equal to or lower than the detected level.",
+    recommendedLevel: "Recommended by the system",
+    saferLevel: "Choose a safer level",
+    breakdownTitle: "Skill breakdown",
+    continueButton: (level) => `Continue with level ${level}`,
+    confirmSuccessTitle: "Level confirmed",
+    confirmSuccessDescription: (level) =>
+      `You will continue your learning path at level ${level}.`,
+    confirmErrorTitle: "Could not confirm the level",
+    tryAgain: "Please try again.",
+    pointsLabel: (earnedScore, maxScore) => `${earnedScore}/${maxScore} points`,
+    skillLabel: (skill) => {
+      switch (skill) {
+        case "grammar":
+          return "Grammar";
+        case "vocab":
+          return "Vocabulary";
+        case "reading":
+          return "Reading";
+        case "listening":
+          return "Listening";
+        default:
+          return skill;
+      }
+    },
+  },
+};
 
 export default function PlacementResultPage() {
   const router = useRouter();
-  const dispatch = useDispatch();
-  const { user } = useAuth();
-  const { success } = useNotification();
+  const searchParams = useSearchParams();
+  const attemptId = searchParams.get("attemptId") || "";
+  const { success, error } = useNotification();
+  const { lang } = useI18n();
+  const { data: result, isLoading } = useGetPlacementAttemptByIdQuery(attemptId, {
+    skip: !attemptId,
+  });
+  const [confirmPlacementResult, { isLoading: isConfirming }] =
+    useConfirmPlacementResultMutation();
 
-  const [result, setResult] = useState<PlacementResult | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<CefrLevel>("A1");
+  const copy = PAGE_COPY[lang];
 
   useEffect(() => {
-    const stored = loadPlacementResult();
-
-    if (!stored || stored.skipped) {
+    if (!attemptId) {
       router.replace("/onboarding");
       return;
     }
+  }, [attemptId, router]);
 
-    setResult(stored);
-    setSelectedLevel((stored.confirmedLevel || stored.detectedLevel) as CefrLevel);
-  }, [router]);
+  useEffect(() => {
+    if (result) {
+      setSelectedLevel((result.confirmedLevel || result.detectedLevel) as CefrLevel);
+    }
+  }, [result]);
 
   const profile = loadOnboardingProfileDraft();
   const levelOptions = useMemo(
@@ -56,29 +180,28 @@ export default function PlacementResultPage() {
     [result],
   );
 
-  const confirmLevel = () => {
-    if (!user || !result) return;
+  const confirmLevel = async () => {
+    if (!result) {
+      return;
+    }
 
-    const nextResult: PlacementResult = {
-      ...result,
-      confirmedLevel: selectedLevel,
-    };
-
-    savePlacementResult(nextResult);
-    dispatch(
-      setUser(
-        buildOnboardingCompletedUser(user, {
-          level: selectedLevel,
-          placementScore: result.percent,
-          displayName: profile?.displayName,
-        }),
-      ),
-    );
-    success(
-      "Da xac nhan trinh do",
-      `Ban se tiep tuc lo trinh hoc voi level ${selectedLevel}.`,
-    );
-    router.replace("/exercises");
+    try {
+      await confirmPlacementResult({
+        attemptId: result.attemptId,
+        confirmedLevel: selectedLevel,
+      }).unwrap();
+      clearOnboardingProfileDraft();
+      success(
+        copy.confirmSuccessTitle,
+        copy.confirmSuccessDescription(selectedLevel),
+      );
+      router.replace("/exercises");
+    } catch (reason) {
+      error(
+        copy.confirmErrorTitle,
+        reason instanceof Error ? reason.message : copy.tryAgain,
+      );
+    }
   };
 
   return (
@@ -88,54 +211,60 @@ export default function PlacementResultPage() {
           <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
             <p className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
               <GraduationCap className="mr-1.5 h-3.5 w-3.5" />
-              Placement Result
+              {copy.badge}
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-              Xac nhan trinh do de bat dau hoc
+              {copy.title}
             </h1>
-            <p className="mt-2 max-w-3xl text-slate-600">
-              He thong chi cham diem objective. Quyet dinh cuoi cung van thuoc ve ban.
-            </p>
+            <p className="mt-2 max-w-3xl text-slate-600">{copy.subtitle}</p>
           </section>
 
           {!result ? (
             <Card className="border-slate-200 py-6">
               <CardContent className="text-sm text-slate-600">
-                Dang tai ket qua placement...
+                {isLoading ? copy.loadingResult : copy.missingResult}
               </CardContent>
             </Card>
           ) : (
             <section className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr]">
               <Card className="border-slate-200 py-5">
                 <CardHeader>
-                  <CardTitle>Tom tat ket qua</CardTitle>
+                  <CardTitle>{copy.summaryTitle}</CardTitle>
                   <CardDescription>
-                    Bai test: {result.testTitle}
+                    {copy.testLabel}: {result.testTitle}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-                    <p className="text-sm text-emerald-700">He thong dang thay ban o trinh do</p>
+                    <p className="text-sm text-emerald-700">
+                      {copy.detectedLevelLabel}
+                    </p>
                     <p className="mt-2 text-4xl font-semibold tracking-tight text-emerald-950">
-                      {formatLevelLabel(result.detectedLevel)}
+                      {result.detectedLevel}
                     </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Raw</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        {copy.rawLabel}
+                      </p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">
                         {result.rawScore}/{result.maxScore}
                       </p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Percent</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        {copy.percentLabel}
+                      </p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">
                         {result.percent}%
                       </p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Self-estimate</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        {copy.selfEstimateLabel}
+                      </p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">
                         {profile?.selectedLevel || "A1"}
                       </p>
@@ -144,11 +273,10 @@ export default function PlacementResultPage() {
 
                   <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
                     <p className="text-sm font-semibold text-slate-900">
-                      Ban co the:
+                      {copy.nextStepTitle}
                     </p>
                     <p className="mt-2 text-sm leading-7 text-slate-600">
-                      tiep tuc voi level he thong de xuat, hoac chon mot level thap hon
-                      neu muon hoc chac nen tang.
+                      {copy.nextStepDescription}
                     </p>
                   </div>
                 </CardContent>
@@ -156,10 +284,8 @@ export default function PlacementResultPage() {
 
               <Card className="border-slate-200 py-5">
                 <CardHeader>
-                  <CardTitle>Chon level cuoi cung</CardTitle>
-                  <CardDescription>
-                    Chi cho phep chon level bang hoac thap hon muc he thong detect duoc.
-                  </CardDescription>
+                  <CardTitle>{copy.chooseLevelTitle}</CardTitle>
+                  <CardDescription>{copy.chooseLevelDescription}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid gap-3 md:grid-cols-3">
@@ -178,8 +304,14 @@ export default function PlacementResultPage() {
                           }`}
                         >
                           <p className="text-sm font-semibold">{level}</p>
-                          <p className={`mt-2 text-xs ${selected ? "text-slate-200" : "text-slate-500"}`}>
-                            {level === result.detectedLevel ? "De xuat tu he thong" : "Hoc chac hon"}
+                          <p
+                            className={`mt-2 text-xs ${
+                              selected ? "text-slate-200" : "text-slate-500"
+                            }`}
+                          >
+                            {level === result.detectedLevel
+                              ? copy.recommendedLevel
+                              : copy.saferLevel}
                           </p>
                         </button>
                       );
@@ -187,7 +319,9 @@ export default function PlacementResultPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-sm font-semibold text-slate-900">Breakdown theo ky nang</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {copy.breakdownTitle}
+                    </p>
                     <div className="grid gap-3 md:grid-cols-2">
                       {result.skillBreakdown.map((item) => (
                         <div
@@ -196,23 +330,27 @@ export default function PlacementResultPage() {
                         >
                           <div className="flex items-center justify-between gap-3">
                             <span className="text-sm font-medium text-slate-700">
-                              {formatSkillLabel(item.skillType)}
+                              {copy.skillLabel(item.skillType)}
                             </span>
                             <span className="text-sm font-semibold text-slate-950">
                               {item.percent}%
                             </span>
                           </div>
                           <p className="mt-2 text-sm text-slate-500">
-                            {item.earnedScore}/{item.maxScore} điểm
+                            {copy.pointsLabel(item.earnedScore, item.maxScore)}
                           </p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <Button onClick={confirmLevel} className="h-11 w-full text-sm font-semibold">
+                  <Button
+                    onClick={confirmLevel}
+                    disabled={isConfirming}
+                    className="h-11 w-full text-sm font-semibold"
+                  >
                     <CheckCircle2 className="h-4 w-4" />
-                    Tiep tuc voi level {selectedLevel}
+                    {copy.continueButton(selectedLevel)}
                   </Button>
                 </CardContent>
               </Card>

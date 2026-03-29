@@ -102,7 +102,7 @@ const PHRASES: PhraseValue[] = [
   { vi: "Chế độ Flashcard", en: "Flashcard Mode" },
   { vi: "Chế độ Quiz từ vựng", en: "Vocabulary Quiz Mode" },
   { vi: "Mở bảng xếp hạng", en: "Open leaderboard" },
-  { vi: "Xem kết quả mẫu", en: "View mock result" },
+  { vi: "Xem kết quả mẫu", en: "View sample result" },
   { vi: "Phiên làm bài", en: "Attempt Session" },
   { vi: "Thẻ đã nhớ:", en: "Known cards:" },
   { vi: "Ngân hàng câu hỏi", en: "Question Bank" },

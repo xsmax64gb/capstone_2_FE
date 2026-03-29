@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pencil, Plus, Search, ShieldCheck, Sparkles } from "lucide-react";
 
+import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { DeleteConfirmButton } from "@/components/admin/delete-confirm-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,21 +25,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  activatePlacementTest,
-  calculatePlacementMaxScore,
-  deletePlacementTestById,
-  loadPlacementTests,
-  type PlacementTest,
-} from "@/lib/mock/placement-tests";
+  useActivateAdminPlacementTestMutation,
+  useDeleteAdminPlacementTestMutation,
+  useGetAdminPlacementTestsQuery,
+} from "@/lib/api/placementApi";
 import { formatDateTime, formatNumber, notify } from "@/lib/admin";
 
 export default function AdminPlacementTestsPage() {
-  const [items, setItems] = useState<PlacementTest[]>([]);
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    setItems(loadPlacementTests());
-  }, []);
+  const { data: items = [], isLoading, error } = useGetAdminPlacementTestsQuery();
+  const [activatePlacementTest, { isLoading: isActivating }] =
+    useActivateAdminPlacementTestMutation();
+  const [deletePlacementTest, { isLoading: isDeleting }] =
+    useDeleteAdminPlacementTestMutation();
 
   const filteredItems = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -57,13 +56,12 @@ export default function AdminPlacementTestsPage() {
 
   const activeTest = items.find((item) => item.isActive) ?? null;
   const totalQuestions = items.reduce(
-    (total, item) => total + item.questions.filter((question) => question.isActive).length,
+    (total, item) => total + item.activeQuestionCount,
     0
   );
 
   const handleDelete = async (id: string, title: string) => {
-    const nextItems = deletePlacementTestById(id);
-    setItems(nextItems);
+    await deletePlacementTest(id).unwrap();
     notify({
       title: "Đã xóa placement test",
       message: `Đã xóa "${title}".`,
@@ -71,15 +69,22 @@ export default function AdminPlacementTestsPage() {
     });
   };
 
-  const handleActivate = (id: string, title: string) => {
-    const nextItems = activatePlacementTest(id);
-    setItems(nextItems);
+  const handleActivate = async (id: string, title: string) => {
+    await activatePlacementTest(id).unwrap();
     notify({
       title: "Đã kích hoạt placement test",
       message: `"${title}" đang là bài test đầu vào cho user mới.`,
       type: "success",
     });
   };
+
+  if (isLoading) {
+    return <AdminPageLoading />;
+  }
+
+  if (error) {
+    return <AdminPageError message="Không tải được danh sách placement tests." />;
+  }
 
   return (
     <div className="space-y-6">
@@ -177,7 +182,9 @@ export default function AdminPlacementTestsPage() {
         <CardContent>
           {filteredItems.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-              <p className="text-lg font-semibold text-slate-900">Chưa có placement test phù hợp</p>
+              <p className="text-lg font-semibold text-slate-900">
+                Chưa có placement test phù hợp
+              </p>
               <p className="mt-2 text-sm text-slate-600">
                 Tạo bài test đầu tiên để onboarding có thể gọi bài active cho user mới.
               </p>
@@ -226,10 +233,8 @@ export default function AdminPlacementTestsPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {formatNumber(item.questions.filter((question) => question.isActive).length)}
-                    </TableCell>
-                    <TableCell>{formatNumber(calculatePlacementMaxScore(item))}</TableCell>
+                    <TableCell>{formatNumber(item.activeQuestionCount)}</TableCell>
+                    <TableCell>{formatNumber(item.maxScore)}</TableCell>
                     <TableCell>{formatNumber(item.durationMinutes)} phút</TableCell>
                     <TableCell className="text-slate-500">
                       {formatDateTime(item.updatedAt)}
@@ -242,17 +247,24 @@ export default function AdminPlacementTestsPage() {
                           variant={item.isActive ? "secondary" : "outline"}
                           className="rounded-lg"
                           onClick={() => handleActivate(item.id, item.title)}
-                          disabled={item.isActive}
+                          disabled={item.isActive || isActivating}
                         >
                           {item.isActive ? "Đang active" : "Kích hoạt"}
                         </Button>
-                        <Button asChild type="button" size="sm" variant="outline" className="rounded-lg">
+                        <Button
+                          asChild
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="rounded-lg"
+                        >
                           <Link href={`/admin/placement-tests/${item.id}`}>
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
                         <DeleteConfirmButton
                           itemLabel={item.title}
+                          disabled={isDeleting}
                           onConfirm={() => handleDelete(item.id, item.title)}
                         />
                       </div>

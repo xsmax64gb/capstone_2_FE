@@ -67,10 +67,13 @@ export const baseApi = createApi({
     "AdminExercises",
     "AdminVocabulary",
     "AdminAiLevels",
+    "AdminPlacementTests",
     "LearnMaps",
     "AdminLearnMaps",
     "AdminLearnSteps",
     "AdminLearnAchievements",
+    "PlacementActiveTest",
+    "PlacementAttempt",
   ],
   endpoints: () => ({}),
 });

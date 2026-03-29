@@ -8,18 +8,16 @@ import { useRouter } from "next/navigation";
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  useCreateAdminPlacementTestMutation,
+  useGetAdminPlacementTestByIdQuery,
+  useUpdateAdminPlacementTestMutation,
+} from "@/lib/api/placementApi";
 import {
   ADMIN_LEVEL_OPTIONS,
   ADMIN_PLACEMENT_QUESTION_TYPE_OPTIONS,
@@ -27,42 +25,77 @@ import {
   formatNumber,
   notify,
 } from "@/lib/admin";
-import {
-  calculatePlacementMaxScore,
-  createEmptyPlacementLevelRule,
-  createEmptyPlacementQuestion,
-  createEmptyPlacementTest,
-  getPlacementTestById,
-  type PlacementLevelRule,
-  type PlacementQuestion,
-  type PlacementTest,
-  upsertPlacementTest,
-} from "@/lib/mock/placement-tests";
+import { CEFR_LEVELS, calculatePlacementMaxScore } from "@/lib/placement";
+import type {
+  AdminPlacementLevelRuleItem,
+  AdminPlacementQuestionItem,
+  AdminPlacementTestItem,
+  AdminPlacementTestPayload,
+} from "@/types";
 
 type Props = {
   testId?: string;
 };
 
-function updateQuestionAt(
-  questions: PlacementQuestion[],
-  questionId: string,
-  updater: (question: PlacementQuestion) => PlacementQuestion
-) {
-  return questions.map((question) =>
-    question.id === questionId ? updater(question) : question
-  );
+type PlacementTestDraft = AdminPlacementTestItem;
+
+const createId = (prefix: string) =>
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+function createEmptyPlacementQuestion(): AdminPlacementQuestionItem {
+  return {
+    id: createId("placement-question"),
+    prompt: "",
+    instruction: "",
+    passage: "",
+    type: "mcq",
+    options: ["", ""],
+    correctOptionIndex: 0,
+    skillType: "grammar",
+    targetLevel: "A1",
+    weight: 1,
+    explanation: "",
+    isActive: true,
+  };
 }
 
-function updateRuleAt(
-  rules: PlacementLevelRule[],
-  ruleId: string,
-  updater: (rule: PlacementLevelRule) => PlacementLevelRule
-) {
-  return rules.map((rule) => (rule.id === ruleId ? updater(rule) : rule));
+function createEmptyPlacementLevelRule(level: AdminPlacementLevelRuleItem["level"] = "A1") {
+  return { id: createId("placement-rule"), level, minScore: 0, maxScore: 0 };
 }
 
-function validatePlacementTestDraft(draft: PlacementTest) {
+function createEmptyPlacementTest(): PlacementTestDraft {
+  return {
+    id: createId("placement-test"),
+    title: "",
+    description: "",
+    instructions: "",
+    durationMinutes: 10,
+    isActive: false,
+    questionCount: 1,
+    activeQuestionCount: 1,
+    maxScore: 1,
+    questions: [createEmptyPlacementQuestion()],
+    levelRules: CEFR_LEVELS.map((level) => createEmptyPlacementLevelRule(level)),
+    createdAt: null,
+    updatedAt: null,
+  };
+}
+
+function toPlacementPayload(draft: PlacementTestDraft): AdminPlacementTestPayload {
+  return {
+    title: draft.title,
+    description: draft.description,
+    instructions: draft.instructions,
+    durationMinutes: draft.durationMinutes,
+    isActive: draft.isActive,
+    questions: draft.questions,
+    levelRules: draft.levelRules,
+  };
+}
+
+function validatePlacementTestDraft(draft: PlacementTestDraft) {
   const title = draft.title.trim();
+
   if (!title) {
     throw new Error("Bài test cần có tiêu đề.");
   }
@@ -87,22 +120,19 @@ function validatePlacementTestDraft(draft: PlacementTest) {
       throw new Error(`Câu ${index + 1} có đáp án đúng không hợp lệ.`);
     }
 
-    if ((Number(question.weight) || 0) <= 0) {
-      throw new Error(`Câu ${index + 1} cần weight lớn hơn 0.`);
-    }
-
     return {
       ...question,
       prompt,
       instruction: question.instruction.trim(),
       passage: question.passage.trim(),
       options,
-      weight: Number(question.weight) || 1,
+      weight: Math.max(1, Number(question.weight) || 1),
       explanation: question.explanation.trim(),
     };
   });
 
   const activeQuestions = questions.filter((question) => question.isActive);
+
   if (!activeQuestions.length) {
     throw new Error("Cần ít nhất 1 câu hỏi active để chấm placement test.");
   }
@@ -110,8 +140,8 @@ function validatePlacementTestDraft(draft: PlacementTest) {
   const rules = draft.levelRules
     .map((rule) => ({
       ...rule,
-      minScore: Number(rule.minScore) || 0,
-      maxScore: Number(rule.maxScore) || 0,
+      minScore: Math.max(0, Number(rule.minScore) || 0),
+      maxScore: Math.max(0, Number(rule.maxScore) || 0),
     }))
     .sort((a, b) => a.minScore - b.minScore);
 
@@ -130,23 +160,15 @@ function validatePlacementTestDraft(draft: PlacementTest) {
       throw new Error("Rule đầu tiên phải bắt đầu từ 0 điểm.");
     }
 
-    if (index > 0) {
-      const previous = rules[index - 1];
-      if (rule.minScore !== previous.maxScore + 1) {
-        throw new Error("Các rule cần nối liên tục và không overlap.");
-      }
+    if (index > 0 && rule.minScore !== rules[index - 1].maxScore + 1) {
+      throw new Error("Các rule cần nối liên tục và không overlap.");
     }
   }
 
-  const maxScore = activeQuestions.reduce(
-    (total, question) => total + (Number(question.weight) || 1),
-    0
-  );
+  const maxScore = calculatePlacementMaxScore(activeQuestions);
 
   if (rules[rules.length - 1].maxScore < maxScore) {
-    throw new Error(
-      `Rule cuối phải bao phủ đến ít nhất ${formatNumber(maxScore)} điểm.`
-    );
+    throw new Error(`Rule cuối phải bao phủ đến ít nhất ${formatNumber(maxScore)} điểm.`);
   }
 
   return {
@@ -162,106 +184,86 @@ function validatePlacementTestDraft(draft: PlacementTest) {
 
 export function PlacementTestEditorScreenInner({ testId }: Props) {
   const router = useRouter();
-  const [draft, setDraft] = useState<PlacementTest | null>(null);
-  const [isReady, setIsReady] = useState(false);
-  const [missing, setMissing] = useState(false);
+  const [draft, setDraft] = useState<PlacementTestDraft | null>(
+    testId ? null : createEmptyPlacementTest()
+  );
+  const { data, isLoading, error } = useGetAdminPlacementTestByIdQuery(testId as string, {
+    skip: !testId,
+  });
+  const [createPlacementTest, { isLoading: isCreating }] =
+    useCreateAdminPlacementTestMutation();
+  const [updatePlacementTest, { isLoading: isUpdating }] =
+    useUpdateAdminPlacementTestMutation();
 
   useEffect(() => {
-    if (!testId) {
-      setDraft(createEmptyPlacementTest());
-      setMissing(false);
-      setIsReady(true);
-      return;
+    if (data) {
+      setDraft(data);
     }
-
-    const existing = getPlacementTestById(testId);
-
-    if (!existing) {
-      setMissing(true);
-      setIsReady(true);
-      return;
-    }
-
-    setDraft(existing);
-    setMissing(false);
-    setIsReady(true);
-  }, [testId]);
+  }, [data]);
 
   const activeQuestionCount = useMemo(
     () => draft?.questions.filter((question) => question.isActive).length ?? 0,
     [draft]
   );
-
   const maxScore = useMemo(
-    () => (draft ? calculatePlacementMaxScore(draft) : 0),
+    () => (draft ? calculatePlacementMaxScore(draft.questions) : 0),
     [draft]
   );
 
-  const setDraftField = <K extends keyof PlacementTest>(field: K, value: PlacementTest[K]) => {
-    setDraft((current) => (current ? { ...current, [field]: value } : current));
-  };
+  const isSaving = isCreating || isUpdating;
 
-  const addQuestion = () => {
+  const updateQuestion = (
+    questionId: string,
+    updater: (question: AdminPlacementQuestionItem) => AdminPlacementQuestionItem
+  ) => {
     setDraft((current) =>
       current
         ? {
             ...current,
-            questions: [...current.questions, createEmptyPlacementQuestion()],
+            questions: current.questions.map((question) =>
+              question.id === questionId ? updater(question) : question
+            ),
           }
         : current
     );
   };
 
-  const removeQuestion = (questionId: string) => {
-    setDraft((current) => {
-      if (!current) return current;
-
-      const nextQuestions = current.questions.filter((question) => question.id !== questionId);
-
-      return {
-        ...current,
-        questions: nextQuestions.length ? nextQuestions : [createEmptyPlacementQuestion()],
-      };
-    });
-  };
-
-  const addRule = () => {
+  const updateRule = (
+    ruleId: string,
+    updater: (rule: AdminPlacementLevelRuleItem) => AdminPlacementLevelRuleItem
+  ) => {
     setDraft((current) =>
       current
         ? {
             ...current,
-            levelRules: [...current.levelRules, createEmptyPlacementLevelRule("A1")],
+            levelRules: current.levelRules.map((rule) =>
+              rule.id === ruleId ? updater(rule) : rule
+            ),
           }
         : current
     );
   };
 
-  const removeRule = (ruleId: string) => {
-    setDraft((current) => {
-      if (!current) return current;
-
-      const nextRules = current.levelRules.filter((rule) => rule.id !== ruleId);
-
-      return {
-        ...current,
-        levelRules: nextRules.length ? nextRules : [createEmptyPlacementLevelRule("A1")],
-      };
-    });
-  };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!draft) {
       return;
     }
 
     try {
       const nextDraft = validatePlacementTestDraft(draft);
-      upsertPlacementTest(nextDraft);
+      const payload = toPlacementPayload(nextDraft);
+
+      if (testId) {
+        await updatePlacementTest({ id: testId, body: payload }).unwrap();
+      } else {
+        await createPlacementTest(payload).unwrap();
+      }
+
       notify({
         title: testId ? "Đã cập nhật placement test" : "Đã tạo placement test",
         message: nextDraft.isActive
           ? "Bài test này đang là bài active cho user mới."
-          : "Bạn có thể kích hoạt bài này bất cứ lúc nào ở danh sách.",
+          : "Bạn có thể kích hoạt bài này ở danh sách.",
         type: "success",
       });
       router.push("/admin/placement-tests");
@@ -274,12 +276,16 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
     }
   };
 
-  if (!isReady) {
+  if (testId && isLoading && !draft) {
     return <AdminPageLoading />;
   }
 
-  if (missing || !draft) {
+  if (testId && error && !draft) {
     return <AdminPageError message="Không tìm thấy placement test để chỉnh sửa." />;
+  }
+
+  if (!draft) {
+    return <AdminPageLoading />;
   }
 
   return (
@@ -296,12 +302,7 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
               {testId ? "Chỉnh sửa bài test đầu vào" : "Tạo bài test đầu vào"}
             </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              Admin có thể tạo ngân hàng câu hỏi, cấu hình rule chấm điểm và đánh dấu
-              bài nào đang active cho người dùng mới.
-            </p>
           </div>
-
           <Button asChild variant="outline" className="rounded-xl">
             <Link href="/admin/placement-tests">
               <ArrowLeft className="h-4 w-4" />
@@ -318,11 +319,11 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
               <Label className="mb-2 block">Tiêu đề</Label>
               <Input
                 value={draft.title}
-                onChange={(event) => setDraftField("title", event.target.value)}
-                placeholder="VD: Placement test tháng 4"
+                onChange={(event) =>
+                  setDraft((current) => (current ? { ...current, title: event.target.value } : current))
+                }
               />
             </div>
-
             <div>
               <Label className="mb-2 block">Duration (phút)</Label>
               <Input
@@ -330,442 +331,282 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
                 min={1}
                 value={draft.durationMinutes}
                 onChange={(event) =>
-                  setDraftField("durationMinutes", Number(event.target.value) || 10)
+                  setDraft((current) =>
+                    current
+                      ? { ...current, durationMinutes: Math.max(1, Number(event.target.value) || 10) }
+                      : current
+                  )
                 }
               />
             </div>
-
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-emerald-900">Bài test active</p>
-                  <p className="mt-1 text-sm leading-6 text-emerald-800">
-                    Chỉ 1 bài được active. Khi bạn bật bài này, các bài khác sẽ tự động
-                    chuyển về inactive.
-                  </p>
+                  <p className="mt-1 text-sm text-emerald-800">Chỉ một bài được active.</p>
                 </div>
                 <Switch
                   checked={draft.isActive}
-                  onCheckedChange={(checked) => setDraftField("isActive", checked)}
+                  onCheckedChange={(checked) =>
+                    setDraft((current) => (current ? { ...current, isActive: checked } : current))
+                  }
                 />
               </div>
             </div>
-
             <div className="md:col-span-2">
               <Label className="mb-2 block">Mô tả</Label>
               <Textarea
                 rows={3}
                 value={draft.description}
-                onChange={(event) => setDraftField("description", event.target.value)}
-                placeholder="Mục tiêu, phạm vi và cách dùng của bài placement test này."
+                onChange={(event) =>
+                  setDraft((current) =>
+                    current ? { ...current, description: event.target.value } : current
+                  )
+                }
               />
             </div>
-
             <div className="md:col-span-2">
               <Label className="mb-2 block">Instructions</Label>
               <Textarea
                 rows={4}
                 value={draft.instructions}
-                onChange={(event) => setDraftField("instructions", event.target.value)}
-                placeholder="Hướng dẫn cho user trước khi bắt đầu làm bài test."
+                onChange={(event) =>
+                  setDraft((current) =>
+                    current ? { ...current, instructions: event.target.value } : current
+                  )
+                }
               />
             </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-sm text-slate-500">Câu hỏi active</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                {formatNumber(activeQuestionCount)}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-sm text-slate-500">Max score</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                {formatNumber(maxScore)}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-sm text-slate-500">Scoring rules</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                {formatNumber(draft.levelRules.length)}
-              </p>
-            </div>
+            <Card className="border-slate-200 shadow-none">
+              <CardContent className="pt-6">
+                <p className="text-sm text-slate-500">Câu hỏi active</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">{formatNumber(activeQuestionCount)}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 shadow-none">
+              <CardContent className="pt-6">
+                <p className="text-sm text-slate-500">Max score</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">{formatNumber(maxScore)}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 shadow-none">
+              <CardContent className="pt-6">
+                <p className="text-sm text-slate-500">Scoring rules</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">
+                  {formatNumber(draft.levelRules.length)}
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
-          <Card className="border-slate-200 bg-slate-50/70 py-5 shadow-none">
-            <CardHeader>
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <CardTitle className="text-base">Ngân hàng câu hỏi</CardTitle>
-                  <CardDescription>
-                    Tạo câu hỏi objective để hệ thống chấm điểm khách quan.
-                  </CardDescription>
-                </div>
-                <Badge variant="outline" className="w-fit rounded-full">
-                  {formatNumber(draft.questions.length)} câu trong form
-                </Badge>
-              </div>
+          <Card className="border-slate-200 shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Ngân hàng câu hỏi</CardTitle>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() =>
+                setDraft((current) =>
+                  current
+                    ? { ...current, questions: [...current.questions, createEmptyPlacementQuestion()] }
+                    : current
+                )
+              }>
+                <Plus className="h-4 w-4" />
+                Thêm câu hỏi
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {draft.questions.map((question, index) => (
-                <Card key={question.id} className="border-slate-200 bg-white py-5 shadow-none">
-                  <CardHeader>
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <CardTitle className="text-base">Câu hỏi {index + 1}</CardTitle>
-                        <CardDescription>
-                          Đánh dấu active để câu hỏi này được dùng khi user làm test.
-                        </CardDescription>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-                          <span className="text-xs font-medium text-slate-500">Active</span>
-                          <Switch
-                            checked={question.isActive}
-                            onCheckedChange={(checked) =>
-                              setDraft((current) =>
-                                current
-                                  ? {
-                                      ...current,
-                                      questions: updateQuestionAt(
-                                        current.questions,
-                                        question.id,
-                                        (item) => ({ ...item, isActive: checked })
-                                      ),
-                                    }
-                                  : current
-                              )
-                            }
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="rounded-lg"
-                          onClick={() => removeQuestion(question.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <div key={question.id} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
+                      <p className="font-semibold text-slate-900">Câu hỏi {index + 1}</p>
+                      <p className="text-sm text-slate-500">Objective scoring question.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500">Active</span>
+                        <Switch
+                          checked={question.isActive}
+                          onCheckedChange={(checked) =>
+                            updateQuestion(question.id, (item) => ({ ...item, isActive: checked }))
+                          }
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setDraft((current) => {
+                            if (!current) {
+                              return current;
+                            }
+
+                            const nextQuestions = current.questions.filter((item) => item.id !== question.id);
+                            return {
+                              ...current,
+                              questions: nextQuestions.length ? nextQuestions : [createEmptyPlacementQuestion()],
+                            };
+                          })
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="md:col-span-2">
                       <Label className="mb-2 block">Prompt</Label>
                       <Textarea
                         rows={3}
                         value={question.prompt}
                         onChange={(event) =>
-                          setDraft((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  questions: updateQuestionAt(
-                                    current.questions,
-                                    question.id,
-                                    (item) => ({ ...item, prompt: event.target.value })
-                                  ),
-                                }
-                              : current
-                          )
+                          updateQuestion(question.id, (item) => ({ ...item, prompt: event.target.value }))
                         }
                       />
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label className="mb-2 block">Instruction</Label>
-                        <Input
-                          value={question.instruction}
-                          onChange={(event) =>
-                            setDraft((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => ({ ...item, instruction: event.target.value })
-                                    ),
-                                  }
-                                : current
-                            )
-                          }
-                          placeholder="Có thể để trống"
-                        />
-                      </div>
-                      <div>
-                        <Label className="mb-2 block">Weight</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={question.weight}
-                          onChange={(event) =>
-                            setDraft((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => ({
-                                        ...item,
-                                        weight: Math.max(1, Number(event.target.value) || 1),
-                                      })
-                                    ),
-                                  }
-                                : current
-                            )
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label className="mb-2 block">Question type</Label>
-                        <select
-                          value={question.type}
-                          onChange={(event) =>
-                            setDraft((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => ({
-                                        ...item,
-                                        type: event.target.value as PlacementQuestion["type"],
-                                      })
-                                    ),
-                                  }
-                                : current
-                            )
-                          }
-                          className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                        >
-                          {ADMIN_PLACEMENT_QUESTION_TYPE_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <Label className="mb-2 block">Skill</Label>
-                        <select
-                          value={question.skillType}
-                          onChange={(event) =>
-                            setDraft((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => ({
-                                        ...item,
-                                        skillType: event.target.value as PlacementQuestion["skillType"],
-                                      })
-                                    ),
-                                  }
-                                : current
-                            )
-                          }
-                          className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                        >
-                          {ADMIN_PLACEMENT_SKILL_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <Label className="mb-2 block">Target level</Label>
-                        <select
-                          value={question.targetLevel}
-                          onChange={(event) =>
-                            setDraft((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => ({
-                                        ...item,
-                                        targetLevel: event.target.value as PlacementQuestion["targetLevel"],
-                                      })
-                                    ),
-                                  }
-                                : current
-                            )
-                          }
-                          className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                        >
-                          {ADMIN_LEVEL_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <Label className="mb-2 block">Đáp án đúng</Label>
-                        <select
-                          value={String(question.correctOptionIndex)}
-                          onChange={(event) =>
-                            setDraft((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => ({
-                                        ...item,
-                                        correctOptionIndex: Number(event.target.value) || 0,
-                                      })
-                                    ),
-                                  }
-                                : current
-                            )
-                          }
-                          className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                        >
-                          {question.options.map((option, optionIndex) => (
-                            <option key={`${question.id}-correct-${optionIndex}`} value={optionIndex}>
-                              {String.fromCharCode(65 + optionIndex)}. {option || `Option ${optionIndex + 1}`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div>
+                      <Label className="mb-2 block">Instruction</Label>
+                      <Input
+                        value={question.instruction}
+                        onChange={(event) =>
+                          updateQuestion(question.id, (item) => ({ ...item, instruction: event.target.value }))
+                        }
+                      />
                     </div>
-
                     <div>
                       <Label className="mb-2 block">Passage</Label>
-                      <Textarea
-                        rows={3}
+                      <Input
                         value={question.passage}
                         onChange={(event) =>
-                          setDraft((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  questions: updateQuestionAt(
-                                    current.questions,
-                                    question.id,
-                                    (item) => ({ ...item, passage: event.target.value })
-                                  ),
-                                }
-                              : current
-                          )
+                          updateQuestion(question.id, (item) => ({ ...item, passage: event.target.value }))
                         }
-                        placeholder="Có thể để trống với câu hỏi ngắn."
                       />
                     </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">Danh sách đáp án</p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            Cần tối thiểu 2 đáp án. Xóa đáp án sẽ tự reset correct answer nếu cần.
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="rounded-lg"
-                          onClick={() =>
-                            setDraft((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => ({ ...item, options: [...item.options, ""] })
-                                    ),
-                                  }
-                                : current
-                            )
-                          }
-                        >
-                          <Plus className="h-4 w-4" />
-                          Thêm đáp án
-                        </Button>
-                      </div>
-                      <div className="mt-4 space-y-3">
+                    <div>
+                      <Label className="mb-2 block">Type</Label>
+                      <select
+                        value={question.type}
+                        onChange={(event) =>
+                          updateQuestion(question.id, (item) => ({
+                            ...item,
+                            type: event.target.value as AdminPlacementQuestionItem["type"],
+                          }))
+                        }
+                        className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                      >
+                        {ADMIN_PLACEMENT_QUESTION_TYPE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="mb-2 block">Skill</Label>
+                      <select
+                        value={question.skillType}
+                        onChange={(event) =>
+                          updateQuestion(question.id, (item) => ({
+                            ...item,
+                            skillType: event.target.value as AdminPlacementQuestionItem["skillType"],
+                          }))
+                        }
+                        className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                      >
+                        {ADMIN_PLACEMENT_SKILL_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="mb-2 block">Target level</Label>
+                      <select
+                        value={question.targetLevel}
+                        onChange={(event) =>
+                          updateQuestion(question.id, (item) => ({
+                            ...item,
+                            targetLevel: event.target.value as AdminPlacementQuestionItem["targetLevel"],
+                          }))
+                        }
+                        className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                      >
+                        {ADMIN_LEVEL_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="mb-2 block">Weight</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={question.weight}
+                        onChange={(event) =>
+                          updateQuestion(question.id, (item) => ({
+                            ...item,
+                            weight: Math.max(1, Number(event.target.value) || 1),
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="mb-2 block">Đáp án</Label>
+                      <div className="space-y-2">
                         {question.options.map((option, optionIndex) => (
-                          <div
-                            key={`${question.id}-option-${optionIndex}`}
-                            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3"
-                          >
-                            <span className="min-w-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                              {String.fromCharCode(65 + optionIndex)}
-                            </span>
+                          <div key={`${question.id}-${optionIndex}`} className="flex items-center gap-2">
                             <Input
                               value={option}
                               onChange={(event) =>
-                                setDraft((current) =>
-                                  current
-                                    ? {
-                                        ...current,
-                                        questions: updateQuestionAt(
-                                          current.questions,
-                                          question.id,
-                                          (item) => ({
-                                            ...item,
-                                            options: item.options.map((itemOption, itemIndex) =>
-                                              itemIndex === optionIndex ? event.target.value : itemOption
-                                            ),
-                                          })
-                                        ),
-                                      }
-                                    : current
-                                )
+                                updateQuestion(question.id, (item) => ({
+                                  ...item,
+                                  options: item.options.map((currentOption, currentIndex) =>
+                                    currentIndex === optionIndex ? event.target.value : currentOption
+                                  ),
+                                }))
                               }
-                              placeholder={`Đáp án ${optionIndex + 1}`}
                             />
                             <Button
                               type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="rounded-lg text-slate-500 hover:text-rose-600"
+                              variant={question.correctOptionIndex === optionIndex ? "default" : "outline"}
+                              onClick={() =>
+                                updateQuestion(question.id, (item) => ({
+                                  ...item,
+                                  correctOptionIndex: optionIndex,
+                                }))
+                              }
+                            >
+                              Đúng
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
                               disabled={question.options.length <= 2}
                               onClick={() =>
-                                setDraft((current) => {
-                                  if (!current) return current;
+                                updateQuestion(question.id, (item) => {
+                                  if (item.options.length <= 2) {
+                                    return item;
+                                  }
+
+                                  const nextOptions = item.options.filter((_, currentIndex) => currentIndex !== optionIndex);
+                                  const nextCorrectOptionIndex =
+                                    item.correctOptionIndex === optionIndex
+                                      ? 0
+                                      : item.correctOptionIndex > optionIndex
+                                        ? item.correctOptionIndex - 1
+                                        : item.correctOptionIndex;
 
                                   return {
-                                    ...current,
-                                    questions: updateQuestionAt(
-                                      current.questions,
-                                      question.id,
-                                      (item) => {
-                                        if (item.options.length <= 2) {
-                                          return item;
-                                        }
-
-                                        const nextOptions = item.options.filter(
-                                          (_, itemIndex) => itemIndex !== optionIndex
-                                        );
-                                        const nextCorrectIndex =
-                                          item.correctOptionIndex === optionIndex
-                                            ? 0
-                                            : item.correctOptionIndex > optionIndex
-                                              ? item.correctOptionIndex - 1
-                                              : item.correctOptionIndex;
-
-                                        return {
-                                          ...item,
-                                          options: nextOptions,
-                                          correctOptionIndex: nextCorrectIndex,
-                                        };
-                                      }
-                                    ),
+                                    ...item,
+                                    options: nextOptions,
+                                    correctOptionIndex: nextCorrectOptionIndex,
                                   };
                                 })
                               }
@@ -774,154 +615,125 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
                             </Button>
                           </div>
                         ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() =>
+                            updateQuestion(question.id, (item) => ({
+                              ...item,
+                              options: [...item.options, ""],
+                            }))
+                          }
+                        >
+                          <Plus className="h-4 w-4" />
+                          Thêm đáp án
+                        </Button>
                       </div>
                     </div>
-
-                    <div>
+                    <div className="md:col-span-2">
                       <Label className="mb-2 block">Explanation</Label>
                       <Textarea
-                        rows={3}
+                        rows={2}
                         value={question.explanation}
                         onChange={(event) =>
-                          setDraft((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  questions: updateQuestionAt(
-                                    current.questions,
-                                    question.id,
-                                    (item) => ({ ...item, explanation: event.target.value })
-                                  ),
-                                }
-                              : current
-                          )
+                          updateQuestion(question.id, (item) => ({
+                            ...item,
+                            explanation: event.target.value,
+                          }))
                         }
-                        placeholder="Giải thích ngắn để admin dễ rà soát."
                       />
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
-
-              <Button type="button" variant="outline" className="rounded-xl" onClick={addQuestion}>
-                <Plus className="h-4 w-4" />
-                Thêm câu hỏi
-              </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 bg-slate-50/70 py-5 shadow-none">
-            <CardHeader>
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <CardTitle className="text-base">Quy định chấm điểm</CardTitle>
-                  <CardDescription>
-                    Thiết lập band điểm để detect level sau khi user hoàn thành bài test.
-                  </CardDescription>
-                </div>
-                <Badge variant="outline" className="w-fit rounded-full">
-                  Max score hiện tại: {formatNumber(maxScore)}
-                </Badge>
-              </div>
+          <Card className="border-slate-200 shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Quy định chấm điểm</CardTitle>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() =>
+                  setDraft((current) =>
+                    current
+                      ? { ...current, levelRules: [...current.levelRules, createEmptyPlacementLevelRule()] }
+                      : current
+                  )
+                }
+              >
+                <Plus className="h-4 w-4" />
+                Thêm rule
+              </Button>
             </CardHeader>
             <CardContent className="space-y-3">
               {draft.levelRules.map((rule) => (
                 <div
                   key={rule.id}
-                  className="grid gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:grid-cols-[1fr_1fr_1fr_auto]"
+                  className="grid gap-3 rounded-2xl border border-slate-200 p-4 md:grid-cols-[1fr_1fr_1fr_auto]"
                 >
-                  <div>
-                    <Label className="mb-2 block">Level</Label>
-                    <select
-                      value={rule.level}
-                      onChange={(event) =>
-                        setDraft((current) =>
-                          current
-                            ? {
-                                ...current,
-                                levelRules: updateRuleAt(current.levelRules, rule.id, (item) => ({
-                                  ...item,
-                                  level: event.target.value as PlacementLevelRule["level"],
-                                })),
-                              }
-                            : current
-                        )
-                      }
-                      className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                    >
-                      {ADMIN_LEVEL_OPTIONS.map((option) => (
-                        <option key={`${rule.id}-${option}`} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <Label className="mb-2 block">Min score</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={rule.minScore}
-                      onChange={(event) =>
-                        setDraft((current) =>
-                          current
-                            ? {
-                                ...current,
-                                levelRules: updateRuleAt(current.levelRules, rule.id, (item) => ({
-                                  ...item,
-                                  minScore: Math.max(0, Number(event.target.value) || 0),
-                                })),
-                              }
-                            : current
-                        )
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label className="mb-2 block">Max score</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={rule.maxScore}
-                      onChange={(event) =>
-                        setDraft((current) =>
-                          current
-                            ? {
-                                ...current,
-                                levelRules: updateRuleAt(current.levelRules, rule.id, (item) => ({
-                                  ...item,
-                                  maxScore: Math.max(0, Number(event.target.value) || 0),
-                                })),
-                              }
-                            : current
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-lg"
-                      onClick={() => removeRule(rule.id)}
-                      disabled={draft.levelRules.length <= 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <select
+                    value={rule.level}
+                    onChange={(event) =>
+                      updateRule(rule.id, (item) => ({
+                        ...item,
+                        level: event.target.value as AdminPlacementLevelRuleItem["level"],
+                      }))
+                    }
+                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  >
+                    {ADMIN_LEVEL_OPTIONS.map((option) => (
+                      <option key={`${rule.id}-${option}`} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={rule.minScore}
+                    onChange={(event) =>
+                      updateRule(rule.id, (item) => ({
+                        ...item,
+                        minScore: Math.max(0, Number(event.target.value) || 0),
+                      }))
+                    }
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    value={rule.maxScore}
+                    onChange={(event) =>
+                      updateRule(rule.id, (item) => ({
+                        ...item,
+                        maxScore: Math.max(0, Number(event.target.value) || 0),
+                      }))
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      setDraft((current) => {
+                        if (!current) {
+                          return current;
+                        }
+
+                        const nextRules = current.levelRules.filter((item) => item.id !== rule.id);
+                        return {
+                          ...current,
+                          levelRules: nextRules.length ? nextRules : [createEmptyPlacementLevelRule()],
+                        };
+                      })
+                    }
+                    disabled={draft.levelRules.length <= 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
-
-              <Button type="button" variant="outline" className="rounded-xl" onClick={addRule}>
-                <Plus className="h-4 w-4" />
-                Thêm scoring rule
-              </Button>
-
-              <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
-                Rule cần nối liên tục từ `0` đến ít nhất `max score`. Khi user làm xong,
-                hệ thống sẽ detect level theo band điểm này và sau đó vẫn hỏi user xác nhận.
-              </div>
             </CardContent>
           </Card>
         </CardContent>
@@ -929,9 +741,9 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
           <Button asChild type="button" variant="outline" className="rounded-xl">
             <Link href="/admin/placement-tests">Hủy</Link>
           </Button>
-          <Button type="button" className="rounded-xl" onClick={handleSave}>
+          <Button type="button" className="rounded-xl" onClick={handleSave} disabled={isSaving}>
             <ShieldCheck className="h-4 w-4" />
-            {testId ? "Lưu thay đổi" : "Tạo placement test"}
+            {isSaving ? "Đang lưu..." : testId ? "Lưu thay đổi" : "Tạo placement test"}
           </Button>
         </CardFooter>
       </Card>

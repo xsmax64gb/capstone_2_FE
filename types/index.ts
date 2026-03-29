@@ -296,3 +296,150 @@ export interface AdminAiLevelPayload {
   isActive: boolean;
   stages: AdminAiStage[];
 }
+
+export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+export type PlacementSkillType =
+  | "grammar"
+  | "vocab"
+  | "reading"
+  | "listening";
+export type PlacementQuestionType = "mcq" | "true_false" | "fill_blank";
+
+export interface OnboardingProfileDraft {
+  selectedLanguage: string;
+  selectedLevel: string;
+  weeklyHours: number;
+  displayName: string;
+  jobTitle: string;
+  selectedGoals: string[];
+  startedAt: string | null;
+}
+
+export interface AdminPlacementQuestionItem {
+  id: string;
+  prompt: string;
+  instruction: string;
+  passage: string;
+  type: PlacementQuestionType;
+  options: string[];
+  correctOptionIndex: number;
+  skillType: PlacementSkillType;
+  targetLevel: CefrLevel;
+  weight: number;
+  explanation: string;
+  isActive: boolean;
+}
+
+export interface AdminPlacementLevelRuleItem {
+  id: string;
+  level: CefrLevel;
+  minScore: number;
+  maxScore: number;
+}
+
+export interface AdminPlacementTestItem {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  durationMinutes: number;
+  isActive: boolean;
+  questionCount: number;
+  activeQuestionCount: number;
+  maxScore: number;
+  questions: AdminPlacementQuestionItem[];
+  levelRules: AdminPlacementLevelRuleItem[];
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface AdminPlacementTestsResponse {
+  items: AdminPlacementTestItem[];
+}
+
+export interface AdminPlacementTestPayload {
+  title: string;
+  description: string;
+  instructions: string;
+  durationMinutes: number;
+  isActive: boolean;
+  questions: AdminPlacementQuestionItem[];
+  levelRules: AdminPlacementLevelRuleItem[];
+}
+
+export interface PlacementQuestionItem {
+  id: string;
+  prompt: string;
+  instruction: string;
+  passage: string;
+  type: PlacementQuestionType;
+  options: string[];
+  skillType: PlacementSkillType;
+  targetLevel: CefrLevel;
+  weight: number;
+  isActive: boolean;
+}
+
+export interface PlacementActiveTestItem {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  durationMinutes: number;
+  questionCount: number;
+  questions: PlacementQuestionItem[];
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface PlacementAnswerResult {
+  questionId: string;
+  selectedOptionIndex: number | null;
+  isCorrect: boolean;
+  earnedScore: number;
+}
+
+export interface PlacementSkillBreakdown {
+  skillType: PlacementSkillType;
+  earnedScore: number;
+  maxScore: number;
+  percent: number;
+}
+
+export interface PlacementResultItem {
+  attemptId: string;
+  testId: string | null;
+  testTitle: string;
+  rawScore: number;
+  maxScore: number;
+  percent: number;
+  detectedLevel: CefrLevel;
+  confirmedLevel: CefrLevel | null;
+  status: "pending_confirmation" | "confirmed" | "skipped";
+  skipped: boolean;
+  answers: PlacementAnswerResult[];
+  skillBreakdown: PlacementSkillBreakdown[];
+  completedAt: string | null;
+  confirmedAt: string | null;
+  profile: OnboardingProfileDraft | null;
+}
+
+export interface PlacementSubmitPayload {
+  testId: string;
+  answersByQuestionId: Record<string, number>;
+  profile: OnboardingProfileDraft;
+}
+
+export interface PlacementConfirmPayload {
+  attemptId: string;
+  confirmedLevel: CefrLevel;
+}
+
+export interface PlacementSkipPayload {
+  profile: OnboardingProfileDraft;
+}
+
+export interface PlacementFinalizeResponse {
+  user: User;
+  result: PlacementResultItem;
+}

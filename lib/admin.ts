@@ -7,6 +7,13 @@ export function formatCompactNumber(value: number) {
 
 export const ADMIN_LEVEL_OPTIONS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 export const ADMIN_EXERCISE_TYPE_OPTIONS = ["mcq", "fill_blank", "matching"];
+export const ADMIN_PLACEMENT_SKILL_OPTIONS = [
+  "grammar",
+  "vocab",
+  "reading",
+  "listening",
+];
+export const ADMIN_PLACEMENT_QUESTION_TYPE_OPTIONS = ["mcq", "true_false", "fill_blank"];
 
 export function formatNumber(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);

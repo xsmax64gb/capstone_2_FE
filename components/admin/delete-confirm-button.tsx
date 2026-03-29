@@ -19,6 +19,8 @@ type DeleteConfirmButtonProps = {
   itemLabel: string;
   title?: string;
   description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
   onConfirm: () => Promise<void> | void;
   disabled?: boolean;
 };
@@ -27,6 +29,8 @@ export function DeleteConfirmButton({
   itemLabel,
   title = "Xác nhận xóa",
   description,
+  confirmLabel = "Xóa",
+  cancelLabel = "Hủy",
   onConfirm,
   disabled = false,
 }: DeleteConfirmButtonProps) {
@@ -65,7 +69,7 @@ export function DeleteConfirmButton({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="rounded-xl">Hủy</AlertDialogCancel>
+          <AlertDialogCancel className="rounded-xl">{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(event) => {
               event.preventDefault();
@@ -73,7 +77,7 @@ export function DeleteConfirmButton({
             }}
             className="rounded-xl bg-rose-600 text-white hover:bg-rose-700"
           >
-            {isSubmitting ? "Đang xóa..." : "Xóa"}
+            {isSubmitting ? "Đang xóa..." : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

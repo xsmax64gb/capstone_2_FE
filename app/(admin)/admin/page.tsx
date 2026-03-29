@@ -35,6 +35,11 @@ const quickActions = [
     href: "/admin/exercises",
   },
   {
+    title: "Placement tests",
+    description: "Tạo, chỉnh sửa, active bài test đầu vào cho người dùng mới.",
+    href: "/admin/placement-tests",
+  },
+  {
     title: "Quản trị vocabulary",
     description: "Quản lý bộ từ vựng và các từ (word, meaning, example), hỗ trợ import hàng loạt.",
     href: "/admin/vocabulary",

@@ -8,6 +8,7 @@ import {
   BarChart3,
   BookOpen,
   ChevronRight,
+  FileText,
   LayoutDashboard,
   Languages,
   LogOut,
@@ -57,6 +58,12 @@ const adminNavigation = [
     heading: "Quản trị ngân hàng bài tập",
     href: "/admin/exercises",
     icon: BookOpen,
+  },
+  {
+    title: "Placement tests",
+    heading: "Bài test đầu vào và rule chấm điểm",
+    href: "/admin/placement-tests",
+    icon: FileText,
   },
   {
     title: "Vocabulary",

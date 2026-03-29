@@ -265,6 +265,7 @@ export interface AdminVocabularyPayload {
   description: string;
   level: string;
   topic: string;
+  coverImage?: string;
   coverImageFile?: File | null;
   isActive: boolean;
   sortOrder: number;

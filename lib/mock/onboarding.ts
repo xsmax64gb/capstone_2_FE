@@ -37,6 +37,8 @@ export const ONBOARDING_LEVEL_OPTIONS: OnboardingLevelOption[] = [
   { value: "A2", label: "A2 - Basic communication" },
   { value: "B1", label: "B1 - Daily confidence" },
   { value: "B2", label: "B2 - Work ready" },
+  { value: "C1", label: "C1 - Advanced fluency" },
+  { value: "C2", label: "C2 - Near-native mastery" },
 ];
 
 export const ONBOARDING_GOAL_OPTIONS: OnboardingGoalOption[] = [

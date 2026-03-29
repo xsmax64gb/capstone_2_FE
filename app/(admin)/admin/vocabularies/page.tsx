@@ -163,6 +163,7 @@ export default function AdminVocabulariesPage() {
                           Edit
                         </Link>
                         <DeleteConfirmButton
+                          itemLabel={item.name}
                           onConfirm={() => handleDelete(item.id, item.name)}
                           title="Xóa bộ từ vựng?"
                           description={`Xóa "${item.name}" và tất cả ${item.wordCount} từ bên trong? Hành động này không thể hoàn tác.`}

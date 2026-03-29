@@ -30,6 +30,13 @@ import {
   ONBOARDING_TEST_PREVIEW,
   ONBOARDING_WEEKLY_HOURS,
 } from "@/lib/mock/onboarding";
+import {
+  buildOnboardingCompletedUser,
+  createSkippedPlacementResult,
+  getActivePlacementTest,
+  saveOnboardingProfileDraft,
+  savePlacementResult,
+} from "@/lib/mock/placement-tests";
 
 type Step = 0 | 1 | 2;
 
@@ -37,7 +44,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const dispatch = useDispatch();
   const { user } = useAuth();
-  const { success, info } = useNotification();
+  const { success } = useNotification();
 
   const [step, setStep] = useState<Step>(0);
   const [isStartingTest, setIsStartingTest] = useState(false);
@@ -102,7 +109,7 @@ export default function OnboardingPage() {
 
     setIsStartingTest(true);
 
-    const mockPayload = {
+    const draftPayload = {
       selectedLanguage,
       selectedLevel,
       weeklyHours,
@@ -113,30 +120,51 @@ export default function OnboardingPage() {
     };
 
     try {
-      localStorage.setItem(
-        "mock_onboarding_profile",
-        JSON.stringify(mockPayload),
+      saveOnboardingProfileDraft(draftPayload);
+      success(
+        "Da luu thong tin onboarding",
+        "He thong se mo bai placement test dang active cho ban.",
       );
+      router.push("/onboarding/placement-test");
+    } finally {
+      setIsStartingTest(false);
+    }
+  };
+
+  const skipPlacementTest = async () => {
+    if (!user) return;
+
+    setIsStartingTest(true);
+
+    const draftPayload = {
+      selectedLanguage,
+      selectedLevel,
+      weeklyHours,
+      displayName,
+      jobTitle,
+      selectedGoals,
+      startedAt: new Date().toISOString(),
+    };
+
+    try {
+      saveOnboardingProfileDraft(draftPayload);
+      savePlacementResult(createSkippedPlacementResult(getActivePlacementTest()));
 
       dispatch(
-        setUser({
-          ...user,
-          fullName: displayName.trim() || user.fullName,
-          name: displayName.trim() || user.name,
-          currentLevel: selectedLevel,
-          onboardingDone: true,
-        }),
+        setUser(
+          buildOnboardingCompletedUser(user, {
+            level: "A1",
+            placementScore: 0,
+            displayName,
+          }),
+        ),
       );
 
       success(
-        "Onboarding hoan tat",
-        "Ban da san sang de bat dau bai test dau vao.",
+        "Bo qua bai test",
+        "Ban se bat dau hoc voi level A1 va co the lam placement test sau.",
       );
-      info("Mock mode", "Dang dung du lieu mock. Co the noi API that sau.");
-
-      setTimeout(() => {
-        router.push("/exercises");
-      }, 500);
+      router.replace("/exercises");
     } finally {
       setIsStartingTest(false);
     }
@@ -314,7 +342,8 @@ export default function OnboardingPage() {
                   San sang bat dau bai test dau vao
                 </CardTitle>
                 <CardDescription>
-                  He thong da tong hop profile hoc tap mock cua ban.
+                  He thong da tong hop profile hoc tap mock cua ban va se mo bai
+                  placement test dang active do admin da chon.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -355,6 +384,15 @@ export default function OnboardingPage() {
                   {isStartingTest
                     ? "Dang khoi tao bai test..."
                     : "Bat dau bai test dau vao"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={skipPlacementTest}
+                  disabled={isStartingTest}
+                  className="h-11 w-full text-sm font-semibold"
+                >
+                  Bo qua bai test va hoc tu A1
                 </Button>
               </CardContent>
             </Card>

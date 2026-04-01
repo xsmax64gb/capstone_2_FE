@@ -91,6 +91,8 @@ export interface LearnStep {
   order: number;
   title: string;
   type: "lesson" | "boss";
+  bestScore?: number | null;
+  starsEarned?: number;
   scenarioTitle?: string;
   scenarioContext?: string;
   scenarioScript?: string;
@@ -156,7 +158,11 @@ export const learnApi = baseApi.injectEndpoints({
     }),
 
     getLearnMapBySlug: builder.query<
-      { map: LearnMapItem; progress: LearnMapProgress | null; steps: LearnStep[] },
+      {
+        map: LearnMapItem;
+        progress: LearnMapProgress | null;
+        steps: LearnStep[];
+      },
       string
     >({
       query: (slug) => ({ url: `/learn/maps/${slug}`, method: "GET" }),
@@ -167,66 +173,25 @@ export const learnApi = baseApi.injectEndpoints({
           progress: LearnMapProgress | null;
           steps: LearnStep[];
         }>,
-      ) => response.data as {
-        map: LearnMapItem;
-        progress: LearnMapProgress | null;
-        steps: LearnStep[];
-      },
-    }),
-
-    getLearnConversation: builder.query<
-      {
-        conversation: Record<string, unknown>;
-        messages: LearnMessage[];
-        bossBattle: LearnBossBattleState | null;
-      },
-      string
-    >({
-      query: (id) => ({ url: `/learn/conversations/${id}`, method: "GET" }),
-      transformResponse: (response: ApiResponse<Record<string, unknown>>) =>
-        response.data as {
-          conversation: Record<string, unknown>;
-          messages: LearnMessage[];
-          bossBattle: LearnBossBattleState | null;
-        },
-    }),
-
-    startLearnConversation: builder.mutation<StartConversationResponse, string>({
-      query: (stepId) => ({
-        url: `/learn/steps/${stepId}/conversations`,
-        method: "POST",
-      }),
-      invalidatesTags: ["LearnMaps"],
-      transformResponse: (response: ApiResponse<StartConversationResponse>) =>
-        response.data as StartConversationResponse,
-    }),
-
-    sendLearnMessage: builder.mutation<
-      {
-        userMessage: LearnMessage;
-        assistantMessage: LearnMessage | null;
-        bossBattle: LearnBossBattleState | null;
-      },
-      { conversationId: string; content: string }
-    >({
-      query: ({ conversationId, content }) => ({
-        url: `/learn/conversations/${conversationId}/messages`,
-        method: "POST",
-        body: { content },
-      }),
-      transformResponse: (
-        response: ApiResponse<{
-          userMessage: LearnMessage;
-          assistantMessage: LearnMessage | null;
-          bossBattle: LearnBossBattleState | null;
-        }>,
       ) =>
         response.data as {
-          userMessage: LearnMessage;
-          assistantMessage: LearnMessage | null;
-          bossBattle: LearnBossBattleState | null;
+          map: LearnMapItem;
+          progress: LearnMapProgress | null;
+          steps: LearnStep[];
         },
     }),
+
+    startLearnConversation: builder.mutation<StartConversationResponse, string>(
+      {
+        query: (stepId) => ({
+          url: `/learn/steps/${stepId}/conversations`,
+          method: "POST",
+        }),
+        invalidatesTags: ["LearnMaps"],
+        transformResponse: (response: ApiResponse<StartConversationResponse>) =>
+          response.data as StartConversationResponse,
+      },
+    ),
 
     sendLearnMessageQuick: builder.mutation<
       {
@@ -345,7 +310,10 @@ export const learnApi = baseApi.injectEndpoints({
         response.data as AdminLearnMapAiDraft,
     }),
 
-    createAdminLearnMap: builder.mutation<{ map: LearnMapItem }, Partial<LearnMapItem>>({
+    createAdminLearnMap: builder.mutation<
+      { map: LearnMapItem },
+      Partial<LearnMapItem>
+    >({
       query: (body) => ({
         url: "/admin/learn/maps",
         method: "POST",
@@ -379,7 +347,10 @@ export const learnApi = baseApi.injectEndpoints({
     }),
 
     getAdminLearnSteps: builder.query<{ items: LearnStep[] }, string>({
-      query: (mapId) => ({ url: `/admin/learn/maps/${mapId}/steps`, method: "GET" }),
+      query: (mapId) => ({
+        url: `/admin/learn/maps/${mapId}/steps`,
+        method: "GET",
+      }),
       providesTags: (_r, _e, mapId) => [{ type: "AdminLearnSteps", id: mapId }],
       transformResponse: (response: ApiResponse<{ items: LearnStep[] }>) =>
         response.data as { items: LearnStep[] },
@@ -434,17 +405,19 @@ export const learnApi = baseApi.injectEndpoints({
         response.data as { step: LearnStep },
     }),
 
-    deleteAdminLearnStep: builder.mutation<void, { id: string; mapId: string }>({
-      query: ({ id }) => ({
-        url: `/admin/learn/steps/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: (_r, _e, arg) => [
-        "AdminLearnMaps",
-        { type: "AdminLearnSteps", id: arg.mapId },
-        "LearnMaps",
-      ],
-    }),
+    deleteAdminLearnStep: builder.mutation<void, { id: string; mapId: string }>(
+      {
+        query: ({ id }) => ({
+          url: `/admin/learn/steps/${id}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: (_r, _e, arg) => [
+          "AdminLearnMaps",
+          { type: "AdminLearnSteps", id: arg.mapId },
+          "LearnMaps",
+        ],
+      },
+    ),
 
     getAdminLearnAchievements: builder.query<
       {
@@ -501,9 +474,7 @@ export const learnApi = baseApi.injectEndpoints({
 export const {
   useGetLearnMapsQuery,
   useGetLearnMapBySlugQuery,
-  useGetLearnConversationQuery,
   useStartLearnConversationMutation,
-  useSendLearnMessageMutation,
   useSendLearnMessageQuickMutation,
   useEvaluateLearnMessageMutation,
   useEndLearnConversationMutation,

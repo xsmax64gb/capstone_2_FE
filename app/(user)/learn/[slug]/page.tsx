@@ -3,7 +3,7 @@
 import { useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Check, Crown, Lock, MessageSquare, Play } from 'lucide-react'
+import { ArrowLeft, Check, Crown, Lock, MessageSquare, Play, Star } from 'lucide-react'
 import {
   LearnPathOverlay,
   LEARN_NODE_COL_CLASS,
@@ -14,6 +14,21 @@ import { ScrollReveal } from '@/components/ui/scroll-reveal'
 import { useGetLearnMapBySlugQuery, type LearnStep } from '@/lib/api/learnApi'
 
 type StepVisual = 'completed' | 'current' | 'locked'
+
+function StepStars({ stars }: { stars: number }) {
+  if (stars <= 0) return null
+
+  return (
+    <div className="mt-2 flex items-center justify-center gap-0.5 text-amber-500">
+      {Array.from({ length: 3 }, (_, index) => (
+        <Star
+          key={`step-star-${index}`}
+          className={`h-3.5 w-3.5 ${index < stars ? 'fill-current' : 'text-slate-200'}`}
+        />
+      ))}
+    </div>
+  )
+}
 
 function stepVisual(
   steps: LearnStep[],
@@ -97,6 +112,7 @@ export default function LearnMapDetailPage() {
                 const isLocked = visual === 'locked'
                 const isCurrent = visual === 'current'
                 const isCompleted = visual === 'completed'
+                const stepStars = isCompleted ? Math.max(0, Math.min(step.starsEarned ?? 0, 3)) : 0
                 const href = isLocked ? '#' : `/learn/${slug}/step/${step.id}`
                 const emphasizeFloat = isCurrent && index === effectivePrimary
 
@@ -157,6 +173,7 @@ export default function LearnMapDetailPage() {
                       <MessageSquare className="h-3 w-3" />
                       {isLocked ? 'Làm bước trước' : isCurrent ? 'Tiếp tục' : 'Ôn lại'}
                     </p>
+                    <StepStars stars={stepStars} />
                   </div>
                 )
 

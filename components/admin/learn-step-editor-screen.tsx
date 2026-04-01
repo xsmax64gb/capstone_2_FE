@@ -107,9 +107,9 @@ function toStepFormState(step: LearnStep): StepFormState {
       step.minimumPassScore == null || Number.isNaN(step.minimumPassScore)
         ? ""
         : String(step.minimumPassScore),
-    passCriteria: (step.passCriteria || []).join(", "),
-    vocabularyFocus: (step.vocabularyFocus || []).join(", "),
-    grammarFocus: (step.grammarFocus || []).join(", "),
+    passCriteria: formatListForTextarea(step.passCriteria),
+    vocabularyFocus: formatListForTextarea(step.vocabularyFocus),
+    grammarFocus: formatListForTextarea(step.grammarFocus),
     bossName: step.bossName || "",
     bossTasksJson: JSON.stringify(step.bossTasks || [], null, 2),
   };
@@ -133,17 +133,28 @@ function aiDraftToStepFormState(draft: AdminLearnStepAiDraft): StepFormState {
       draft.minimumPassScore == null || Number.isNaN(draft.minimumPassScore)
         ? ""
         : String(draft.minimumPassScore),
-    passCriteria: (draft.passCriteria || []).join(", "),
-    vocabularyFocus: (draft.vocabularyFocus || []).join(", "),
-    grammarFocus: (draft.grammarFocus || []).join(", "),
+    passCriteria: formatListForTextarea(draft.passCriteria),
+    vocabularyFocus: formatListForTextarea(draft.vocabularyFocus),
+    grammarFocus: formatListForTextarea(draft.grammarFocus),
     bossName: draft.bossName || "",
     bossTasksJson: JSON.stringify(draft.bossTasks || [], null, 2),
   };
 }
 
-function parseCommaSeparated(value: string) {
-  return value
-    .split(",")
+function formatListForTextarea(values?: string[]) {
+  return (values || []).join("\n");
+}
+
+function parseListInput(value: string) {
+  const normalized = value.replace(/\r\n/g, "\n").trim();
+
+  if (!normalized) {
+    return [];
+  }
+
+  const baseItems = normalized.includes("\n") ? normalized.split("\n") : normalized.split(",");
+
+  return baseItems
     .map((item) => item.trim())
     .filter(Boolean);
 }
@@ -337,9 +348,9 @@ export function LearnStepEditorScreen({ mapId, stepId, source }: Props) {
       xpReward: Number(form.xpReward || 0),
       gradingDifficulty: form.gradingDifficulty,
       minimumPassScore: form.minimumPassScore ? Number(form.minimumPassScore) : null,
-      passCriteria: parseCommaSeparated(form.passCriteria),
-      vocabularyFocus: parseCommaSeparated(form.vocabularyFocus),
-      grammarFocus: parseCommaSeparated(form.grammarFocus),
+      passCriteria: parseListInput(form.passCriteria),
+      vocabularyFocus: parseListInput(form.vocabularyFocus),
+      grammarFocus: parseListInput(form.grammarFocus),
       bossName: form.type === "boss" ? form.bossName.trim() : "",
       bossTasks,
       bossHPMax: form.type === "boss" ? 100 : undefined,
@@ -624,35 +635,40 @@ export function LearnStepEditorScreen({ mapId, stepId, source }: Props) {
 
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="step-pass-criteria">Pass criteria</Label>
-                      <Input
+                      <Textarea
                         id="step-pass-criteria"
+                        rows={4}
                         value={form.passCriteria}
                         onChange={(event) => setField("passCriteria", event.target.value)}
-                        placeholder="ask about price, confirm time, speak naturally"
+                        placeholder={`Ask about price\nState a clear preference\nConfirm the purchase politely`}
                       />
                       <p className="text-xs text-slate-500">
-                        Nhập các tiêu chí, cách nhau bằng dấu phẩy.
+                        Mỗi dòng là một tiêu chí. Vẫn hỗ trợ dữ liệu cũ ngăn cách bằng dấu phẩy.
                       </p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="step-vocabulary-focus">Vocabulary focus</Label>
-                      <Input
+                      <Textarea
                         id="step-vocabulary-focus"
+                        rows={4}
                         value={form.vocabularyFocus}
                         onChange={(event) => setField("vocabularyFocus", event.target.value)}
-                        placeholder="departure, boarding pass, luggage"
+                        placeholder={`price\nsize\nreturn policy`}
                       />
+                      <p className="text-xs text-slate-500">Mỗi dòng là một cụm từ vựng.</p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="step-grammar-focus">Grammar focus</Label>
-                      <Input
+                      <Textarea
                         id="step-grammar-focus"
+                        rows={4}
                         value={form.grammarFocus}
                         onChange={(event) => setField("grammarFocus", event.target.value)}
-                        placeholder="polite questions, present simple, modal verbs"
+                        placeholder={`polite questions\nmodal verbs`}
                       />
+                      <p className="text-xs text-slate-500">Mỗi dòng là một điểm ngữ pháp.</p>
                     </div>
                   </div>
 

@@ -31,22 +31,14 @@ function StepStars({ stars }: { stars: number }) {
 }
 
 function stepVisual(
-  steps: LearnStep[],
-  index: number,
+  step: LearnStep,
   mapLocked: boolean,
-  mapCompleted: boolean,
   currentStepId: string | null | undefined,
+  completedStepIds: Set<string>,
 ): StepVisual {
   if (mapLocked) return 'locked'
-  if (mapCompleted) return 'completed'
-  const cur = currentStepId
-  if (!cur) {
-    return index === 0 ? 'current' : 'locked'
-  }
-  const curIndex = steps.findIndex((s) => s.id === cur)
-  if (curIndex < 0) return index === 0 ? 'current' : 'locked'
-  if (index < curIndex) return 'completed'
-  if (index === curIndex) return 'current'
+  if (completedStepIds.has(step.id)) return 'completed'
+  if (currentStepId && step.id === currentStepId) return 'current'
   return 'locked'
 }
 
@@ -58,13 +50,18 @@ export default function LearnMapDetailPage() {
   const { data, isLoading, error } = useGetLearnMapBySlugQuery(slug, { skip: !slug })
 
   const mapLocked = data?.progress?.status === 'locked'
-  const mapCompleted = data?.progress?.status === 'completed'
   const steps = data?.steps ?? []
   anchorRefs.current.length = steps.length
-  const currentStepId = data?.progress?.currentStepId
+  const completedStepIds = new Set(
+    steps.filter((step) => step.bestScore != null).map((step) => step.id),
+  )
+  const requestedCurrentStepId = data?.progress?.currentStepId
+  const currentStepId =
+    requestedCurrentStepId && !completedStepIds.has(requestedCurrentStepId)
+      ? requestedCurrentStepId
+      : steps.find((step) => !completedStepIds.has(step.id))?.id ?? null
   const primaryCurrentIndex = steps.findIndex((s) => s.id === currentStepId)
-  const effectivePrimary =
-    primaryCurrentIndex >= 0 ? primaryCurrentIndex : !mapLocked && !mapCompleted ? 0 : -1
+  const effectivePrimary = primaryCurrentIndex >= 0 ? primaryCurrentIndex : -1
 
   return (
     <ProtectedRoute>
@@ -107,7 +104,7 @@ export default function LearnMapDetailPage() {
               <LearnPathOverlay containerRef={trackRef} anchorRefs={anchorRefs} anchorCount={steps.length} />
               {steps.map((step, index) => {
                 const side: 'left' | 'right' = index % 2 === 0 ? 'left' : 'right'
-                const visual = stepVisual(steps, index, mapLocked, mapCompleted, currentStepId)
+                const visual = stepVisual(step, mapLocked, currentStepId, completedStepIds)
                 const isBoss = step.type === 'boss'
                 const isLocked = visual === 'locked'
                 const isCurrent = visual === 'current'

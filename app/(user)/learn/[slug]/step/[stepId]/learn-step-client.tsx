@@ -124,13 +124,30 @@ function translateSpeechError(error: string | undefined, pick: PairTextPicker) {
   }
 }
 
+function compactDisplayLabel(value: string, maxLength = 32) {
+  const normalized = String(value || "").replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const firstSentence = normalized.split(/[.!?]/)[0]?.trim() || normalized;
+  const candidate = firstSentence || normalized;
+
+  if (candidate.length <= maxLength) {
+    return candidate;
+  }
+
+  return `${candidate.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
 function getTeacherName(
   step: LearnStep,
   boss: LearnBossBattleState | null,
   pick: PairTextPicker,
 ) {
-  if (boss?.bossName) return boss.bossName;
-  if (step.aiPersona?.trim()) return step.aiPersona.trim();
+  if (boss?.bossName) return compactDisplayLabel(boss.bossName, 28);
+  if (step.aiPersona?.trim()) return compactDisplayLabel(step.aiPersona.trim());
   return step.type === "boss"
     ? pick("Giáo viên boss", "Boss Teacher")
     : pick("Giáo viên AI", "AI Teacher");
@@ -268,6 +285,8 @@ export function LearnStepClient({ slug, step }: Props) {
   const [starting, setStarting] = useState(true);
   const [startError, setStartError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [endError, setEndError] = useState<string | null>(null);
+  const [ending, setEnding] = useState(false);
   const [ended, setEnded] = useState<{
     passed: boolean;
     feedback: string;
@@ -550,9 +569,11 @@ export function LearnStepClient({ slug, step }: Props) {
   };
 
   const handleEnd = async () => {
-    if (!conversationId || ended) return;
+    if (!conversationId || ended || ending) return;
     stopListening("abort");
     stopSpeaking();
+    setEnding(true);
+    setEndError(null);
 
     try {
       const response = await endConversation(conversationId).unwrap();
@@ -567,8 +588,21 @@ export function LearnStepClient({ slug, step }: Props) {
         requiredMapXP: response.requiredMapXP,
         replayAttempt: response.replayAttempt,
       });
-    } catch {
-      /* ignore */
+    } catch (error) {
+      const apiError = handleApiError(error);
+      setEndError(
+        apiError.status === 401
+          ? bi(
+              "Bạn cần đăng nhập lại để chấm điểm buổi học.",
+              "Please sign in again before grading this lesson.",
+            )
+          : bi(
+              "Chưa thể chấm điểm lúc này. Hãy thử lại.",
+              "Unable to grade this lesson right now. Please try again.",
+            ),
+      );
+    } finally {
+      setEnding(false);
     }
   };
 
@@ -592,6 +626,8 @@ export function LearnStepClient({ slug, step }: Props) {
     setBoss(null);
     setStartError(null);
     setSendError(null);
+    setEndError(null);
+    setEnding(false);
     setEnded(null);
     setSpeechError(null);
     setInterimTranscript("");
@@ -1040,84 +1076,122 @@ export function LearnStepClient({ slug, step }: Props) {
           </div>
         </div>
 
-        {ended ? (
+        {ended || ending ? (
           <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-xl">
-            <Badge
-              className={`rounded-full px-3 py-1 ${ended.passed ? "bg-emerald-600 text-white" : "bg-slate-900 text-white"}`}
-            >
-              {ended.passed
-                ? bi("Đạt", "Passed")
-                : bi("Xem lại và thử lại", "Review and retry")}
-            </Badge>
-            <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
-              {ended.passed
-                ? bi("Buổi học hoàn thành", "Lesson completed")
-                : bi("Phiên học đã kết thúc", "Lesson session ended")}
-            </h3>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              {ended.feedback}
-            </p>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {ended.score != null && (
-                <Meter
-                  label={bi("Điểm", "Score")}
-                  value={`${ended.score}`}
-                  progress={ended.score}
-                  tone="dark"
-                />
-              )}
-              <Meter
-                label={bi("XP đã nhận", "XP earned")}
-                value={`+${ended.xp}`}
-                progress={Math.min(100, (ended.xp / 40) * 100)}
-                tone="emerald"
-              />
-            </div>
-            <div className="mt-4 space-y-2 text-sm text-slate-600">
-              {ended.requiredScore != null ? (
-                <p>
-                  {bi("Điểm cần để pass", "Score needed to pass")}:{" "}
-                  <strong>{ended.requiredScore}</strong>
-                </p>
-              ) : null}
-              {ended.requiredMapXP != null && ended.currentMapXP != null ? (
-                <p>
-                  {bi("Tiến độ map", "Map progress")}:{" "}
-                  <strong>{ended.currentMapXP}</strong> /{" "}
-                  <strong>{ended.requiredMapXP}</strong> XP
-                </p>
-              ) : null}
-              {ended.replayAttempt ? (
-                <p>
+            {ending && !ended ? (
+              <>
+                <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {bi("Đang chấm điểm", "Grading in progress")}
+                </Badge>
+                <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
+                  {bi("AI đang chấm buổi học của bạn", "AI is grading your lesson")}
+                </h3>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                   {bi(
-                    "Đây là lượt ôn lại nên sẽ không mở khóa tiến độ mới.",
-                    "This was a review attempt, so it does not unlock new progression.",
+                    "Giao diện chấm điểm đã sẵn sàng. Hệ thống đang tổng hợp điểm và nhận xét từ AI, vui lòng đợi trong giây lát.",
+                    "Your grading screen is ready. The system is now collecting the score and AI feedback, so please wait a moment.",
                   )}
                 </p>
-              ) : ended.mapCompleted ? (
-                <p>
-                  {bi("Bạn đã hoàn thành map này.", "You completed this map.")}
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center gap-3 text-slate-600">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm font-semibold">
+                        {bi("Đang tính điểm tổng", "Calculating final score")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center gap-3 text-slate-600">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm font-semibold">
+                        {bi("Đang tạo nhận xét AI", "Generating AI feedback")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : ended ? (
+              <>
+                <Badge
+                  className={`rounded-full px-3 py-1 ${ended.passed ? "bg-emerald-600 text-white" : "bg-slate-900 text-white"}`}
+                >
+                  {ended.passed
+                    ? bi("Đạt", "Passed")
+                    : bi("Xem lại và thử lại", "Review and retry")}
+                </Badge>
+                <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
+                  {ended.passed
+                    ? bi("Buổi học hoàn thành", "Lesson completed")
+                    : bi("Phiên học đã kết thúc", "Lesson session ended")}
+                </h3>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                  {ended.feedback}
                 </p>
-              ) : null}
-            </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild>
-                <Link href={`/learn/${slug}`}>
-                  <ArrowLeft className="h-4 w-4" />
-                  {bi("Về bản đồ", "Back to map")}
-                </Link>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => window.location.reload()}
-              >
-                <RotateCcw className="h-4 w-4" />
-                {bi("Học lại bước này", "Retry this step")}
-              </Button>
-            </div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {ended.score != null && (
+                    <Meter
+                      label={bi("Điểm", "Score")}
+                      value={`${ended.score}`}
+                      progress={ended.score}
+                      tone="dark"
+                    />
+                  )}
+                  <Meter
+                    label={bi("XP đã nhận", "XP earned")}
+                    value={`+${ended.xp}`}
+                    progress={Math.min(100, (ended.xp / 40) * 100)}
+                    tone="emerald"
+                  />
+                </div>
+                <div className="mt-4 space-y-2 text-sm text-slate-600">
+                  {ended.requiredScore != null ? (
+                    <p>
+                      {bi("Điểm cần để pass", "Score needed to pass")}:{" "}
+                      <strong>{ended.requiredScore}</strong>
+                    </p>
+                  ) : null}
+                  {ended.requiredMapXP != null && ended.currentMapXP != null ? (
+                    <p>
+                      {bi("Tiến độ map", "Map progress")}:{" "}
+                      <strong>{ended.currentMapXP}</strong> /{" "}
+                      <strong>{ended.requiredMapXP}</strong> XP
+                    </p>
+                  ) : null}
+                  {ended.replayAttempt ? (
+                    <p>
+                      {bi(
+                        "Đây là lượt ôn lại nên sẽ không mở khóa tiến độ mới.",
+                        "This was a review attempt, so it does not unlock new progression.",
+                      )}
+                    </p>
+                  ) : ended.mapCompleted ? (
+                    <p>
+                      {bi("Bạn đã hoàn thành map này.", "You completed this map.")}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Button asChild>
+                    <Link href={`/learn/${slug}`}>
+                      <ArrowLeft className="h-4 w-4" />
+                      {bi("Về bản đồ", "Back to map")}
+                    </Link>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => window.location.reload()}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {bi("Học lại bước này", "Retry this step")}
+                  </Button>
+                </div>
+              </>
+            ) : null}
           </div>
         ) : (
           <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl">
@@ -1145,6 +1219,14 @@ export function LearnStepClient({ slug, step }: Props) {
                       className="rounded-full border-amber-200 bg-amber-50 px-3 py-1 text-amber-900"
                     >
                       {speechError}
+                    </Badge>
+                  )}
+                  {endError && (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-red-200 bg-red-50 px-3 py-1 text-red-900"
+                    >
+                      {endError}
                     </Badge>
                   )}
                 </div>
@@ -1300,9 +1382,12 @@ export function LearnStepClient({ slug, step }: Props) {
                 type="button"
                 variant="outline"
                 onClick={() => void handleEnd()}
+                disabled={ending}
                 className="rounded-2xl border-slate-200"
               >
-                {bi("Kết thúc và chấm điểm", "Finish and grade")}
+                {ending
+                  ? bi("Đang chấm điểm...", "Grading...")
+                  : bi("Kết thúc và chấm điểm", "Finish and grade")}
               </Button>
             </div>
           </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3 } from "lucide-react";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,16 @@ import {
   loadOnboardingProfileDraft,
 } from "@/lib/onboarding";
 
+const PLACEMENT_TIMER_STORAGE_PREFIX = "onboarding-placement-deadline";
+
+function formatCountdown(totalSeconds: number) {
+  const safeSeconds = Math.max(0, totalSeconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 type PlacementTestCopy = {
   badge: string;
   title: string;
@@ -48,16 +58,20 @@ type PlacementTestCopy = {
   questionLabel: (index: number) => string;
   submitButton: string;
   submitButtonLoading: string;
+  timerLabel: string;
+  timerHint: string;
+  timerExpiredTitle: string;
+  timerExpiredDescription: string;
   noActiveWarningTitle: string;
   noActiveWarningDescription: string;
-  incompleteWarningTitle: string;
-  incompleteWarningDescription: string;
+  incompleteConfirmPrompt: (missingCount: number) => string;
   submitSuccessTitle: string;
   submitSuccessDescription: string;
   submitErrorTitle: string;
   skipSuccessTitle: string;
   skipSuccessDescription: string;
   skipErrorTitle: string;
+  listeningAudioUnavailable: string;
   tryAgain: string;
 };
 
@@ -86,10 +100,15 @@ const PAGE_COPY: Record<AppLang, PlacementTestCopy> = {
     questionLabel: (index) => `Câu ${index + 1}`,
     submitButton: "Hoàn tất bài test",
     submitButtonLoading: "Đang nộp bài...",
+    timerLabel: "Thời gian còn lại",
+    timerHint: "Đồng hồ vẫn giữ nguyên khi bạn reload trang.",
+    timerExpiredTitle: "Hết thời gian làm bài",
+    timerExpiredDescription:
+      "Hệ thống đang tự nộp bài với các đáp án bạn đã chọn.",
     noActiveWarningTitle: "Chưa có bài test active",
     noActiveWarningDescription: "Admin cần kích hoạt một bài test đầu vào.",
-    incompleteWarningTitle: "Bạn chưa hoàn tất bài test",
-    incompleteWarningDescription: "Vui lòng trả lời hết các câu hỏi active.",
+    incompleteConfirmPrompt: (missingCount) =>
+      `Bạn còn ${missingCount} câu chưa trả lời. Bạn có muốn nộp bài ngay bây giờ không?`,
     submitSuccessTitle: "Đã nộp bài placement",
     submitSuccessDescription: "Hệ thống đang đề xuất trình độ phù hợp cho bạn.",
     submitErrorTitle: "Không thể nộp bài placement",
@@ -97,6 +116,7 @@ const PAGE_COPY: Record<AppLang, PlacementTestCopy> = {
     skipSuccessDescription:
       "Bạn sẽ bắt đầu học với level A1 và có thể quay lại làm placement test sau.",
     skipErrorTitle: "Không thể bỏ qua bài test",
+    listeningAudioUnavailable: "Câu nghe này chưa có audio.",
     tryAgain: "Vui lòng thử lại.",
   },
   en: {
@@ -123,11 +143,16 @@ const PAGE_COPY: Record<AppLang, PlacementTestCopy> = {
     questionLabel: (index) => `Question ${index + 1}`,
     submitButton: "Finish the test",
     submitButtonLoading: "Submitting...",
+    timerLabel: "Time remaining",
+    timerHint: "The countdown stays the same even after page reload.",
+    timerExpiredTitle: "Time is up",
+    timerExpiredDescription:
+      "The system is auto-submitting with your selected answers.",
     noActiveWarningTitle: "No active test available",
     noActiveWarningDescription:
       "An admin needs to activate a placement test first.",
-    incompleteWarningTitle: "You have not finished the test",
-    incompleteWarningDescription: "Please answer all active questions.",
+    incompleteConfirmPrompt: (missingCount) =>
+      `You still have ${missingCount} unanswered questions. Submit now anyway?`,
     submitSuccessTitle: "Placement test submitted",
     submitSuccessDescription:
       "The system is recommending the right level for you.",
@@ -136,6 +161,7 @@ const PAGE_COPY: Record<AppLang, PlacementTestCopy> = {
     skipSuccessDescription:
       "You will start at A1 and can come back to take the placement test later.",
     skipErrorTitle: "Could not skip the placement test",
+    listeningAudioUnavailable: "This listening question has no audio yet.",
     tryAgain: "Please try again.",
   },
 };
@@ -152,23 +178,109 @@ export default function PlacementTestPage() {
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deadlineAtMs, setDeadlineAtMs] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const autoSubmitTriggeredRef = useRef(false);
 
   const copy = PAGE_COPY[lang];
   const profile = loadOnboardingProfileDraft();
   const activeQuestions = useMemo(() => test?.questions ?? [], [test]);
+  const timerStorageKey = useMemo(
+    () =>
+      test?.id
+        ? `${PLACEMENT_TIMER_STORAGE_PREFIX}:${test.id}:${user?.id || "anonymous"}`
+        : "",
+    [test?.id, user?.id]
+  );
   const selectedLanguageLabel =
     getOnboardingLanguageOption(profile?.selectedLanguage)?.label[lang] ||
     (lang === "vi" ? "Tiếng Việt" : "Vietnamese");
 
-  const handleSubmit = async () => {
+  const resolvedProfile =
+    profile ?? {
+      selectedLanguage: lang,
+      selectedLevel: "A1",
+      weeklyHours: 0,
+      displayName: user?.fullName || "",
+      jobTitle: "",
+      selectedGoals: [],
+      startedAt: new Date().toISOString(),
+    };
+
+  useEffect(() => {
+    if (!test || !timerStorageKey || typeof window === "undefined") {
+      setDeadlineAtMs(null);
+      setRemainingSeconds(0);
+      return;
+    }
+
+    autoSubmitTriggeredRef.current = false;
+
+    const now = Date.now();
+    const storedDeadline = Number(window.localStorage.getItem(timerStorageKey));
+    const hasValidStoredDeadline =
+      Number.isFinite(storedDeadline) && storedDeadline > 0;
+    const nextDeadlineAtMs = hasValidStoredDeadline
+      ? storedDeadline
+      : now + Math.max(1, Number(test.durationMinutes) || 10) * 60 * 1000;
+
+    if (!hasValidStoredDeadline) {
+      window.localStorage.setItem(timerStorageKey, String(nextDeadlineAtMs));
+    }
+
+    setDeadlineAtMs(nextDeadlineAtMs);
+    setRemainingSeconds(Math.max(0, Math.ceil((nextDeadlineAtMs - now) / 1000)));
+  }, [test?.id, test?.durationMinutes, timerStorageKey]);
+
+  useEffect(() => {
+    if (!deadlineAtMs || typeof window === "undefined") {
+      return;
+    }
+
+    const updateCountdown = () => {
+      setRemainingSeconds(Math.max(0, Math.ceil((deadlineAtMs - Date.now()) / 1000)));
+    };
+
+    updateCountdown();
+    const intervalId = window.setInterval(updateCountdown, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [deadlineAtMs]);
+
+  type SubmitOptions = {
+    allowPartialSubmission?: boolean;
+    autoSubmitted?: boolean;
+    skipIncompleteConfirm?: boolean;
+  };
+
+  const handleSubmit = async (options: SubmitOptions = {}) => {
     if (!test) {
       warning(copy.noActiveWarningTitle, copy.noActiveWarningDescription);
       return;
     }
 
-    if (activeQuestions.some((question) => !Number.isInteger(answers[question.id]))) {
-      warning(copy.incompleteWarningTitle, copy.incompleteWarningDescription);
-      return;
+    const unansweredCount = activeQuestions.reduce(
+      (total, question) =>
+        total + (Number.isInteger(answers[question.id]) ? 0 : 1),
+      0
+    );
+
+    let allowPartialSubmission = Boolean(options.allowPartialSubmission);
+
+    if (unansweredCount > 0 && !allowPartialSubmission) {
+      if (!options.skipIncompleteConfirm) {
+        const confirmed = window.confirm(
+          copy.incompleteConfirmPrompt(unansweredCount)
+        );
+
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      allowPartialSubmission = true;
     }
 
     setIsSubmitting(true);
@@ -177,20 +289,22 @@ export default function PlacementTestPage() {
       const result = await submitPlacementTest({
         testId: test.id,
         answersByQuestionId: answers,
-        profile:
-          profile ?? {
-            selectedLanguage: lang,
-            selectedLevel: "A1",
-            weeklyHours: 0,
-            displayName: user?.fullName || "",
-            jobTitle: "",
-            selectedGoals: [],
-            startedAt: new Date().toISOString(),
-          },
+        profile: resolvedProfile,
+        allowPartial: allowPartialSubmission,
+        autoSubmitted: Boolean(options.autoSubmitted),
       }).unwrap();
+
+      if (timerStorageKey && typeof window !== "undefined") {
+        window.localStorage.removeItem(timerStorageKey);
+      }
+
       success(copy.submitSuccessTitle, copy.submitSuccessDescription);
       router.push(`/onboarding/result?attemptId=${result.attemptId}`);
     } catch (reason) {
+      if (options.autoSubmitted) {
+        autoSubmitTriggeredRef.current = false;
+      }
+
       error(
         copy.submitErrorTitle,
         reason instanceof Error ? reason.message : copy.tryAgain,
@@ -199,6 +313,33 @@ export default function PlacementTestPage() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!test || !deadlineAtMs || remainingSeconds > 0) {
+      return;
+    }
+
+    if (isSubmitting || isSubmittingPlacement || autoSubmitTriggeredRef.current) {
+      return;
+    }
+
+    autoSubmitTriggeredRef.current = true;
+    warning(copy.timerExpiredTitle, copy.timerExpiredDescription);
+
+    void handleSubmit({
+      allowPartialSubmission: true,
+      autoSubmitted: true,
+      skipIncompleteConfirm: true,
+    });
+  }, [
+    copy.timerExpiredDescription,
+    copy.timerExpiredTitle,
+    deadlineAtMs,
+    isSubmitting,
+    isSubmittingPlacement,
+    remainingSeconds,
+    test,
+  ]);
 
   const skipPlacementTest = async () => {
     if (!user) {
@@ -209,17 +350,13 @@ export default function PlacementTestPage() {
 
     try {
       await skipPlacementTestMutation({
-        profile:
-          profile ?? {
-            selectedLanguage: lang,
-            selectedLevel: "A1",
-            weeklyHours: 0,
-            displayName: user.fullName || "",
-            jobTitle: "",
-            selectedGoals: [],
-            startedAt: new Date().toISOString(),
-          },
+        profile: resolvedProfile,
       }).unwrap();
+
+      if (timerStorageKey && typeof window !== "undefined") {
+        window.localStorage.removeItem(timerStorageKey);
+      }
+
       clearOnboardingProfileDraft();
       success(copy.skipSuccessTitle, copy.skipSuccessDescription);
       router.replace("/exercises");
@@ -236,6 +373,27 @@ export default function PlacementTestPage() {
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-sky-50/30 px-4 py-10">
+        {test ? (
+          <div className="fixed right-4 top-4 z-40">
+            <div
+              className={`rounded-2xl border bg-white/95 px-4 py-3 shadow-lg backdrop-blur ${
+                remainingSeconds <= 60
+                  ? "border-rose-300 text-rose-700"
+                  : "border-slate-200 text-slate-700"
+              }`}
+            >
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+                <Clock3 className="h-3.5 w-3.5" />
+                {copy.timerLabel}
+              </p>
+              <p className="mt-1 text-lg font-bold">{formatCountdown(remainingSeconds)}</p>
+              <p className="mt-1 max-w-[220px] text-[11px] leading-4 text-slate-500">
+                {copy.timerHint}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="mx-auto w-full max-w-5xl space-y-6">
           <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -331,27 +489,53 @@ export default function PlacementTestPage() {
                         key={question.id}
                         className="rounded-3xl border border-slate-200 bg-slate-50/60 p-5"
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-slate-900">
-                            {copy.questionLabel(index)}
-                          </p>
-                          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
-                            {question.skillType} • {question.targetLevel}
-                          </span>
-                        </div>
-                        <p className="mt-3 text-base font-semibold text-slate-950">
-                          {question.prompt}
-                        </p>
-                        {question.instruction ? (
-                          <p className="mt-2 text-sm text-slate-500">
-                            {question.instruction}
-                          </p>
-                        ) : null}
-                        {question.passage ? (
-                          <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-600">
-                            {question.passage}
+                        {question.skillType === "listening" ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {copy.questionLabel(index)}
+                              </p>
+                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
+                                {question.skillType} • {question.targetLevel}
+                              </span>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                              {question.audioUrl ? (
+                                <audio controls preload="auto" className="w-full">
+                                  <source src={question.audioUrl} type="audio/mpeg" />
+                                </audio>
+                              ) : (
+                                <p className="text-sm text-rose-600">
+                                  {copy.listeningAudioUnavailable}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        ) : null}
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {copy.questionLabel(index)}
+                              </p>
+                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
+                                {question.skillType} • {question.targetLevel}
+                              </span>
+                            </div>
+                            <p className="mt-3 text-base font-semibold text-slate-950">
+                              {question.prompt}
+                            </p>
+                            {question.instruction ? (
+                              <p className="mt-2 text-sm text-slate-500">
+                                {question.instruction}
+                              </p>
+                            ) : null}
+                            {question.passage ? (
+                              <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-600">
+                                {question.passage}
+                              </div>
+                            ) : null}
+                          </>
+                        )}
 
                         <div className="mt-4 grid gap-3">
                           {question.options.map((option, optionIndex) => {
@@ -382,7 +566,7 @@ export default function PlacementTestPage() {
                     ))}
 
                     <Button
-                      onClick={handleSubmit}
+                      onClick={() => void handleSubmit()}
                       disabled={isSubmitting || isSubmittingPlacement}
                       className="h-11 w-full text-sm font-semibold"
                     >

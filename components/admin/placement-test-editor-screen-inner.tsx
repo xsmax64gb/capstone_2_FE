@@ -25,6 +25,11 @@ import {
   formatNumber,
   notify,
 } from "@/lib/admin";
+import {
+  clearPlacementAiDraft,
+  loadPlacementAiDraft,
+} from "@/lib/placement-ai-draft";
+import { handleApiError } from "@/lib/api-error-handler";
 import { CEFR_LEVELS, calculatePlacementMaxScore } from "@/lib/placement";
 import type {
   AdminPlacementLevelRuleItem,
@@ -35,6 +40,7 @@ import type {
 
 type Props = {
   testId?: string;
+  source?: string;
 };
 
 type PlacementTestDraft = AdminPlacementTestItem;
@@ -182,11 +188,13 @@ function validatePlacementTestDraft(draft: PlacementTestDraft) {
   };
 }
 
-export function PlacementTestEditorScreenInner({ testId }: Props) {
+export function PlacementTestEditorScreenInner({ testId, source }: Props) {
   const router = useRouter();
   const [draft, setDraft] = useState<PlacementTestDraft | null>(
-    testId ? null : createEmptyPlacementTest()
+    testId ? null : null
   );
+  const [isInitializingDraft, setIsInitializingDraft] = useState(!testId);
+  const [draftSource, setDraftSource] = useState<"manual" | "ai">("manual");
   const { data, isLoading, error } = useGetAdminPlacementTestByIdQuery(testId as string, {
     skip: !testId,
   });
@@ -200,6 +208,43 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
       setDraft(data);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (testId) {
+      return;
+    }
+
+    if (source === "ai") {
+      const aiDraft = loadPlacementAiDraft();
+
+      if (aiDraft) {
+        setDraft(aiDraft);
+        setDraftSource("ai");
+      } else {
+        setDraft(createEmptyPlacementTest());
+        setDraftSource("manual");
+        notify({
+          title: "Không tìm thấy AI draft",
+          message: "Draft AI đã hết hoặc chưa được tạo. Hệ thống mở form thủ công.",
+          type: "warning",
+        });
+      }
+
+      setIsInitializingDraft(false);
+      return;
+    }
+
+    clearPlacementAiDraft();
+    setDraft(createEmptyPlacementTest());
+    setDraftSource("manual");
+    setIsInitializingDraft(false);
+  }, [source, testId]);
+
+  useEffect(() => {
+    if (testId) {
+      clearPlacementAiDraft();
+    }
+  }, [testId]);
 
   const activeQuestionCount = useMemo(
     () => draft?.questions.filter((question) => question.isActive).length ?? 0,
@@ -259,6 +304,10 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
         await createPlacementTest(payload).unwrap();
       }
 
+      if (!testId) {
+        clearPlacementAiDraft();
+      }
+
       notify({
         title: testId ? "Đã cập nhật placement test" : "Đã tạo placement test",
         message: nextDraft.isActive
@@ -268,15 +317,16 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
       });
       router.push("/admin/placement-tests");
     } catch (error) {
+      const apiError = handleApiError(error);
       notify({
         title: "Không thể lưu placement test",
-        message: error instanceof Error ? error.message : "Kiểm tra lại dữ liệu nhập.",
+        message: apiError.message,
         type: "error",
       });
     }
   };
 
-  if (testId && isLoading && !draft) {
+  if ((testId && isLoading && !draft) || (!testId && isInitializingDraft)) {
     return <AdminPageLoading />;
   }
 
@@ -311,6 +361,15 @@ export function PlacementTestEditorScreenInner({ testId }: Props) {
           </Button>
         </div>
       </section>
+
+      {!testId && draftSource === "ai" ? (
+        <Card className="border-sky-200 bg-sky-50 py-4 shadow-none">
+          <CardContent className="pt-0 text-sm text-sky-900">
+            Draft này được AI tạo từ form yêu cầu. Hãy rà soát lại title, question
+            bank, scoring rules và mức độ phù hợp trước khi xác nhận tạo bài test.
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="border-slate-200 py-5">
         <CardContent className="space-y-6 pt-6">

@@ -2,6 +2,7 @@ import { baseApi } from "./baseApi";
 import { setUser } from "@/lib/slices/authSlice";
 import type {
   AdminPlacementTestItem,
+  AdminGeneratePlacementWithAiPayload,
   AdminPlacementTestPayload,
   AdminPlacementTestsResponse,
   ApiResponse,
@@ -72,6 +73,19 @@ export const placementApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["AdminPlacementTests", "AdminOverview", "PlacementActiveTest"],
+      transformResponse: (response: ApiResponse<AdminPlacementTestItem>) =>
+        response.data as AdminPlacementTestItem,
+    }),
+
+    generateAdminPlacementTestWithAi: builder.mutation<
+      AdminPlacementTestItem,
+      AdminGeneratePlacementWithAiPayload
+    >({
+      query: (body) => ({
+        url: "/admin/placement-tests/generate-ai",
+        method: "POST",
+        body,
+      }),
       transformResponse: (response: ApiResponse<AdminPlacementTestItem>) =>
         response.data as AdminPlacementTestItem,
     }),
@@ -195,6 +209,7 @@ export const {
   useConfirmPlacementResultMutation,
   useCreateAdminPlacementTestMutation,
   useDeleteAdminPlacementTestMutation,
+  useGenerateAdminPlacementTestWithAiMutation,
   useGetActivePlacementTestQuery,
   useGetAdminPlacementTestByIdQuery,
   useGetAdminPlacementTestsQuery,

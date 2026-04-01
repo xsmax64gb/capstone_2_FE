@@ -28,7 +28,7 @@ const baseQueryWithAuthGuard: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   const result = await rawBaseQuery(args, api, extraOptions);
   const status = result.error?.status;
-  const isAuthError = status === 401 || status === 403;
+  const isAuthError = status === 401;
 
   if (isAuthError && typeof window !== "undefined" && !isHandlingAuthError) {
     isHandlingAuthError = true;

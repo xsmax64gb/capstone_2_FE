@@ -1,0 +1,39 @@
+
+> my-project@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.56.1:3000
+
+✓ Starting...
+✓ Ready in 895ms
+ GET /admin/learn/maps 200 in 1041ms (compile: 826ms, render: 215ms)
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 1329ms (compile: 1165ms, render: 163ms)
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 1308ms (compile: 1144ms, render: 164ms)
+ GET /admin/learn/maps/69c79b690ba5a39eac7e8675 200 in 363ms (compile: 331ms, render: 32ms)
+ GET /admin/learn/maps/69c79b690ba5a39eac7e8675/steps/69c79b740ba5a39eac7e867c 200 in 1137ms (compile: 1109ms, render: 28ms)
+ GET /admin/learn/maps 200 in 23ms (compile: 4ms, render: 19ms)
+ GET /admin/learn/achievements 200 in 56ms (compile: 38ms, render: 17ms)
+ GET /admin/learn/maps/69c79b690ba5a39eac7e8675 200 in 34ms (compile: 9ms, render: 25ms)
+✓ Compiled in 211ms
+✓ Compiled in 131ms
+✓ Compiled in 141ms
+✓ Compiled in 113ms
+✓ Compiled in 114ms
+✓ Compiled in 86ms
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 286ms (compile: 77ms, render: 208ms)
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 93ms (compile: 14ms, render: 79ms)
+✓ Compiled in 177ms
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 240ms (compile: 62ms, render: 178ms)
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 74ms (compile: 11ms, render: 63ms)
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 64ms (compile: 8ms, render: 56ms)
+ GET /learn/aa 200 in 382ms (compile: 360ms, render: 22ms)
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 27ms (compile: 8ms, render: 20ms)
+✓ Compiled in 111ms
+✓ Compiled in 216ms
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 273ms (compile: 56ms, render: 216ms)
+ GET /learn 200 in 59ms (compile: 41ms, render: 18ms)
+ GET /learn/%C3%A1d 200 in 84ms (compile: 56ms, render: 28ms)
+ GET /learn/aa 200 in 29ms (compile: 9ms, render: 20ms)
+ GET /learn/aa/step/69c79b740ba5a39eac7e867c 200 in 25ms (compile: 8ms, render: 17ms)

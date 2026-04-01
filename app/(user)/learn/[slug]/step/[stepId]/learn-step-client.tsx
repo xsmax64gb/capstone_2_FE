@@ -26,9 +26,11 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import type { LearnBossBattleState, LearnMessage, LearnStep } from '@/lib/api/learnApi'
 import { handleApiError } from '@/lib/api-error-handler'
+import { useI18n } from '@/lib/i18n/context'
 import {
+  useEvaluateLearnMessageMutation,
   useEndLearnConversationMutation,
-  useSendLearnMessageMutation,
+  useSendLearnMessageQuickMutation,
   useStartLearnConversationMutation,
 } from '@/lib/api/learnApi'
 
@@ -40,6 +42,11 @@ type Props = {
 type VoiceCapabilities = {
   recognition: boolean
   synthesis: boolean
+}
+
+type StepChatMessage = LearnMessage & {
+  pendingEvaluation?: boolean
+  pendingRequestId?: string
 }
 
 type SpeechRecognitionAlternativeLike = { transcript: string }
@@ -73,83 +80,81 @@ function getRecognitionConstructor() {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition
 }
 
-function bi(vi: string, en: string) {
-  return `${vi} / ${en}`
-}
+type PairTextPicker = (vi: string, en: string) => string
 
-function translateSpeechError(error?: string) {
+function translateSpeechError(error: string | undefined, pick: PairTextPicker) {
   switch (error) {
     case 'not-allowed':
     case 'service-not-allowed':
-      return bi('Trình duyệt đang chặn micro. Hãy cấp quyền microphone rồi thử lại.', 'The browser is blocking the microphone. Please allow microphone access and try again.')
+      return pick('Trình duyệt đang chặn micro. Hãy cấp quyền microphone rồi thử lại.', 'The browser is blocking the microphone. Please allow microphone access and try again.')
     case 'audio-capture':
-      return bi('Không tìm thấy microphone khả dụng trên thiết bị này.', 'No working microphone was found on this device.')
+      return pick('Không tìm thấy microphone khả dụng trên thiết bị này.', 'No working microphone was found on this device.')
     case 'network':
-      return bi('Nhận diện giọng nói cần mạng ổn định. Hãy thử lại.', 'Speech recognition needs a stable network connection. Please try again.')
+      return pick('Nhận diện giọng nói cần mạng ổn định. Hãy thử lại.', 'Speech recognition needs a stable network connection. Please try again.')
     case 'no-speech':
-      return bi('Không nghe thấy giọng nói. Nói gần micro hơn một chút.', 'No speech was detected. Please speak a bit closer to the microphone.')
+      return pick('Không nghe thấy giọng nói. Nói gần micro hơn một chút.', 'No speech was detected. Please speak a bit closer to the microphone.')
     default:
-      return bi('Không thể bật voice input lúc này.', 'Voice input cannot be started right now.')
+      return pick('Không thể bật voice input lúc này.', 'Voice input cannot be started right now.')
   }
 }
 
-function getTeacherName(step: LearnStep, boss: LearnBossBattleState | null) {
+function getTeacherName(step: LearnStep, boss: LearnBossBattleState | null, pick: PairTextPicker) {
   if (boss?.bossName) return boss.bossName
   if (step.aiPersona?.trim()) return step.aiPersona.trim()
-  return step.type === 'boss' ? bi('Giáo viên boss', 'Boss Teacher') : bi('Giáo viên AI', 'AI Teacher')
+  return step.type === 'boss' ? pick('Giáo viên boss', 'Boss Teacher') : pick('Giáo viên AI', 'AI Teacher')
 }
 
-function getLatestAiMessage(messages: LearnMessage[]) {
+function getLatestAiMessage(messages: StepChatMessage[]) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     if (messages[index].role === 'ai') return messages[index]
   }
   return null
 }
 
-function getStartConversationErrorMessage(error: unknown) {
+function getStartConversationErrorMessage(error: unknown, pick: PairTextPicker) {
   const apiError = handleApiError(error)
 
   if (apiError.message === 'Complete earlier steps first') {
-    return bi('Bạn cần hoàn thành bước hiện tại trước khi mở bước này.', 'You need to finish your current step before opening this one.')
+    return pick('Bạn cần hoàn thành bước hiện tại trước khi mở bước này.', 'You need to finish your current step before opening this one.')
   }
 
   if (apiError.message === 'Finish or abandon current attempt first') {
-    return bi('Bạn đang có một phiên học chưa kết thúc ở bước này.', 'You still have an unfinished lesson session on this step.')
+    return pick('Bạn đang có một phiên học chưa kết thúc ở bước này.', 'You still have an unfinished lesson session on this step.')
   }
 
   if (apiError.message === 'Map not available') {
-    return bi('Bản đồ này hiện chưa khả dụng.', 'This map is not available right now.')
+    return pick('Bản đồ này hiện chưa khả dụng.', 'This map is not available right now.')
   }
 
   if (apiError.message === 'Map locked') {
-    return bi('Bản đồ này đang bị khóa.', 'This map is currently locked.')
+    return pick('Bản đồ này đang bị khóa.', 'This map is currently locked.')
   }
 
   if (apiError.message === 'Step not found') {
-    return bi('Không tìm thấy bước học.', 'The lesson step could not be found.')
+    return pick('Không tìm thấy bước học.', 'The lesson step could not be found.')
   }
 
   if (apiError.status === 401) {
-    return bi('Bạn cần đăng nhập lại để tiếp tục.', 'You need to sign in again to continue.')
+    return pick('Bạn cần đăng nhập lại để tiếp tục.', 'You need to sign in again to continue.')
   }
 
   if (apiError.status === 403) {
-    return bi('Bạn chưa thể truy cập bước học này.', 'You cannot access this lesson step yet.')
+    return pick('Bạn chưa thể truy cập bước học này.', 'You cannot access this lesson step yet.')
   }
 
   if (apiError.status === 404) {
-    return bi('Không tìm thấy dữ liệu phiên học.', 'The lesson session data could not be found.')
+    return pick('Không tìm thấy dữ liệu phiên học.', 'The lesson session data could not be found.')
   }
 
   if (apiError.status === 409) {
-    return bi('Phiên học hiện đang xung đột trạng thái.', 'The lesson session is currently in a conflicting state.')
+    return pick('Phiên học hiện đang xung đột trạng thái.', 'The lesson session is currently in a conflicting state.')
   }
 
   if (apiError.status >= 500 || apiError.status === 0) {
-    return bi('Máy chủ đang lỗi hoặc không thể kết nối.', 'The server has an issue or cannot be reached.')
+    return pick('Máy chủ đang lỗi hoặc không thể kết nối.', 'The server has an issue or cannot be reached.')
   }
 
-  return bi('Không thể bắt đầu phiên học.', 'Unable to start the lesson session.')
+  return pick('Không thể bắt đầu phiên học.', 'Unable to start the lesson session.')
 }
 
 function Meter({
@@ -187,14 +192,26 @@ function Meter({
 }
 
 export function LearnStepClient({ slug, step }: Props) {
+  const { lang } = useI18n()
   const [conversationId, setConversationId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<LearnMessage[]>([])
+  const [messages, setMessages] = useState<StepChatMessage[]>([])
   const [input, setInput] = useState('')
   const [boss, setBoss] = useState<LearnBossBattleState | null>(null)
   const [sending, setSending] = useState(false)
   const [starting, setStarting] = useState(true)
   const [startError, setStartError] = useState<string | null>(null)
-  const [ended, setEnded] = useState<{ passed: boolean; feedback: string; score: number | null; xp: number } | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [ended, setEnded] = useState<{
+    passed: boolean
+    feedback: string
+    score: number | null
+    xp: number
+    requiredScore?: number
+    mapCompleted?: boolean
+    currentMapXP?: number
+    requiredMapXP?: number
+    replayAttempt?: boolean
+  } | null>(null)
   const [voice, setVoice] = useState<VoiceCapabilities>({ recognition: false, synthesis: false })
   const [isListening, setIsListening] = useState(false)
   const [interimTranscript, setInterimTranscript] = useState('')
@@ -207,15 +224,18 @@ export function LearnStepClient({ slug, step }: Props) {
   const lastSpokenMessageIdRef = useRef<string | null>(null)
 
   const [startConversation] = useStartLearnConversationMutation()
-  const [sendMessage] = useSendLearnMessageMutation()
+  const [sendQuickMessage] = useSendLearnMessageQuickMutation()
+  const [evaluateMessage] = useEvaluateLearnMessageMutation()
   const [endConversation] = useEndLearnConversationMutation()
 
-  const teacherName = getTeacherName(step, boss)
+  const bi = (vi: string, en: string) => (lang === 'vi' ? vi : en)
+  const teacherName = getTeacherName(step, boss, bi)
   const latestAiMessage = getLatestAiMessage(messages)
   const focusItems = [
     step.scenarioTitle,
     ...(step.passCriteria ?? []).slice(0, 2),
     ...(step.vocabularyFocus ?? []).slice(0, 2),
+    ...(step.grammarFocus ?? []).slice(0, 1),
   ].filter(Boolean) as string[]
   const learnerTurns = messages.filter((message) => message.role === 'user').length
   const minTurns = step.minTurns ?? (step.type === 'boss' ? 4 : 3)
@@ -301,7 +321,7 @@ export function LearnStepClient({ slug, step }: Props) {
       setInterimTranscript(interimText.trim())
     }
     recognition.onerror = (event) => {
-      if (event.error !== 'aborted') setSpeechError(translateSpeechError(event.error))
+      if (event.error !== 'aborted') setSpeechError(translateSpeechError(event.error, bi))
       setIsListening(false)
     }
     recognition.onend = () => {
@@ -315,24 +335,104 @@ export function LearnStepClient({ slug, step }: Props) {
     }
   }
 
+  const evaluateMessageInBackground = async (
+    currentConversationId: string,
+    targetMessageId: string,
+  ) => {
+    try {
+      const response = await evaluateMessage({
+        conversationId: currentConversationId,
+        messageId: targetMessageId,
+      }).unwrap()
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === targetMessageId
+            ? {
+                ...message,
+                ...response.userMessage,
+                pendingEvaluation: false,
+                pendingRequestId: undefined,
+              }
+            : message,
+        ),
+      )
+
+      if (response.bossBattle) {
+        setBoss((current) => ({
+          ...response.bossBattle,
+          tasks: response.bossBattle.tasks ?? current?.tasks ?? [],
+        }))
+      }
+    } catch {
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === targetMessageId
+            ? {
+                ...message,
+                pendingEvaluation: false,
+                pendingRequestId: undefined,
+              }
+            : message,
+        ),
+      )
+    }
+  }
+
   const handleSend = async () => {
     const text = [input.trim(), interimTranscript.trim()].filter(Boolean).join(' ').trim()
     if (!text || !conversationId || sending || ended) return
 
+    const pendingRequestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const optimisticUserMessage: StepChatMessage = {
+      id: `tmp-user-${pendingRequestId}`,
+      role: 'user',
+      content: text,
+      timestamp: new Date().toISOString(),
+      pendingEvaluation: true,
+      pendingRequestId,
+    }
+
     setSending(true)
+    setSendError(null)
     stopListening('abort')
     setInput('')
     setInterimTranscript('')
+    setMessages((current) => [...current, optimisticUserMessage])
 
     try {
-      const response = await sendMessage({ conversationId, content: text }).unwrap()
-      setMessages(response.messages)
-      if (response.bossBattle) {
-        setBoss({
-          ...response.bossBattle,
-          tasks: response.bossBattle.tasks ?? boss?.tasks ?? [],
+      const response = await sendQuickMessage({ conversationId, content: text }).unwrap()
+      setMessages((current) => {
+        const nextMessages = current.filter(
+          (message) => message.pendingRequestId !== pendingRequestId,
+        )
+
+        nextMessages.push({
+          ...response.userMessage,
+          pendingEvaluation: true,
         })
+
+        if (response.assistantMessage) {
+          nextMessages.push(response.assistantMessage)
+        }
+
+        return nextMessages
+      })
+
+      if (response.userMessage?.id) {
+        void evaluateMessageInBackground(conversationId, response.userMessage.id)
       }
+    } catch (error) {
+      const apiError = handleApiError(error)
+      setMessages((current) =>
+        current.filter((message) => message.pendingRequestId !== pendingRequestId),
+      )
+      setInput(text)
+      setSendError(
+        apiError.status === 401
+          ? bi('Bạn cần đăng nhập lại để tiếp tục gửi câu trả lời.', 'Please sign in again before sending your answer.')
+          : bi('Không thể gửi câu trả lời lúc này. Hãy thử lại.', 'Unable to send your answer right now. Please try again.'),
+      )
     } finally {
       setSending(false)
     }
@@ -350,6 +450,11 @@ export function LearnStepClient({ slug, step }: Props) {
         feedback: response.conversation.aiFeedback,
         score: response.conversation.score,
         xp: response.conversation.xpEarned,
+        requiredScore: response.requiredScore,
+        mapCompleted: response.mapCompleted,
+        currentMapXP: response.currentMapXP,
+        requiredMapXP: response.requiredMapXP,
+        replayAttempt: response.replayAttempt,
       })
     } catch {
       /* ignore */
@@ -375,6 +480,7 @@ export function LearnStepClient({ slug, step }: Props) {
     setInput('')
     setBoss(null)
     setStartError(null)
+    setSendError(null)
     setEnded(null)
     setSpeechError(null)
     setInterimTranscript('')
@@ -395,7 +501,7 @@ export function LearnStepClient({ slug, step }: Props) {
         )
       } catch (error) {
         if (!cancelled) {
-          setStartError(getStartConversationErrorMessage(error))
+          setStartError(getStartConversationErrorMessage(error, bi))
           setStarting(false)
         }
         return
@@ -504,14 +610,35 @@ export function LearnStepClient({ slug, step }: Props) {
             {step.openingMessage?.trim() || step.scenarioContext?.trim() || bi('Hãy bắt đầu bằng cách trả lời tự nhiên bằng tiếng Anh.', 'Start by answering naturally in English.')}
           </p>
           {focusItems.length ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {focusItems.map((item, index) => (
-                <Badge key={`${item}-${index}`} variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
-                  {item}
-                </Badge>
-              ))}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {focusItems.map((item, index) => (
+              <Badge key={`${item}-${index}`} variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
+                {item}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+          <div className="mt-4 grid gap-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <p className="font-semibold text-slate-900">{bi('Độ khó chấm', 'Grading difficulty')}</p>
+              <p className="mt-1">
+                {(step.gradingDifficulty || 'medium').toUpperCase()} · {bi('Điểm pass', 'Pass score')}{' '}
+                {step.minimumPassScore ?? bi('tự động', 'auto')}
+              </p>
             </div>
-          ) : null}
+            {step.grammarFocus?.length ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p className="font-semibold text-slate-900">{bi('Ngữ pháp cần tập trung', 'Grammar focus')}</p>
+                <p className="mt-1">{step.grammarFocus.join(', ')}</p>
+              </div>
+            ) : null}
+            {step.scenarioScript?.trim() ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p className="font-semibold text-slate-900">{bi('Kịch bản', 'Scenario script')}</p>
+                <p className="mt-1 whitespace-pre-wrap leading-6">{step.scenarioScript}</p>
+              </div>
+            ) : null}
+          </div>
         </section>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
@@ -601,7 +728,12 @@ export function LearnStepClient({ slug, step }: Props) {
                           <Volume2 className="h-4 w-4" />
                         </button>
                       )}
-                      {message.evaluationScore != null && (
+                      {message.pendingEvaluation ? (
+                        <span className={`inline-flex items-center gap-1 text-xs font-semibold ${isAi ? 'text-slate-400' : 'text-slate-200'}`}>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          {bi('Đang chấm...', 'Scoring...')}
+                        </span>
+                      ) : message.evaluationScore != null && (
                         <span className={`text-xs font-semibold ${isAi ? 'text-slate-400' : 'text-slate-200'}`}>
                           {bi('Điểm', 'Score')} {message.evaluationScore}
                         </span>
@@ -624,8 +756,18 @@ export function LearnStepClient({ slug, step }: Props) {
                     ) : null}
 
                     {!isAi && message.suggestion && (
-                      <div className="mt-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs text-slate-100">
-                        <p className="font-semibold">{bi('Bản tốt hơn', 'Better version')}</p>
+                      <div
+                        className={`mt-3 rounded-2xl border px-3 py-2 text-xs ${
+                          message.grammarErrors?.length
+                            ? 'border-white/10 bg-white/10 text-slate-100'
+                            : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'
+                        }`}
+                      >
+                        <p className="font-semibold">
+                          {message.grammarErrors?.length
+                            ? bi('Bản tốt hơn', 'Better version')
+                            : bi('Khen ngợi', 'Praise')}
+                        </p>
                         <p className="mt-1 leading-5">{message.suggestion}</p>
                       </div>
                     )}
@@ -662,6 +804,24 @@ export function LearnStepClient({ slug, step }: Props) {
               {ended.score != null && <Meter label={bi('Điểm', 'Score')} value={`${ended.score}`} progress={ended.score} tone="dark" />}
               <Meter label={bi('XP đã nhận', 'XP earned')} value={`+${ended.xp}`} progress={Math.min(100, (ended.xp / 40) * 100)} tone="emerald" />
             </div>
+            <div className="mt-4 space-y-2 text-sm text-slate-600">
+              {ended.requiredScore != null ? (
+                <p>
+                  {bi('Điểm cần để pass', 'Score needed to pass')}: <strong>{ended.requiredScore}</strong>
+                </p>
+              ) : null}
+              {ended.requiredMapXP != null && ended.currentMapXP != null ? (
+                <p>
+                  {bi('Tiến độ map', 'Map progress')}: <strong>{ended.currentMapXP}</strong> /{' '}
+                  <strong>{ended.requiredMapXP}</strong> XP
+                </p>
+              ) : null}
+              {ended.replayAttempt ? (
+                <p>{bi('Đây là lượt ôn lại nên sẽ không mở khóa tiến độ mới.', 'This was a review attempt, so it does not unlock new progression.')}</p>
+              ) : ended.mapCompleted ? (
+                <p>{bi('Bạn đã hoàn thành map này.', 'You completed this map.')}</p>
+              ) : null}
+            </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild>
@@ -685,6 +845,11 @@ export function LearnStepClient({ slug, step }: Props) {
                     <Brain className="h-3.5 w-3.5" />
                     {bi('Bản nháp câu trả lời', 'Draft answer')}
                   </Badge>
+                  {sendError && (
+                    <Badge variant="outline" className="rounded-full border-red-200 bg-red-50 px-3 py-1 text-red-900">
+                      {sendError}
+                    </Badge>
+                  )}
                   {speechError && (
                     <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 px-3 py-1 text-amber-900">
                       {speechError}

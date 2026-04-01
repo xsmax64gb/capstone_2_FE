@@ -320,6 +320,7 @@ export interface AdminPlacementQuestionItem {
   prompt: string;
   instruction: string;
   passage: string;
+  audioUrl?: string;
   type: PlacementQuestionType;
   options: string[];
   correctOptionIndex: number;
@@ -367,11 +368,27 @@ export interface AdminPlacementTestPayload {
   levelRules: AdminPlacementLevelRuleItem[];
 }
 
+export interface AdminGeneratePlacementWithAiPayload {
+  title: string;
+  context: string;
+  levelFrom: CefrLevel;
+  levelTo: CefrLevel;
+  listeningQuestions: number;
+  readingQuestions: number;
+  grammarQuestions: number;
+  vocabQuestions: number;
+  durationMinutes: number;
+  description?: string;
+  instructions?: string;
+  isActive: boolean;
+}
+
 export interface PlacementQuestionItem {
   id: string;
   prompt: string;
   instruction: string;
   passage: string;
+  audioUrl?: string;
   type: PlacementQuestionType;
   options: string[];
   skillType: PlacementSkillType;
@@ -428,6 +445,8 @@ export interface PlacementSubmitPayload {
   testId: string;
   answersByQuestionId: Record<string, number>;
   profile: OnboardingProfileDraft;
+  allowPartial?: boolean;
+  autoSubmitted?: boolean;
 }
 
 export interface PlacementConfirmPayload {

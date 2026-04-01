@@ -4,8 +4,9 @@ import { PlacementTestEditorScreenInner } from "./placement-test-editor-screen-i
 
 type Props = {
   testId?: string;
+  source?: string;
 };
 
-export function PlacementTestEditorScreen({ testId }: Props) {
-  return <PlacementTestEditorScreenInner testId={testId} />;
+export function PlacementTestEditorScreen({ testId, source }: Props) {
+  return <PlacementTestEditorScreenInner testId={testId} source={source} />;
 }

@@ -45,7 +45,11 @@ function MapStageNode({
   const floatClass = isCurrent && emphasizeFloat ? 'animate-float' : ''
 
   const xpDisplay =
-    map.totalXP > 0 ? map.totalXP : Math.max(10, map.bossXPReward || 0) + 15
+    map.requiredXPToComplete > 0
+      ? map.requiredXPToComplete
+      : map.totalXP > 0
+        ? map.totalXP
+        : Math.max(10, map.bossXPReward || 0) + 15
 
   const subtitle =
     map.theme ||
@@ -79,6 +83,7 @@ function MapStageNode({
       </div>
 
       <h3 className="mt-3 text-center text-base font-bold tracking-tight text-slate-900">{map.title}</h3>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Level {map.level}</p>
       <p className="mt-1 line-clamp-2 min-h-9 text-center text-xs text-slate-500">{subtitle}</p>
       <p
         className={`mt-1 text-[11px] font-bold ${
@@ -88,6 +93,11 @@ function MapStageNode({
         {stageBadge(visual)}
       </p>
       <p className="text-[10px] font-semibold text-slate-400">~{xpDisplay} XP</p>
+      {map.progress ? (
+        <p className="mt-1 text-[10px] text-slate-400">
+          {Math.min(map.progress.totalXPEarned || 0, xpDisplay)} / {xpDisplay} XP
+        </p>
+      ) : null}
 
       <div className="mt-3">
         {isLocked ? (

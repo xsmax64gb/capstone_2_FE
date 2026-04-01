@@ -5,14 +5,17 @@ import { useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { useGetLearnMapBySlugQuery } from '@/lib/api/learnApi'
+import { useI18n } from '@/lib/i18n/context'
 import { LearnStepClient } from './learn-step-client'
 
 export default function LearnStepPage() {
+  const { lang } = useI18n()
   const params = useParams()
   const slug = typeof params.slug === 'string' ? params.slug : ''
   const stepId = typeof params.stepId === 'string' ? params.stepId : ''
   const { data, isLoading } = useGetLearnMapBySlugQuery(slug, { skip: !slug })
   const step = data?.steps?.find((s) => s.id === stepId)
+  const bi = (vi: string, en: string) => (lang === 'vi' ? vi : en)
 
   return (
     <ProtectedRoute>
@@ -23,12 +26,14 @@ export default function LearnStepPage() {
             className="mb-5 inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại bản đồ / Back to map
+            {bi('Quay lại bản đồ', 'Back to map')}
           </Link>
 
-          {isLoading && <p className="text-sm text-slate-500">Đang tải… / Loading…</p>}
+          {isLoading && <p className="text-sm text-slate-500">{bi('Đang tải…', 'Loading…')}</p>}
           {!isLoading && !step && (
-            <p className="text-sm text-red-600">Không tìm thấy bước trong bản đồ này. / This step was not found in the map.</p>
+            <p className="text-sm text-red-600">
+              {bi('Không tìm thấy bước trong bản đồ này.', 'This step was not found in the map.')}
+            </p>
           )}
           {step && <LearnStepClient slug={slug} step={step} />}
         </div>

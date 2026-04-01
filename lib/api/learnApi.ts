@@ -22,10 +22,12 @@ export interface LearnMapItem {
   description: string;
   coverImageUrl: string;
   theme: string;
+  level: number;
   order: number;
   prerequisiteMapId: string | null;
   unlocksMapId: string | null;
   totalXP: number;
+  requiredXPToComplete: number;
   bossXPReward: number;
   isPublished: boolean;
   progress?: LearnMapProgress | null;
@@ -37,6 +39,52 @@ export interface LearnBossTask {
   completed?: boolean;
 }
 
+export interface AdminLearnMapAiDraft {
+  title: string;
+  slug: string;
+  description: string;
+  theme: string;
+  level: number;
+  order: number;
+  requiredXPToComplete: number;
+  bossXPReward: number;
+  isPublished: boolean;
+}
+
+export interface AdminGenerateLearnMapWithAiPayload {
+  brief: string;
+  level: number;
+  theme?: string;
+  isPublished: boolean;
+}
+
+export interface AdminLearnStepAiDraft {
+  title: string;
+  type: "lesson" | "boss";
+  order: number;
+  scenarioTitle: string;
+  scenarioContext: string;
+  scenarioScript: string;
+  aiPersona: string;
+  aiSystemPrompt: string;
+  openingMessage: string;
+  minTurns: number;
+  xpReward: number;
+  gradingDifficulty: "easy" | "medium" | "hard";
+  minimumPassScore: number | null;
+  passCriteria: string[];
+  vocabularyFocus: string[];
+  grammarFocus: string[];
+  bossName: string;
+  bossTasks: LearnBossTask[];
+}
+
+export interface AdminGenerateLearnStepWithAiPayload {
+  brief: string;
+  type: "lesson" | "boss";
+  gradingDifficulty: "easy" | "medium" | "hard";
+}
+
 export interface LearnStep {
   id: string;
   mapId: string;
@@ -45,13 +93,17 @@ export interface LearnStep {
   type: "lesson" | "boss";
   scenarioTitle?: string;
   scenarioContext?: string;
+  scenarioScript?: string;
   aiPersona?: string;
   aiSystemPrompt?: string;
   openingMessage?: string;
   xpReward?: number;
   minTurns?: number;
+  gradingDifficulty?: "easy" | "medium" | "hard";
+  minimumPassScore?: number | null;
   passCriteria?: string[];
   vocabularyFocus?: string[];
+  grammarFocus?: string[];
   bossTasks?: LearnBossTask[];
   bossHPMax?: number;
   playerHPMax?: number;
@@ -152,8 +204,8 @@ export const learnApi = baseApi.injectEndpoints({
     sendLearnMessage: builder.mutation<
       {
         userMessage: LearnMessage;
+        assistantMessage: LearnMessage | null;
         bossBattle: LearnBossBattleState | null;
-        messages: LearnMessage[];
       },
       { conversationId: string; content: string }
     >({
@@ -165,14 +217,64 @@ export const learnApi = baseApi.injectEndpoints({
       transformResponse: (
         response: ApiResponse<{
           userMessage: LearnMessage;
+          assistantMessage: LearnMessage | null;
           bossBattle: LearnBossBattleState | null;
-          messages: LearnMessage[];
+        }>,
+      ) =>
+        response.data as {
+          userMessage: LearnMessage;
+          assistantMessage: LearnMessage | null;
+          bossBattle: LearnBossBattleState | null;
+        },
+    }),
+
+    sendLearnMessageQuick: builder.mutation<
+      {
+        userMessage: LearnMessage;
+        assistantMessage: LearnMessage | null;
+      },
+      { conversationId: string; content: string }
+    >({
+      query: ({ conversationId, content }) => ({
+        url: `/learn/conversations/${conversationId}/messages/quick`,
+        method: "POST",
+        body: { content },
+      }),
+      transformResponse: (
+        response: ApiResponse<{
+          userMessage: LearnMessage;
+          assistantMessage: LearnMessage | null;
+        }>,
+      ) =>
+        response.data as {
+          userMessage: LearnMessage;
+          assistantMessage: LearnMessage | null;
+        },
+    }),
+
+    evaluateLearnMessage: builder.mutation<
+      {
+        userMessage: LearnMessage;
+        bossBattle: LearnBossBattleState | null;
+        alreadyEvaluated?: boolean;
+      },
+      { conversationId: string; messageId: string }
+    >({
+      query: ({ conversationId, messageId }) => ({
+        url: `/learn/conversations/${conversationId}/messages/${messageId}/evaluation`,
+        method: "POST",
+      }),
+      transformResponse: (
+        response: ApiResponse<{
+          userMessage: LearnMessage;
+          bossBattle: LearnBossBattleState | null;
+          alreadyEvaluated?: boolean;
         }>,
       ) =>
         response.data as {
           userMessage: LearnMessage;
           bossBattle: LearnBossBattleState | null;
-          messages: LearnMessage[];
+          alreadyEvaluated?: boolean;
         },
     }),
 
@@ -189,6 +291,11 @@ export const learnApi = baseApi.injectEndpoints({
         };
         passed: boolean;
         bossWin?: boolean;
+        requiredScore?: number;
+        mapCompleted?: boolean;
+        currentMapXP?: number;
+        requiredMapXP?: number;
+        replayAttempt?: boolean;
       },
       string
     >({
@@ -210,6 +317,11 @@ export const learnApi = baseApi.injectEndpoints({
           };
           passed: boolean;
           bossWin?: boolean;
+          requiredScore?: number;
+          mapCompleted?: boolean;
+          currentMapXP?: number;
+          requiredMapXP?: number;
+          replayAttempt?: boolean;
         },
     }),
 
@@ -218,6 +330,19 @@ export const learnApi = baseApi.injectEndpoints({
       providesTags: ["AdminLearnMaps"],
       transformResponse: (response: ApiResponse<{ items: LearnMapItem[] }>) =>
         response.data as { items: LearnMapItem[] },
+    }),
+
+    generateAdminLearnMapWithAi: builder.mutation<
+      AdminLearnMapAiDraft,
+      AdminGenerateLearnMapWithAiPayload
+    >({
+      query: (body) => ({
+        url: "/admin/learn/maps/generate-ai",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<AdminLearnMapAiDraft>) =>
+        response.data as AdminLearnMapAiDraft,
     }),
 
     createAdminLearnMap: builder.mutation<{ map: LearnMapItem }, Partial<LearnMapItem>>({
@@ -258,6 +383,19 @@ export const learnApi = baseApi.injectEndpoints({
       providesTags: (_r, _e, mapId) => [{ type: "AdminLearnSteps", id: mapId }],
       transformResponse: (response: ApiResponse<{ items: LearnStep[] }>) =>
         response.data as { items: LearnStep[] },
+    }),
+
+    generateAdminLearnStepWithAi: builder.mutation<
+      AdminLearnStepAiDraft,
+      { mapId: string; body: AdminGenerateLearnStepWithAiPayload }
+    >({
+      query: ({ mapId, body }) => ({
+        url: `/admin/learn/maps/${mapId}/steps/generate-ai`,
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<AdminLearnStepAiDraft>) =>
+        response.data as AdminLearnStepAiDraft,
     }),
 
     createAdminLearnStep: builder.mutation<
@@ -366,12 +504,16 @@ export const {
   useGetLearnConversationQuery,
   useStartLearnConversationMutation,
   useSendLearnMessageMutation,
+  useSendLearnMessageQuickMutation,
+  useEvaluateLearnMessageMutation,
   useEndLearnConversationMutation,
   useGetAdminLearnMapsQuery,
+  useGenerateAdminLearnMapWithAiMutation,
   useCreateAdminLearnMapMutation,
   useUpdateAdminLearnMapMutation,
   useDeleteAdminLearnMapMutation,
   useGetAdminLearnStepsQuery,
+  useGenerateAdminLearnStepWithAiMutation,
   useCreateAdminLearnStepMutation,
   useUpdateAdminLearnStepMutation,
   useDeleteAdminLearnStepMutation,

@@ -76,10 +76,13 @@ export default function LearnMapDetailPage() {
                   {data.map.title}
                 </h1>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600">{data.map.description}</p>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Level {data.map.level} · {data.progress?.totalXPEarned ?? 0} / {data.map.requiredXPToComplete} XP
+                </p>
                 {mapLocked && (
                   <p className="mx-auto mt-5 flex max-w-lg items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <Lock className="h-4 w-4 shrink-0" />
-                    Bản đồ đang khóa — hoàn thành map trước để mở.
+                    Bản đồ đang khóa — cần hoàn thành map trước và đạt đủ XP yêu cầu để mở.
                   </p>
                 )}
               </header>
@@ -137,6 +140,16 @@ export default function LearnMapDetailPage() {
                     <span className="mt-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
                       {step.type}
                     </span>
+                    {!isLocked && (
+                      <div className="mt-2 flex flex-wrap justify-center gap-1">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {step.gradingDifficulty || 'medium'}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                          pass {step.minimumPassScore ?? 'auto'}
+                        </span>
+                      </div>
+                    )}
                     {step.scenarioTitle && (
                       <p className="mt-2 line-clamp-2 text-center text-[11px] text-slate-500">{step.scenarioTitle}</p>
                     )}

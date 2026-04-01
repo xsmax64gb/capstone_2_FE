@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { DeleteConfirmButton } from "@/components/admin/delete-confirm-button";
@@ -15,7 +16,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -24,20 +35,45 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useActivateAdminPlacementTestMutation,
   useDeleteAdminPlacementTestMutation,
+  useGenerateAdminPlacementTestWithAiMutation,
   useGetAdminPlacementTestsQuery,
 } from "@/lib/api/placementApi";
-import { formatDateTime, formatNumber, notify } from "@/lib/admin";
+import { handleApiError } from "@/lib/api-error-handler";
+import { ADMIN_LEVEL_OPTIONS, formatDateTime, formatNumber, notify } from "@/lib/admin";
+import { savePlacementAiDraft } from "@/lib/placement-ai-draft";
+import type { AdminGeneratePlacementWithAiPayload } from "@/types";
+
+const INITIAL_AI_FORM: AdminGeneratePlacementWithAiPayload = {
+  title: "",
+  context: "",
+  levelFrom: "A1",
+  levelTo: "B2",
+  listeningQuestions: 4,
+  readingQuestions: 6,
+  grammarQuestions: 5,
+  vocabQuestions: 5,
+  durationMinutes: 25,
+  description: "",
+  instructions: "",
+  isActive: false,
+};
 
 export default function AdminPlacementTestsPage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [aiForm, setAiForm] = useState<AdminGeneratePlacementWithAiPayload>(INITIAL_AI_FORM);
   const { data: items = [], isLoading, error } = useGetAdminPlacementTestsQuery();
   const [activatePlacementTest, { isLoading: isActivating }] =
     useActivateAdminPlacementTestMutation();
   const [deletePlacementTest, { isLoading: isDeleting }] =
     useDeleteAdminPlacementTestMutation();
+  const [generatePlacementTestWithAi, { isLoading: isGeneratingWithAi }] =
+    useGenerateAdminPlacementTestWithAiMutation();
 
   const filteredItems = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -59,6 +95,11 @@ export default function AdminPlacementTestsPage() {
     (total, item) => total + item.activeQuestionCount,
     0
   );
+  const aiQuestionTotal =
+    Math.max(0, Math.round(aiForm.listeningQuestions)) +
+    Math.max(0, Math.round(aiForm.readingQuestions)) +
+    Math.max(0, Math.round(aiForm.grammarQuestions)) +
+    Math.max(0, Math.round(aiForm.vocabQuestions));
 
   const handleDelete = async (id: string, title: string) => {
     await deletePlacementTest(id).unwrap();
@@ -78,6 +119,73 @@ export default function AdminPlacementTestsPage() {
     });
   };
 
+  const handleGenerateWithAi = async () => {
+    if (!aiForm.title.trim() || !aiForm.context.trim()) {
+      notify({
+        title: "Thiếu thông tin",
+        message: "Vui lòng nhập tiêu đề và ngữ cảnh để AI tạo đề.",
+        type: "warning",
+      });
+      return;
+    }
+
+    const levelFromIndex = ADMIN_LEVEL_OPTIONS.indexOf(aiForm.levelFrom);
+    const levelToIndex = ADMIN_LEVEL_OPTIONS.indexOf(aiForm.levelTo);
+
+    if (levelFromIndex > levelToIndex) {
+      notify({
+        title: "Khoảng level không hợp lệ",
+        message: "Level bắt đầu cần nhỏ hơn hoặc bằng level kết thúc.",
+        type: "warning",
+      });
+      return;
+    }
+
+    const listeningQuestions = Math.max(0, Math.round(aiForm.listeningQuestions));
+    const readingQuestions = Math.max(0, Math.round(aiForm.readingQuestions));
+    const grammarQuestions = Math.max(0, Math.round(aiForm.grammarQuestions));
+    const vocabQuestions = Math.max(0, Math.round(aiForm.vocabQuestions));
+    const totalQuestions =
+      listeningQuestions + readingQuestions + grammarQuestions + vocabQuestions;
+
+    if (totalQuestions < 5 || totalQuestions > 60) {
+      notify({
+        title: "Tổng số câu không hợp lệ",
+        message: "Tổng số câu từ 4 nhóm cần nằm trong khoảng 5 đến 60.",
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      const draft = await generatePlacementTestWithAi({
+        ...aiForm,
+        title: aiForm.title.trim(),
+        context: aiForm.context.trim(),
+        listeningQuestions,
+        readingQuestions,
+        grammarQuestions,
+        vocabQuestions,
+      }).unwrap();
+      savePlacementAiDraft(draft);
+      setIsAiDialogOpen(false);
+      setAiForm(INITIAL_AI_FORM);
+      notify({
+        title: "Đã sinh draft placement test",
+        message: "Kiểm tra lại nội dung trên form đầy đủ trước khi xác nhận tạo bài test.",
+        type: "success",
+      });
+      router.push("/admin/placement-tests/new?source=ai");
+    } catch (generateError) {
+      const apiError = handleApiError(generateError);
+      notify({
+        title: "Không thể tạo đề với AI",
+        message: apiError.message,
+        type: "error",
+      });
+    }
+  };
+
   if (isLoading) {
     return <AdminPageLoading />;
   }
@@ -87,7 +195,8 @@ export default function AdminPlacementTestsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -106,12 +215,23 @@ export default function AdminPlacementTestsPage() {
             </p>
           </div>
 
-          <Button asChild className="rounded-xl">
-            <Link href="/admin/placement-tests/new">
-              <Plus className="h-4 w-4" />
-              Tạo placement test
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setIsAiDialogOpen(true)}
+            >
+              <Sparkles className="h-4 w-4" />
+              Tạo với AI
+            </Button>
+            <Button asChild className="rounded-xl">
+              <Link href="/admin/placement-tests/new">
+                <Plus className="h-4 w-4" />
+                Tạo placement test
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -196,25 +316,25 @@ export default function AdminPlacementTestsPage() {
               </Button>
             </div>
           ) : (
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tiêu đề</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Câu hỏi</TableHead>
-                  <TableHead>Max score</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[34%]">Tiêu đề</TableHead>
+                  <TableHead className="w-[11%]">Active</TableHead>
+                  <TableHead className="w-[9%]">Câu hỏi</TableHead>
+                  <TableHead className="w-[9%]">Max score</TableHead>
+                  <TableHead className="w-[9%]">Duration</TableHead>
+                  <TableHead className="w-[14%]">Updated</TableHead>
+                  <TableHead className="w-[14%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredItems.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>
+                    <TableCell className="align-top">
                       <div>
-                        <p className="font-medium text-slate-900">{item.title}</p>
-                        <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+                        <p className="truncate font-medium text-slate-900">{item.title}</p>
+                        <p className="mt-1 line-clamp-2 wrap-break-word text-sm text-slate-500">
                           {item.description || "Không có mô tả"}
                         </p>
                       </div>
@@ -276,6 +396,200 @@ export default function AdminPlacementTestsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+      <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Tạo placement test với AI</DialogTitle>
+          <DialogDescription>
+            Nhập yêu cầu theo từng nhóm câu. AI chỉ sinh draft để admin review trên form
+            đầy đủ; chỉ khi xác nhận tạo thì hệ thống mới TTS câu nghe, upload
+            Cloudinary và lưu DB.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Label className="mb-2 block">Tiêu đề</Label>
+            <Input
+              value={aiForm.title}
+              onChange={(event) =>
+                setAiForm((current) => ({ ...current, title: event.target.value }))
+              }
+              placeholder="VD: Placement Test cho CSKH ngành du lịch"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <Label className="mb-2 block">Ngữ cảnh tạo đề</Label>
+            <Textarea
+              rows={4}
+              value={aiForm.context}
+              onChange={(event) =>
+                setAiForm((current) => ({ ...current, context: event.target.value }))
+              }
+              placeholder="Mô tả đối tượng học viên, ngành nghề, mục tiêu đánh giá và tình huống thực tế..."
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Level từ</Label>
+            <select
+              value={aiForm.levelFrom}
+              onChange={(event) =>
+                setAiForm((current) => ({
+                  ...current,
+                  levelFrom: event.target.value as AdminGeneratePlacementWithAiPayload["levelFrom"],
+                }))
+              }
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+            >
+              {ADMIN_LEVEL_OPTIONS.map((level) => (
+                <option key={`from-${level}`} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Level đến</Label>
+            <select
+              value={aiForm.levelTo}
+              onChange={(event) =>
+                setAiForm((current) => ({
+                  ...current,
+                  levelTo: event.target.value as AdminGeneratePlacementWithAiPayload["levelTo"],
+                }))
+              }
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+            >
+              {ADMIN_LEVEL_OPTIONS.map((level) => (
+                <option key={`to-${level}`} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Số câu nghe</Label>
+            <Input
+              type="number"
+              min={0}
+              max={60}
+              value={aiForm.listeningQuestions}
+              onChange={(event) =>
+                setAiForm((current) => ({
+                  ...current,
+                  listeningQuestions: Math.max(0, Number(event.target.value) || 0),
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Số câu đọc</Label>
+            <Input
+              type="number"
+              min={0}
+              value={aiForm.readingQuestions}
+              onChange={(event) =>
+                setAiForm((current) => ({
+                  ...current,
+                  readingQuestions: Math.max(0, Number(event.target.value) || 0),
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Số câu ngữ pháp</Label>
+            <Input
+              type="number"
+              min={0}
+              value={aiForm.grammarQuestions}
+              onChange={(event) =>
+                setAiForm((current) => ({
+                  ...current,
+                  grammarQuestions: Math.max(0, Number(event.target.value) || 0),
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Số câu từ vựng</Label>
+            <Input
+              type="number"
+              min={0}
+              value={aiForm.vocabQuestions}
+              onChange={(event) =>
+                setAiForm((current) => ({
+                  ...current,
+                  vocabQuestions: Math.max(0, Number(event.target.value) || 0),
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Thời lượng (phút)</Label>
+            <Input
+              type="number"
+              min={5}
+              value={aiForm.durationMinutes}
+              onChange={(event) =>
+                setAiForm((current) => ({
+                  ...current,
+                  durationMinutes: Number(event.target.value) || 25,
+                }))
+              }
+            />
+          </div>
+
+          <div className="flex items-end">
+            <div className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <span className="text-sm font-medium text-slate-700">Đặt làm bài active</span>
+              <Switch
+                checked={aiForm.isActive}
+                onCheckedChange={(checked) =>
+                  setAiForm((current) => ({ ...current, isActive: checked }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="md:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-medium text-slate-700">
+              Tổng số câu sẽ tạo: {formatNumber(aiQuestionTotal)}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Tổng từ 4 nhóm cần nằm trong khoảng 5 đến 60 câu.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsAiDialogOpen(false)}
+            className="rounded-xl"
+          >
+            Hủy
+          </Button>
+          <Button
+            type="button"
+            onClick={() => void handleGenerateWithAi()}
+            disabled={isGeneratingWithAi}
+            className="rounded-xl"
+          >
+            {isGeneratingWithAi ? "Đang tạo..." : "Tạo với AI"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+      </Dialog>
+    </>
   );
 }

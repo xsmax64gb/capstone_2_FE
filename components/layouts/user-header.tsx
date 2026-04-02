@@ -16,10 +16,10 @@ import {
 import { LanguageSwitch } from "./language-switch";
 
 const navItems = [
-  { label: "Trang chủ", href: "/" },
-  { label: "Bài tập", href: "/exercises" },
-  { label: "Từ vựng", href: "/vocabularies" },
-  { label: "Nói với AI", href: "/learn" },
+  { labelKey: "Trang chủ", href: "/" },
+  { labelKey: "Bài tập", href: "/exercises" },
+  { labelKey: "Từ vựng", href: "/vocabularies" },
+  { labelKey: "Nói với AI", href: "/learn" },
 ];
 
 const DEFAULT_AVATAR_URL =
@@ -43,7 +43,7 @@ export function UserHeader() {
     mounted && user?.avatarUrl ? user.avatarUrl : DEFAULT_AVATAR_URL;
   const navLinks =
     mounted && user?.role === "admin"
-      ? [...navItems, { label: "Quản trị", href: "/admin" }]
+      ? [...navItems, { labelKey: "Quản trị", href: "/admin" }]
       : navItems;
 
   const isActive = (href: string) => {
@@ -55,7 +55,8 @@ export function UserHeader() {
 
   const getActiveIndex = () => {
     const activeItem = navLinks.find(
-      (item) => isActive(item.href) && item.label !== "Quản trị",
+      (item) =>
+        isActive(item.href) && (item.labelKey || item.label) !== "Quản trị",
     );
     return activeItem ? navLinks.indexOf(activeItem) : -1;
   };
@@ -87,16 +88,20 @@ export function UserHeader() {
         <nav className="relative hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
           {navLinks.map((item, index) => (
             <Link
-              key={item.label}
+              key={item.labelKey || item.label}
               href={item.href}
               className={`relative z-10 px-1 transition-colors duration-300 hover:text-black ${
-                isActive(item.href) && item.label !== "Quản trị"
+                isActive(item.href) &&
+                (item.labelKey || item.label) !== "Quản trị"
                   ? "font-bold text-black"
                   : ""
               }`}
-              data-active={isActive(item.href) && item.label !== "Quản trị"}
+              data-active={
+                isActive(item.href) &&
+                (item.labelKey || item.label) !== "Quản trị"
+              }
             >
-              {item.label}
+              {item.labelKey ? t(item.labelKey) : item.label}
             </Link>
           ))}
           {/* Sliding underline */}

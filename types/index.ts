@@ -8,11 +8,13 @@ export interface User {
   nativeLanguage?: string;
   timezone?: string;
   role?: string;
+  isActive?: boolean;
   currentLevel?: string;
   exp?: number;
   onboardingDone?: boolean;
   placementScore?: number;
   avatarUrl?: string;
+  lastActiveAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -118,13 +120,72 @@ export interface AdminUsersResponse {
     onboardingCompleted: number;
     onboardingPending: number;
     adminUsers: number;
+    activeUsers?: number;
+    inactiveUsers?: number;
     averagePlacementScore: number;
   };
   breakdowns: {
     byLevel: MetricBreakdownItem[];
     byRole: MetricBreakdownItem[];
+    byStatus?: MetricBreakdownItem[];
+  };
+  filters?: {
+    query?: string;
+    role?: string;
+    level?: string;
+    onboardingDone?: boolean | null;
+    isActive?: boolean | null;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  };
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
   };
   users: User[];
+}
+
+export interface AdminUsersQueryParams {
+  page?: number;
+  limit?: number;
+  query?: string;
+  role?: string;
+  level?: string;
+  onboardingDone?: "all" | "true" | "false";
+  isActive?: "all" | "true" | "false";
+  sortBy?: "createdAt" | "updatedAt" | "fullName" | "email" | "exp" | "placementScore" | "lastActiveAt";
+  sortOrder?: "asc" | "desc";
+}
+
+export interface AdminCreateUserPayload {
+  fullName: string;
+  email: string;
+  password: string;
+  role: "user" | "admin";
+  currentLevel: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+  exp?: number;
+  onboardingDone?: boolean;
+  isActive?: boolean;
+  bio?: string;
+  nativeLanguage?: string;
+  timezone?: string;
+  avatarUrl?: string;
+}
+
+export interface AdminUpdateUserPayload {
+  fullName?: string;
+  email?: string;
+  role?: "user" | "admin";
+  currentLevel?: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+  exp?: number;
+  onboardingDone?: boolean;
+  isActive?: boolean;
+  bio?: string;
+  nativeLanguage?: string;
+  timezone?: string;
+  avatarUrl?: string;
 }
 
 export interface AdminExerciseItem {

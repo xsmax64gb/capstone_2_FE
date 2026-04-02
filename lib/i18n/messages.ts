@@ -15,7 +15,7 @@ const PHRASES: PhraseValue[] = [
   { vi: "Đăng xuất", en: "Logout" },
   { vi: "Giới thiệu", en: "About" },
   { vi: "Hỗ trợ", en: "Support" },
-  { vi: "Riêng tư", en: "Privacy" },
+  { vi: "Quản trị", en: "Admin" },
   { vi: "Điều khoản dịch vụ", en: "Terms of Service" },
   { vi: "Đã đăng nhập thành công", en: "Login successful" },
   { vi: "Đăng ký thành công", en: "Registration successful" },

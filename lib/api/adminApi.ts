@@ -3,11 +3,14 @@ import type {
   AdminAiLevelItem,
   AdminAiLevelPayload,
   AdminAiLevelsResponse,
+  AdminCreateUserPayload,
   AdminExerciseItem,
   AdminExercisePayload,
   AdminExercisesResponse,
   AdminOverviewResponse,
   AdminReportsResponse,
+  AdminUpdateUserPayload,
+  AdminUsersQueryParams,
   AdminVocabularySetItem,
   AdminVocabularyWordItem,
   AdminVocabularyPayload,
@@ -17,6 +20,7 @@ import type {
   AdminVocabularyResponse,
   AdminUsersResponse,
   ApiResponse,
+  User,
 } from "@/types";
 
 const appendFormDataValue = (
@@ -74,6 +78,20 @@ const toVocabularyWordBody = (payload: Partial<AdminVocabularyWordPayload>) => (
   example: payload.example,
 });
 
+const toQueryString = (params?: Record<string, string | number | undefined>) => {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params ?? {}).forEach(([key, value]) => {
+    if (value === undefined || value === "") {
+      return;
+    }
+    searchParams.set(key, String(value));
+  });
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+};
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAdminOverview: builder.query<AdminOverviewResponse, void>({
@@ -86,14 +104,97 @@ export const adminApi = baseApi.injectEndpoints({
         response.data as AdminOverviewResponse,
     }),
 
-    getAdminUsers: builder.query<AdminUsersResponse, void>({
-      query: () => ({
-        url: "/admin/users",
+    getAdminUsers: builder.query<AdminUsersResponse, AdminUsersQueryParams | void>({
+      query: (params) => ({
+        url: `/admin/users${toQueryString({
+          page: params?.page,
+          limit: params?.limit,
+          query: params?.query,
+          role: params?.role,
+          level: params?.level,
+          onboardingDone: params?.onboardingDone,
+          isActive: params?.isActive,
+          sortBy: params?.sortBy,
+          sortOrder: params?.sortOrder,
+        })}`,
         method: "GET",
       }),
       providesTags: ["AdminUsers"],
       transformResponse: (response: ApiResponse<AdminUsersResponse>) =>
         response.data as AdminUsersResponse,
+    }),
+
+    getAdminUserById: builder.query<User, string>({
+      query: (id) => ({
+        url: `/admin/users/${id}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "AdminUsers", id }],
+      transformResponse: (response: ApiResponse<User>) => response.data as User,
+    }),
+
+    createAdminUser: builder.mutation<User, AdminCreateUserPayload>({
+      query: (body) => ({
+        url: "/admin/users",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminUsers", "AdminOverview"],
+      transformResponse: (response: ApiResponse<User>) => response.data as User,
+    }),
+
+    updateAdminUser: builder.mutation<
+      User,
+      { id: string; body: AdminUpdateUserPayload }
+    >({
+      query: ({ id, body }) => ({
+        url: `/admin/users/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["AdminUsers", "AdminOverview"],
+      transformResponse: (response: ApiResponse<User>) => response.data as User,
+    }),
+
+    updateAdminUserRole: builder.mutation<User, { id: string; role: "user" | "admin" }>({
+      query: ({ id, role }) => ({
+        url: `/admin/users/${id}/role`,
+        method: "PATCH",
+        body: { role },
+      }),
+      invalidatesTags: ["AdminUsers", "AdminOverview"],
+      transformResponse: (response: ApiResponse<User>) => response.data as User,
+    }),
+
+    updateAdminUserStatus: builder.mutation<User, { id: string; isActive: boolean }>({
+      query: ({ id, isActive }) => ({
+        url: `/admin/users/${id}/status`,
+        method: "PATCH",
+        body: { isActive },
+      }),
+      invalidatesTags: ["AdminUsers", "AdminOverview"],
+      transformResponse: (response: ApiResponse<User>) => response.data as User,
+    }),
+
+    resetAdminUserPassword: builder.mutation<{ id: string }, { id: string; newPassword: string }>({
+      query: ({ id, newPassword }) => ({
+        url: `/admin/users/${id}/password`,
+        method: "PATCH",
+        body: { newPassword },
+      }),
+      invalidatesTags: ["AdminUsers"],
+      transformResponse: (response: ApiResponse<{ id: string }>) =>
+        response.data as { id: string },
+    }),
+
+    deleteAdminUser: builder.mutation<{ id: string }, string>({
+      query: (id) => ({
+        url: `/admin/users/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminUsers", "AdminOverview"],
+      transformResponse: (response: ApiResponse<{ id: string }>) =>
+        response.data as { id: string },
     }),
 
     getAdminReports: builder.query<AdminReportsResponse, void>({
@@ -315,22 +416,29 @@ export const adminApi = baseApi.injectEndpoints({
 export const {
   useCreateAdminAiLevelMutation,
   useCreateAdminExerciseMutation,
+  useCreateAdminUserMutation,
   useCreateAdminVocabularyMutation,
   useCreateAdminVocabularyWordMutation,
   useCreateAdminVocabularyWordsBulkMutation,
   useDeleteAdminAiLevelMutation,
   useDeleteAdminExerciseMutation,
+  useDeleteAdminUserMutation,
   useDeleteAdminVocabularyMutation,
   useDeleteAdminVocabularyWordMutation,
   useGetAdminAiLevelsQuery,
   useGetAdminExercisesQuery,
   useGetAdminOverviewQuery,
   useGetAdminReportsQuery,
+  useGetAdminUserByIdQuery,
   useGetAdminUsersQuery,
   useGetAdminVocabularyByIdQuery,
   useGetAdminVocabularyQuery,
+  useResetAdminUserPasswordMutation,
   useUpdateAdminAiLevelMutation,
   useUpdateAdminExerciseMutation,
+  useUpdateAdminUserMutation,
+  useUpdateAdminUserRoleMutation,
+  useUpdateAdminUserStatusMutation,
   useUpdateAdminVocabularyMutation,
   useUpdateAdminVocabularyWordMutation,
 } = adminApi;

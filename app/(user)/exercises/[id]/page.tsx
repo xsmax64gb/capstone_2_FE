@@ -142,7 +142,9 @@ export default function ExerciseDetailPage() {
             <section className="grid grid-cols-1 gap-10 lg:grid-cols-12">
               <div className="space-y-6 lg:col-span-8">
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="mb-4 text-xl font-bold">{t("Chi tiết bài tập")}</h2>
+                  <h2 className="mb-4 text-xl font-bold">
+                    {t("Chi tiết bài tập")}
+                  </h2>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="rounded-lg bg-slate-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -186,12 +188,18 @@ export default function ExerciseDetailPage() {
                     {t("Cách bài tập này hoạt động")}
                   </h3>
                   <ul className="space-y-2 text-sm text-slate-700">
-                    <li>{t("1. Mở trang làm bài và trả lời câu hỏi theo thứ tự.")}</li>
                     <li>
-                      {t("2. Nộp bài để nhận điểm, ước tính XP và thống kê tốc độ.")}
+                      {t("1. Mở trang làm bài và trả lời câu hỏi theo thứ tự.")}
                     </li>
                     <li>
-                      {t("3. Vào trang xem lại để kiểm tra từng giải thích chi tiết.")}
+                      {t(
+                        "2. Nộp bài để nhận điểm, ước tính XP và thống kê tốc độ.",
+                      )}
+                    </li>
+                    <li>
+                      {t(
+                        "3. Vào trang xem lại để kiểm tra từng giải thích chi tiết.",
+                      )}
                     </li>
                   </ul>
                   <div className="mt-5 flex flex-wrap gap-2">
@@ -208,7 +216,9 @@ export default function ExerciseDetailPage() {
 
               <aside className="space-y-6 lg:col-span-4">
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="mb-5 text-lg font-bold">{t("Mục tiêu phiên học")}</h3>
+                  <h3 className="mb-5 text-lg font-bold">
+                    {t("Mục tiêu phiên học")}
+                  </h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
                       <span className="text-sm font-medium text-slate-600">
@@ -236,7 +246,9 @@ export default function ExerciseDetailPage() {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="mb-3 text-lg font-bold">{t("Xếp hạng cao nhất")}</h3>
+                  <h3 className="mb-3 text-lg font-bold">
+                    {t("Xếp hạng cao nhất")}
+                  </h3>
                   {topRank ? (
                     <div className="rounded-lg bg-slate-50 p-4">
                       <p className="inline-flex items-center text-sm font-semibold text-slate-800">
@@ -248,7 +260,9 @@ export default function ExerciseDetailPage() {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500">{t("Chưa có dữ liệu xếp hạng.")}</p>
+                    <p className="text-sm text-slate-500">
+                      {t("Chưa có dữ liệu xếp hạng.")}
+                    </p>
                   )}
                 </div>
               </aside>

@@ -75,7 +75,9 @@ export default function ExercisesPage() {
                 {t("Sân thi đấu bài tập")}
               </h1>
               <p className="mt-1 text-slate-500">
-                {t("Trung tâm luyện tập đầy đủ với luồng làm bài, phân tích kết quả và trang xem lại.")}
+                {t(
+                  "Trung tâm luyện tập đầy đủ với luồng làm bài, phân tích kết quả và trang xem lại.",
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -172,7 +174,9 @@ export default function ExercisesPage() {
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            {t("Không tải được bài tập. Vui lòng kiểm tra token đăng nhập hoặc kết nối backend.")}
+            {t(
+              "Không tải được bài tập. Vui lòng kiểm tra token đăng nhập hoặc kết nối backend.",
+            )}
           </div>
         )}
 

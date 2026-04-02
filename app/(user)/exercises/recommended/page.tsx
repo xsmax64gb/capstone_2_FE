@@ -52,7 +52,9 @@ export default function RecommendedExercisesPage() {
             {t("Đề xuất cho bạn")}
           </h1>
           <p className="mt-1 text-slate-500">
-            {t("Các bộ được tuyển chọn dựa trên lần làm gần nhất, kỹ năng yếu và tiến độ cấp độ của bạn.")}
+            {t(
+              "Các bộ được tuyển chọn dựa trên lần làm gần nhất, kỹ năng yếu và tiến độ cấp độ của bạn.",
+            )}
           </p>
         </section>
 

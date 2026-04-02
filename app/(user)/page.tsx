@@ -229,6 +229,200 @@ const faqItems = [
 
 export default function UserHomePage() {
   const { t } = useI18n();
+
+  const coreFeatures = [
+    {
+      title: t("Luyện tập giọng nói AI"),
+      description: t(
+        "Trò chuyện với AI theo thời gian thực và nhận phản hồi tức thì về khả năng nói.",
+      ),
+      href: "/ai",
+      action: t("Bắt đầu nói"),
+      icon: Mic,
+      image:
+        "https://lh3.googleusercontent.com/aida-public/AB6AXuD63g8SzYGC_Qj0D_8rLiYR5YLZW3txwqA7GsKUeGyktjpKO4Q6DSoguMh8BmtJGJ47GPtAoUTXR5b0FHhBWOg3GpF7A7mwYtZnYhXbPlirLarrZY-_JhWK3ehXBLWSP6-rKNi1BdoRmYOIsjRtiXMC1cRYNx74_N_HgsvbXGbGUB_seGuULLbSuO5serMXGI83KlH--HZecV6rTqImexRVhEFTevOxFCv9xsPUwSnCdgKs2qYei1ChsIcTSL7yOjDD_iAjmjXFeapd",
+    },
+    {
+      title: t("Trình tạo từ vựng"),
+      description: t(
+        "Học từ theo chủ đề và cấp độ với ví dụ giàu ngữ cảnh.",
+      ),
+      href: "/vocabulary",
+      action: t("Mở từ vựng"),
+      icon: BookOpen,
+      image:
+        "https://lh3.googleusercontent.com/aida-public/AB6AXuDkHd8UJkk0tKsH-WI92KXxEhjDAj97l5oVuGnrGlRzvqls_sdBENfU7YbC15_QFl2lGHD8koNlLhZ4NB2nAHzUCzC7wMxzsAee6uEBwx2IDNJzA_PkbjOl_TquQrhRC_PwAjSPDRQg5OSbk3k5KgMJIylwsBFSaFaWAu35K2JeKBVwU9XscP5BLq_7BlucwCTIO7-hlgoEynBsa5C8t4ZV8S4s3U-SoITsiu9k_k8YfUmos-YFAkxJKCY9N76gtfRZMgC3-Z678t4M",
+    },
+    {
+      title: t("Sân thi đấu bài tập"),
+      description: t(
+        "Làm bài tập ngữ pháp và đọc hiểu với thử thách theo cấp độ.",
+      ),
+      href: "/exercises",
+      action: t("Bắt đầu bài tập"),
+      icon: ListChecks,
+      image:
+        "https://lh3.googleusercontent.com/aida-public/AB6AXuD--BLKmCk2XERkZsjBk2Knjtbv8AERjUvskv5mAiB31qRGd1P_ViekbdMKjmXuyM0uNk0GGZyIyC9pp2ksPGD_Nc_FHjM_CJkkobhtpkR-phm0OlqZ-GbvKv-D7mqSUPs-hynj9nqRjfU-rBZkSQE81LXgNZX4rPlnzEAF4Vhtfi9w3PCSYRwvy-jDwb90w7WkMpRUwdTQYLc7WlrGq5uDXaFxE6S7SsKFDp7DRB08AXEftsZfJO1bynMGAZP96fx57xUfqbU9LL5j",
+    },
+  ];
+
+  const quickStats = [
+    { label: t("Mục tiêu nói hàng ngày"), value: "15-20 min" },
+    { label: t("Trọng tâm từ vựng"), value: "20 words/week" },
+    { label: t("Phong cách luyện tập"), value: "Short loops, high frequency" },
+    { label: t("Chuỗi khuyến nghị"), value: "30+ days" },
+  ];
+
+  const learningSteps = [
+    {
+      title: t("Nghe và lặp lại"),
+      detail: t(
+        "Bắt đầu với các lời nhắc có hướng dẫn để làm nóng phát âm, nhịp điệu và trọng âm câu trước khi trò chuyện tự do.",
+      ),
+      icon: Waves,
+    },
+    {
+      title: t("Trò chuyện với đối tác AI"),
+      detail: t(
+        "Chuyển sang các cuộc đối thoại thời gian thực ngắn để rèn luyện tốc độ phản ứng, sự tự tin và khả năng nói tự phát.",
+      ),
+      icon: MessageSquare,
+    },
+    {
+      title: t("Thu thập từ hữu ích"),
+      detail: t(
+        "Lưu từ từ các phiên của bạn vào các bộ theo chủ đề để từ vựng luôn kết nối với ngữ cảnh.",
+      ),
+      icon: BookOpen,
+    },
+    {
+      title: t("Khóa lại với bài tập"),
+      detail: t(
+        "Sử dụng bài tập tập trung để củng cố ngữ pháp và hiểu biết xung quanh cùng các mẫu ngôn ngữ.",
+      ),
+      icon: ListChecks,
+    },
+  ];
+
+  const weeklyPlan = [
+    {
+      day: t("Thứ Hai"),
+      focus: t("Làm nóng giọng nói + phát âm"),
+      tasks: [t("10 phút nói có hướng dẫn"), t("5 phút lặp lại bóng"), t("Xem lại phản hồi")],
+    },
+    {
+      day: t("Thứ Ba"),
+      focus: t("Chủ đề trò chuyện hàng ngày"),
+      tasks: [t("2 vòng vai diễn AI"), t("Lưu 8 từ mới"), t("Tóm tắt nhanh")],
+    },
+    {
+      day: t("Thứ Tư"),
+      focus: t("Ngữ pháp trong ngữ cảnh"),
+      tasks: [t("Bộ bài tập mục tiêu"), t("Kiểm tra mẫu lỗi"), t("1 phiên làm lại")],
+    },
+    {
+      day: t("Thứ Năm"),
+      focus: t("Ôn tập từ vựng sâu"),
+      tasks: [t("Ôn tập cách biệt"), t("Viết câu ví dụ"), t("Nói với từ đã lưu")],
+    },
+    {
+      day: t("Thứ Sáu"),
+      focus: t("Thử thách nói nhanh"),
+      tasks: [t("Lời nhắc theo thời gian"), t("So sánh điểm số trôi chảy"), t("Ảnh chụp phát âm")],
+    },
+    {
+      day: t("Thứ Bảy"),
+      focus: t("Bài tập đọc + hiểu biết"),
+      tasks: [t("Bộ đoạn ngắn"), t("Câu hỏi suy luận"), t("Ghi chú lỗi")],
+    },
+    {
+      day: t("Chủ Nhật"),
+      focus: t("Điểm kiểm tra hàng tuần"),
+      tasks: [t("Phản ánh tiến độ"), t("Chọn chủ đề tiếp theo"), t("Lập kế hoạch tuần tiếp theo")],
+    },
+  ];
+
+  const trustPoints = [
+    {
+      title: t("Tiến bộ rõ ràng"),
+      detail: t(
+        "Mỗi hoạt động có vai trò trong vòng lặp học tập kết nối, không phải nhiệm vụ ngẫu nhiên.",
+      ),
+      icon: TrendingUp,
+    },
+    {
+      title: t("Ngữ cảnh thực tế"),
+      detail: t(
+        "Từ vựng và ngữ pháp xuất hiện trong các tình huống nói mà bạn thực sự có thể sử dụng.",
+      ),
+      icon: Compass,
+    },
+    {
+      title: t("Nhịp điệu thân thiện với thói quen"),
+      detail: t(
+        "Các phiên ngắn và cấu trúc hàng ngày làm cho sự nhất quán thực tế với lịch trình bận rộn.",
+      ),
+      icon: Clock3,
+    },
+    {
+      title: t("Phản hồi được hỗ trợ bởi AI"),
+      detail: t(
+        "Nhận tín hiệu có thể hành động ngay lập tức thay vì chờ sửa chữa bị trì hoãn.",
+      ),
+      icon: Brain,
+    },
+  ];
+
+  const testimonials = [
+    {
+      name: "Linh N.",
+      role: t("Sinh viên đại học"),
+      quote: t(
+        "Tôi đã ngừng tránh các nhiệm vụ nói. Luồng hàng ngày ngắn làm cho việc luyện tập ít đáng sợ hơn và tự nhiên hơn.",
+      ),
+    },
+    {
+      name: "Minh T.",
+      role: t("Nhà phát triển trẻ"),
+      quote: t(
+        "Các phiên giọng nói cộng với ôn tập từ vựng đã mang lại cho tôi ngôn ngữ mà tôi có thể sử dụng trong các cuộc họp nhóm và trò chuyện nhóm nhanh chóng.",
+      ),
+    },
+    {
+      name: "Phuong A.",
+      role: t("Ứng viên hỗ trợ khách hàng"),
+      quote: t(
+        "Tôi thích rằng mỗi tuần có cấu trúc. Tôi biết phải làm gì mỗi ngày và tôi có thể thấy tiến độ rõ ràng.",
+      ),
+    },
+  ];
+
+  const faqItems = [
+    {
+      q: t("Tôi có cần tiếng Anh nâng cao để bắt đầu không?"),
+      a: t(
+        "Không. Luồng được thiết kế để mở rộng từ các cấp độ cơ bản. Bạn có thể bắt đầu với các lời nhắc có hướng dẫn ngắn và tăng độ phức tạp theo thời gian.",
+      ),
+    },
+    {
+      q: t("Tôi nên luyện tập bao lâu mỗi ngày?"),
+      a: t(
+        "Một phiên tập trung 15-25 phút là đủ cho hầu hết người học khi thực hiện nhất quán trong tuần.",
+      ),
+    },
+    {
+      q: t("Tôi có thể chỉ tập trung vào nói không?"),
+      a: t(
+        "Có, nhưng kết quả tốt nhất đến từ việc kết hợp nói với từ vựng và bài tập củng cố ngắn.",
+      ),
+    },
+    {
+      q: t("Nếu tôi bỏ lỡ một ngày thì sao?"),
+      a: t(
+        "Tiếp tục với phiên tiếp theo. Cấu trúc hàng tuần linh hoạt và được thiết kế cho lịch trình thực tế.",
+      ),
+    },
+  ];
   return (
     <main className="mx-auto max-w-7xl px-6 pb-28">
       <ScrollReveal>

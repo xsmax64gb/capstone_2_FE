@@ -39,9 +39,13 @@ export default function ExerciseHistoryPage() {
         </section>
 
         <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold tracking-tight">{t("Lịch sử làm bài")}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("Lịch sử làm bài")}
+          </h1>
           <p className="mt-1 text-slate-500">
-            {t("Theo dõi các bài nộp gần đây, điểm số và tốc độ hoàn thành của bạn.")}
+            {t(
+              "Theo dõi các bài nộp gần đây, điểm số và tốc độ hoàn thành của bạn.",
+            )}
           </p>
         </section>
 
@@ -132,7 +136,9 @@ export default function ExerciseHistoryPage() {
           <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <p className="font-semibold">{t("Chưa có lịch sử làm bài")}</p>
             <p className="mt-1 text-sm text-slate-500">
-              {t("Bắt đầu một bài tập để tạo bản ghi lịch sử đầu tiên của bạn.")}
+              {t(
+                "Bắt đầu một bài tập để tạo bản ghi lịch sử đầu tiên của bạn.",
+              )}
             </p>
           </div>
         )}

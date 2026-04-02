@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ReduxProvider } from "@/lib/providers/redux-provider";
 import { AuthProvider } from "@/lib/auth-context";
@@ -53,6 +54,7 @@ export default function RootLayout({
             </AuthProvider>
           </I18nProvider>
         </ReduxProvider>
+        <Analytics />
       </body>
     </html>
   );

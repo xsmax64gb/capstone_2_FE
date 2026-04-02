@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, GraduationCap } from "lucide-react";
 
@@ -146,7 +146,7 @@ const PAGE_COPY: Record<AppLang, PlacementResultCopy> = {
   },
 };
 
-export default function PlacementResultPage() {
+function PlacementResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const attemptId = searchParams.get("attemptId") || "";
@@ -359,5 +359,29 @@ export default function PlacementResultPage() {
         </div>
       </main>
     </ProtectedRoute>
+  );
+}
+
+function PlacementResultFallback() {
+  return (
+    <ProtectedRoute>
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/40 px-4 py-10">
+        <div className="mx-auto w-full max-w-5xl">
+          <Card className="border-slate-200 py-6">
+            <CardContent className="text-sm text-slate-600">
+              Đang tải kết quả placement...
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </ProtectedRoute>
+  );
+}
+
+export default function PlacementResultPage() {
+  return (
+    <Suspense fallback={<PlacementResultFallback />}>
+      <PlacementResultContent />
+    </Suspense>
   );
 }

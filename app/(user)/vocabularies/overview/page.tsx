@@ -29,7 +29,9 @@ export default function VocabulariesOverviewPage() {
         <section className="mb-8">
           <div className="mb-2 flex items-center gap-2">
             <Layers3 className="h-6 w-6 text-slate-600" />
-            <h1 className="text-3xl font-bold tracking-tight">Overview Table</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Overview Table
+            </h1>
           </div>
           <p className="text-sm text-slate-500">
             All vocabulary sets and their words at a glance.
@@ -50,12 +52,24 @@ export default function VocabulariesOverviewPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50 text-left">
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Set</th>
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Topic</th>
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Level</th>
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Words</th>
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Duration</th>
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Set
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Topic
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Level
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Words
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Duration
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -66,7 +80,9 @@ export default function VocabulariesOverviewPage() {
                           <BookOpen className="h-4 w-4 text-slate-400" />
                           <div>
                             <p className="font-semibold">{set.title}</p>
-                            <p className="text-xs text-slate-500 line-clamp-1">{set.description}</p>
+                            <p className="text-xs text-slate-500 line-clamp-1">
+                              {set.description}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -76,10 +92,14 @@ export default function VocabulariesOverviewPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm font-semibold">{LEVEL_LABELS[set.level] ?? set.level}</span>
+                        <span className="text-sm font-semibold">
+                          {LEVEL_LABELS[set.level] ?? set.level}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-sm">{set.wordCount}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{set.durationMinutes} min</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {set.durationMinutes} min
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <Link

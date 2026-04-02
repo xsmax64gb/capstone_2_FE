@@ -11,7 +11,9 @@ export default function VocabularyHintsPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
-  const { data, isLoading, isError } = useGetVocabularyHintsQuery(id, { skip: !id });
+  const { data, isLoading, isError } = useGetVocabularyHintsQuery(id, {
+    skip: !id,
+  });
 
   return (
     <ProtectedRoute>

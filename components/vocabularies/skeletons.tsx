@@ -23,7 +23,10 @@ export function VocabulariesListSkeleton() {
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 md:grid-cols-4">
               {Array.from({ length: 4 }).map((__, btnIdx) => (
-                <SkeletonBlock key={`vocab-btn-${btnIdx}`} className="h-9 w-full" />
+                <SkeletonBlock
+                  key={`vocab-btn-${btnIdx}`}
+                  className="h-9 w-full"
+                />
               ))}
             </div>
           </div>
@@ -92,7 +95,10 @@ export function VocabularyReviewSkeleton() {
   return (
     <div className="space-y-4 py-6">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={`rev-${i}`} className="rounded-xl border border-slate-200 bg-white p-5">
+        <div
+          key={`rev-${i}`}
+          className="rounded-xl border border-slate-200 bg-white p-5"
+        >
           <SkeletonBlock className="mb-3 h-5 w-3/4 rounded" />
           <SkeletonBlock className="mb-2 h-4 w-full rounded" />
           <SkeletonBlock className="h-4 w-2/3 rounded" />

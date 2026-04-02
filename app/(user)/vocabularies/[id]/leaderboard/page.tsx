@@ -12,7 +12,9 @@ export default function VocabularyLeaderboardPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
-  const { data, isLoading, isError } = useGetVocabularyLeaderboardQuery(id, { skip: !id });
+  const { data, isLoading, isError } = useGetVocabularyLeaderboardQuery(id, {
+    skip: !id,
+  });
   const leaderboard = data?.leaderboard ?? [];
 
   return (
@@ -61,10 +63,10 @@ export default function VocabularyLeaderboardPage() {
                   entry.rank === 1
                     ? "border-amber-300 bg-amber-50"
                     : entry.rank === 2
-                    ? "border-slate-300 bg-slate-50"
-                    : entry.rank === 3
-                    ? "border-orange-200 bg-orange-50"
-                    : "border-slate-200 bg-white"
+                      ? "border-slate-300 bg-slate-50"
+                      : entry.rank === 3
+                        ? "border-orange-200 bg-orange-50"
+                        : "border-slate-200 bg-white"
                 }`}
               >
                 {/* Rank */}
@@ -76,7 +78,9 @@ export default function VocabularyLeaderboardPage() {
                   ) : entry.rank === 3 ? (
                     <Medal className="h-7 w-7 text-orange-400" />
                   ) : (
-                    <span className="text-lg font-bold text-slate-400">#{entry.rank}</span>
+                    <span className="text-lg font-bold text-slate-400">
+                      #{entry.rank}
+                    </span>
                   )}
                 </div>
 

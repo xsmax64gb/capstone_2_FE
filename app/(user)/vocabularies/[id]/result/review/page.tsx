@@ -11,7 +11,9 @@ export default function VocabularyReviewPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
-  const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, { skip: !id });
+  const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, {
+    skip: !id,
+  });
   const vocabulary = data?.vocabulary;
   const words = vocabulary?.words ?? [];
 
@@ -50,7 +52,9 @@ export default function VocabularyReviewPage() {
                   <div className="flex items-center gap-2">
                     <span className="font-bold">{word.word}</span>
                     {word.phonetic && (
-                      <span className="text-sm text-slate-500">{word.phonetic}</span>
+                      <span className="text-sm text-slate-500">
+                        {word.phonetic}
+                      </span>
                     )}
                   </div>
                   <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
@@ -63,7 +67,9 @@ export default function VocabularyReviewPage() {
                 </p>
 
                 {word.example && (
-                  <p className="text-sm italic text-slate-500">"{word.example}"</p>
+                  <p className="text-sm italic text-slate-500">
+                    "{word.example}"
+                  </p>
                 )}
 
                 {/* Correct indicator */}

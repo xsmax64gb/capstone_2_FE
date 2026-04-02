@@ -99,7 +99,9 @@ export default function VocabularyDetailPage() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
-                  <h1 className="text-3xl font-bold text-white">{vocabulary.title}</h1>
+                  <h1 className="text-3xl font-bold text-white">
+                    {vocabulary.title}
+                  </h1>
                   <p className="mt-1 text-sm text-white/80">
                     {vocabulary.description || "No description"}
                   </p>
@@ -136,7 +138,9 @@ export default function VocabularyDetailPage() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Words</p>
-                    <p className="text-sm font-semibold">{vocabulary.wordCount}</p>
+                    <p className="text-sm font-semibold">
+                      {vocabulary.wordCount}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -145,7 +149,9 @@ export default function VocabularyDetailPage() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Duration</p>
-                    <p className="text-sm font-semibold">{vocabulary.durationMinutes} min</p>
+                    <p className="text-sm font-semibold">
+                      {vocabulary.durationMinutes} min
+                    </p>
                   </div>
                 </div>
               </div>
@@ -180,10 +186,14 @@ export default function VocabularyDetailPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-bold">{word.word}</span>
                         {word.phonetic && (
-                          <span className="text-sm text-slate-500">{word.phonetic}</span>
+                          <span className="text-sm text-slate-500">
+                            {word.phonetic}
+                          </span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm text-slate-600">{word.meaning}</p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {word.meaning}
+                      </p>
                       {word.example && (
                         <p className="mt-1 text-xs italic text-slate-400">
                           {word.example}
@@ -198,7 +208,9 @@ export default function VocabularyDetailPage() {
             {/* Related sets */}
             {related.length > 0 && (
               <section className="mb-8">
-                <h2 className="mb-4 text-lg font-bold">Related Vocabulary Sets</h2>
+                <h2 className="mb-4 text-lg font-bold">
+                  Related Vocabulary Sets
+                </h2>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   {related.map((set) => (
                     <Link
@@ -208,7 +220,8 @@ export default function VocabularyDetailPage() {
                     >
                       <h3 className="font-semibold">{set.title}</h3>
                       <p className="mt-1 text-xs text-slate-500">
-                        {TOPIC_LABELS[set.topic] ?? set.topic} · {set.wordCount} words
+                        {TOPIC_LABELS[set.topic] ?? set.topic} · {set.wordCount}{" "}
+                        words
                       </p>
                     </Link>
                   ))}
@@ -219,7 +232,9 @@ export default function VocabularyDetailPage() {
             {/* Top rank */}
             {topRank && (
               <section className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-6">
-                <h3 className="mb-2 text-sm font-semibold text-amber-800">Top Performer</h3>
+                <h3 className="mb-2 text-sm font-semibold text-amber-800">
+                  Top Performer
+                </h3>
                 <p className="text-amber-900">
                   <span className="font-bold">{topRank.name}</span> with score{" "}
                   <span className="font-bold">{topRank.score}</span>

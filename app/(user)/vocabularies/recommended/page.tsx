@@ -6,9 +6,7 @@ import { ArrowLeft, BookOpen, Clock3, Sparkles } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "../data";
 import { RecommendedVocabulariesSkeleton } from "@/components/vocabularies/skeletons";
-import {
-  useGetRecommendedVocabulariesQuery,
-} from "@/lib/api/vocabulariesApi";
+import { useGetRecommendedVocabulariesQuery } from "@/lib/api/vocabulariesApi";
 
 export default function RecommendedVocabulariesPage() {
   const params = useParams<{ id: string }>();
@@ -82,7 +80,9 @@ export default function RecommendedVocabulariesPage() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="text-lg font-bold text-white">{item.title}</h3>
+                    <h3 className="text-lg font-bold text-white">
+                      {item.title}
+                    </h3>
                   </div>
                 </div>
 

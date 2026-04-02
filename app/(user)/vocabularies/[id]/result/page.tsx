@@ -30,12 +30,16 @@ function ResultContent() {
   const mode = searchParams.get("mode") ?? "flashcards";
 
   const resultLabel =
-    percent >= 90 ? "Excellent!" :
-    percent >= 70 ? "Good job!" :
-    percent >= 50 ? "Keep going!" :
-    "Needs more practice";
+    percent >= 90
+      ? "Excellent!"
+      : percent >= 70
+        ? "Good job!"
+        : percent >= 50
+          ? "Keep going!"
+          : "Needs more practice";
 
-  const resultInfo = RESULT_LABELS[resultLabel] ?? RESULT_LABELS["Needs more practice"];
+  const resultInfo =
+    RESULT_LABELS[resultLabel] ?? RESULT_LABELS["Needs more practice"];
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -73,7 +77,9 @@ function ResultContent() {
           </div>
 
           <div>
-            <h1 className={`text-2xl font-bold ${resultInfo.color}`}>{resultLabel}</h1>
+            <h1 className={`text-2xl font-bold ${resultInfo.color}`}>
+              {resultLabel}
+            </h1>
             <p className="mt-1 text-sm text-slate-500">
               You got {score} out of {total} correct
             </p>

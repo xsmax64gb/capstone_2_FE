@@ -44,7 +44,9 @@ export default function VocabularyHistoryPage() {
         <section className="mb-8">
           <div className="mb-2 flex items-center gap-2">
             <History className="h-6 w-6 text-blue-500" />
-            <h1 className="text-3xl font-bold tracking-tight">Attempt History</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Attempt History
+            </h1>
           </div>
           <p className="text-sm text-slate-500">
             Your past vocabulary study sessions.
@@ -113,7 +115,11 @@ export default function VocabularyHistoryPage() {
                         {item.score}/{item.total}
                       </span>
                       <span className="ml-1 text-xs text-slate-500">
-                        ({Math.round((item.score / Math.max(1, item.total)) * 100)}%)
+                        (
+                        {Math.round(
+                          (item.score / Math.max(1, item.total)) * 100,
+                        )}
+                        %)
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">

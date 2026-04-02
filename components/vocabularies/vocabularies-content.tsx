@@ -3,7 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, CheckCircle2, History, Layers3, Search, Sparkles } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle2,
+  History,
+  Layers3,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "@/app/(user)/vocabularies/data";
 import { VocabulariesListSkeleton } from "@/components/vocabularies/skeletons";
@@ -26,10 +33,10 @@ export default function VocabulariesContent() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [selectedLevel, setSelectedLevel] = useState<string>(
-    searchParams.get("level") || "all"
+    searchParams.get("level") || "all",
   );
   const [selectedTopic, setSelectedTopic] = useState<string>(
-    searchParams.get("topic") || "all"
+    searchParams.get("topic") || "all",
   );
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
@@ -103,9 +110,12 @@ export default function VocabulariesContent() {
         <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Vocabulary Lab</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Vocabulary Lab
+              </h1>
               <p className="mt-1 text-slate-500">
-                Master vocabulary through flashcards and quizzes, powered by real data.
+                Master vocabulary through flashcards and quizzes, powered by
+                real data.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -144,11 +154,15 @@ export default function VocabulariesContent() {
               <p className="text-xs text-slate-500">Total Words</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-              <p className="text-2xl font-bold">{summaryData?.masteredCount ?? 0}</p>
+              <p className="text-2xl font-bold">
+                {summaryData?.masteredCount ?? 0}
+              </p>
               <p className="text-xs text-slate-500">Mastered</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-              <p className="text-2xl font-bold">{summaryData?.learningCount ?? 0}</p>
+              <p className="text-2xl font-bold">
+                {summaryData?.learningCount ?? 0}
+              </p>
               <p className="text-xs text-slate-500">Learning</p>
             </div>
           </div>
@@ -246,7 +260,9 @@ export default function VocabulariesContent() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                    <h3 className="text-xl font-bold text-white">
+                      {item.title}
+                    </h3>
                   </div>
                 </div>
 
@@ -370,8 +386,9 @@ export default function VocabulariesContent() {
               Suggested Route
             </h3>
             <p className="mt-2 text-sm text-slate-600">
-              Open <span className="font-semibold">Overview Table</span> to scan all words, then study
-              with <span className="font-semibold">Flashcards</span>, and finish with{" "}
+              Open <span className="font-semibold">Overview Table</span> to scan
+              all words, then study with{" "}
+              <span className="font-semibold">Flashcards</span>, and finish with{" "}
               <span className="font-semibold">Quiz</span>.
             </p>
           </section>

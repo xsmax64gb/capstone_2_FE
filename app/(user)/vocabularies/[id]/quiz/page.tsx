@@ -4,7 +4,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Clock3 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { useGetVocabularyByIdQuery, useSubmitVocabularyAttemptMutation } from "@/lib/api/vocabulariesApi";
+import {
+  useGetVocabularyByIdQuery,
+  useSubmitVocabularyAttemptMutation,
+} from "@/lib/api/vocabulariesApi";
 import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
 
 export default function QuizPage() {
@@ -12,7 +15,9 @@ export default function QuizPage() {
   const id = params?.id ?? "";
   const router = useRouter();
 
-  const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, { skip: !id });
+  const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, {
+    skip: !id,
+  });
   const [submit] = useSubmitVocabularyAttemptMutation();
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,7 +37,9 @@ export default function QuizPage() {
       while (otherMeanings.length < 3) {
         otherMeanings.push("Không có trong danh sách");
       }
-      const options = [word.meaning, ...otherMeanings].sort(() => Math.random() - 0.5);
+      const options = [word.meaning, ...otherMeanings].sort(
+        () => Math.random() - 0.5,
+      );
       const correctIndex = options.indexOf(word.meaning);
       return {
         wordId: word.id,
@@ -58,7 +65,8 @@ export default function QuizPage() {
 
   const current = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
-  const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+  const progress =
+    questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
   const allAnswered = answers.every((a) => a !== null);
 
   const formatTime = (s: number) => {
@@ -76,7 +84,7 @@ export default function QuizPage() {
     }).unwrap();
 
     router.push(
-      `/vocabularies/${id}/result?score=${result.score}&total=${result.total}&percent=${result.percent}&time=${durationSec}&mode=quiz&attemptId=${result.attemptId}`
+      `/vocabularies/${id}/result?score=${result.score}&total=${result.total}&percent=${result.percent}&time=${durationSec}&mode=quiz&attemptId=${result.attemptId}`,
     );
   };
 

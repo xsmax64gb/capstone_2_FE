@@ -30,7 +30,9 @@ export default function FlashcardsPage() {
   const id = params?.id ?? "";
   const router = useRouter();
 
-  const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, { skip: !id });
+  const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, {
+    skip: !id,
+  });
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -44,12 +46,12 @@ export default function FlashcardsPage() {
   const wordIdSignature = useMemo(() => allWordIds.join("|"), [allWordIds]);
   const wordMap = useMemo(
     () => new Map(words.map((word) => [word.id, word])),
-    [words]
+    [words],
   );
   const knownSet = useMemo(() => new Set(knownIds), [knownIds]);
   const unknownIds = useMemo(
     () => allWordIds.filter((wordId) => !knownSet.has(wordId)),
-    [allWordIds, knownSet]
+    [allWordIds, knownSet],
   );
 
   const hasSpeechSupport =
@@ -100,8 +102,12 @@ export default function FlashcardsPage() {
     }
 
     setDeckIds((currentDeck) => {
-      const keptOrder = currentDeck.filter((wordId) => unknownIds.includes(wordId));
-      const missing = unknownIds.filter((wordId) => !keptOrder.includes(wordId));
+      const keptOrder = currentDeck.filter((wordId) =>
+        unknownIds.includes(wordId),
+      );
+      const missing = unknownIds.filter(
+        (wordId) => !keptOrder.includes(wordId),
+      );
       return [...keptOrder, ...missing];
     });
   }, [studyMode, unknownIds, allWordIds]);
@@ -145,13 +151,14 @@ export default function FlashcardsPage() {
     deckIds.length > 0
       ? deckIds
       : studyMode === "unknown"
-      ? unknownIds
-      : allWordIds;
+        ? unknownIds
+        : allWordIds;
   const deckCount = effectiveDeckIds.length;
   const safeCurrentIndex = deckCount > 0 ? currentIndex % deckCount : 0;
   const activeWordId = deckCount > 0 ? effectiveDeckIds[safeCurrentIndex] : "";
   const currentWord = activeWordId ? wordMap.get(activeWordId) : undefined;
-  const progress = deckCount > 0 ? ((safeCurrentIndex + 1) / deckCount) * 100 : 0;
+  const progress =
+    deckCount > 0 ? ((safeCurrentIndex + 1) / deckCount) * 100 : 0;
 
   const stopSpeaking = () => {
     setIsSpeaking(false);
@@ -166,7 +173,7 @@ export default function FlashcardsPage() {
     setKnownIds((prev) =>
       prev.includes(currentWord.id)
         ? prev.filter((wordId) => wordId !== currentWord.id)
-        : [...prev, currentWord.id]
+        : [...prev, currentWord.id],
     );
   };
 
@@ -257,7 +264,7 @@ export default function FlashcardsPage() {
     stopSpeaking();
 
     const shouldStartQuiz = window.confirm(
-      "Bạn muốn làm bài trắc nghiệm (quiz) ngay bây giờ không?"
+      "Bạn muốn làm bài trắc nghiệm (quiz) ngay bây giờ không?",
     );
 
     if (shouldStartQuiz) {
@@ -289,9 +296,13 @@ export default function FlashcardsPage() {
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600">
-            <span>{deckCount > 0 ? safeCurrentIndex + 1 : 0} / {deckCount}</span>
+            <span>
+              {deckCount > 0 ? safeCurrentIndex + 1 : 0} / {deckCount}
+            </span>
             <span className="text-slate-300">|</span>
-            <span>{studyMode === "unknown" ? "Unknown only" : "All cards"}</span>
+            <span>
+              {studyMode === "unknown" ? "Unknown only" : "All cards"}
+            </span>
           </div>
         </div>
 
@@ -310,7 +321,10 @@ export default function FlashcardsPage() {
 
         {currentWord && (
           <div className="mb-8">
-            <div className="mx-auto max-w-2xl" style={{ perspective: "1600px" }}>
+            <div
+              className="mx-auto max-w-2xl"
+              style={{ perspective: "1600px" }}
+            >
               <div
                 key={currentWord.id}
                 role="button"
@@ -349,7 +363,9 @@ export default function FlashcardsPage() {
                         disabled={!hasSpeechSupport}
                         className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        <Volume2 className={`h-3.5 w-3.5 ${isSpeaking ? "animate-pulse" : ""}`} />
+                        <Volume2
+                          className={`h-3.5 w-3.5 ${isSpeaking ? "animate-pulse" : ""}`}
+                        />
                         Voice
                       </button>
                     </div>
@@ -358,7 +374,9 @@ export default function FlashcardsPage() {
                         {currentWord.word}
                       </p>
                       {currentWord.phonetic && (
-                        <p className="mt-3 text-base text-slate-500">{currentWord.phonetic}</p>
+                        <p className="mt-3 text-base text-slate-500">
+                          {currentWord.phonetic}
+                        </p>
                       )}
                     </div>
                     <p className="mt-3 text-center text-xs text-slate-400">
@@ -379,7 +397,9 @@ export default function FlashcardsPage() {
                       </span>
                     </div>
                     <div className="flex flex-1 flex-col items-center justify-center text-center">
-                      <p className="text-2xl font-semibold text-slate-800">{currentWord.meaning}</p>
+                      <p className="text-2xl font-semibold text-slate-800">
+                        {currentWord.meaning}
+                      </p>
                       {currentWord.example && (
                         <p className="mt-4 max-w-xl text-sm italic leading-6 text-slate-500">
                           "{currentWord.example}"
@@ -399,11 +419,15 @@ export default function FlashcardsPage() {
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
             <p className="text-slate-500">Known</p>
-            <p className="text-lg font-bold text-emerald-600">{knownIds.length}</p>
+            <p className="text-lg font-bold text-emerald-600">
+              {knownIds.length}
+            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
             <p className="text-slate-500">Unknown</p>
-            <p className="text-lg font-bold text-amber-600">{unknownIds.length}</p>
+            <p className="text-lg font-bold text-amber-600">
+              {unknownIds.length}
+            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
             <p className="text-slate-500">Current Deck</p>
@@ -457,7 +481,9 @@ export default function FlashcardsPage() {
               } disabled:cursor-not-allowed disabled:opacity-40`}
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              {currentWord && knownSet.has(currentWord.id) ? "Known" : "Mark Known"}
+              {currentWord && knownSet.has(currentWord.id)
+                ? "Known"
+                : "Mark Known"}
             </button>
 
             <button

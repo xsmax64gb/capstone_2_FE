@@ -144,8 +144,8 @@ export default function LearnMapsPage() {
 
   return (
     <ProtectedRoute>
-      <main className="mx-auto flex w-full max-w-[1440px] flex-1 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50">
-        <section className="min-w-0 flex-1 px-5 py-10 md:px-8 md:py-12">
+      <main className="mx-auto flex w-full max-w-[1440px] flex-1 bg-gradient-to-b from-slate-50 via-white to-slate-50">
+        <section className="min-w-0 flex-1 overflow-y-auto px-5 py-10 md:px-8 md:py-12" style={{ height: 'calc(100vh - 64px)' }}>
           <ScrollReveal>
             <header className="mx-auto max-w-2xl text-center">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 shadow-sm">

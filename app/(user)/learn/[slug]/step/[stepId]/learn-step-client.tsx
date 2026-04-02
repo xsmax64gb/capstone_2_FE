@@ -279,7 +279,6 @@ function Meter({
 
 export function LearnStepClient({ slug, step }: Props) {
   const { lang } = useI18n();
-  console.log("=== LearnStepClient rendering ===");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<StepChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -580,8 +579,6 @@ export function LearnStepClient({ slug, step }: Props) {
 
     try {
       const response = await endConversation(conversationId).unwrap();
-      console.log("Response:", response);
-      console.log("Setting ended state...");
       setEnded({
         passed: response.passed ?? false,
         feedback: response.conversation?.aiFeedback ?? "",
@@ -1084,7 +1081,6 @@ export function LearnStepClient({ slug, step }: Props) {
 
         {ended || ending ? (
           <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-xl">
-            {console.log("RENDER DECISION - ending:", ending, "ended:", ended)}
             {ending && !ended ? (
               <>
                 <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white">
@@ -1124,7 +1120,6 @@ export function LearnStepClient({ slug, step }: Props) {
               </>
             ) : ended ? (
               <>
-                {console.log("=== RENDERING ENDED SECTION ===", ended)}
                 <Badge
                   className={`rounded-full px-3 py-1 ${ended.passed ? "bg-emerald-600 text-white" : "bg-slate-900 text-white"}`}
                 >
@@ -1133,13 +1128,11 @@ export function LearnStepClient({ slug, step }: Props) {
                     : bi("Xem lại và thử lại", "Review and retry")}
                 </Badge>
                 <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
-                  {console.log("=== RENDERING TITLE ===", ended.passed)}
                   {ended.passed
                     ? bi("Buổi học hoàn thành", "Lesson completed")
                     : bi("Phiên học đã kết thúc", "Lesson session ended")}
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                  {console.log("=== RENDERING FEEDBACK ===", ended.feedback)}
                   {ended.feedback ||
                     bi("Không có nhận xét AI.", "No AI feedback available.")}
                 </p>

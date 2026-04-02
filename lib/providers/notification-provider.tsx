@@ -1,11 +1,45 @@
-'use client'
+"use client";
 
-import { useSelector } from 'react-redux'
-import type { RootState } from '@/lib/store'
-import { NotificationContainer } from '@/components/notification/notification-container'
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
+import { addNotification } from "@/store/slices/notificationSlice";
+import { NotificationContainer } from "@/components/notification/notification-container";
 
 export function NotificationProvider() {
-  const notifications = useSelector((state: RootState) => state.notification.notifications)
+  const dispatch = useDispatch();
+  const notifications = useSelector(
+    (state: RootState) => state.notification.notifications,
+  );
 
-  return <NotificationContainer notifications={notifications} />
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        title?: string;
+        message?: string;
+        type?: "default" | "success" | "error" | "warning" | "info";
+        duration?: number;
+      }>;
+
+      if (!customEvent.detail?.title) {
+        return;
+      }
+
+      dispatch(
+        addNotification({
+          title: customEvent.detail.title,
+          message: customEvent.detail.message,
+          type: customEvent.detail.type ?? "default",
+          duration: customEvent.detail.duration,
+        }),
+      );
+    };
+
+    window.addEventListener("elapp:notify", handler);
+    return () => {
+      window.removeEventListener("elapp:notify", handler);
+    };
+  }, [dispatch]);
+
+  return <NotificationContainer notifications={notifications} />;
 }

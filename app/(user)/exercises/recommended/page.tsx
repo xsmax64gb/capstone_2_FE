@@ -4,19 +4,35 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, TYPE_LABELS } from "../data";
-import { RecommendedSkeleton } from "../skeletons";
-import { useGetRecommendedExercisesQuery } from "@/lib/api/exercisesApi";
+import { RecommendedSkeleton } from "@/components/exercises/skeletons";
+import { useGetRecommendedExercisesQuery } from "@/store/services/exercisesApi";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function RecommendedExercisesPage() {
+  const { t } = useI18n();
   const {
     data: items = [],
     isLoading,
     isError,
   } = useGetRecommendedExercisesQuery({ limit: 6 });
-  const getTopicLabel = (topic: string) =>
-    TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic;
-  const getTypeLabel = (type: string) =>
-    TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type;
+  const getTopicLabel = (topic: string) => {
+    const labels: Record<string, string> = {
+      "daily-life": t("Đời sống hằng ngày"),
+      work: t("Công việc"),
+      travel: t("Du lịch"),
+      technology: t("Công nghệ"),
+    };
+    return labels[topic] ?? topic;
+  };
+
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      mcq: t("Trắc nghiệm lựa chọn"),
+      fill_blank: t("Điền vào chỗ trống"),
+      matching: t("Nối cặp"),
+    };
+    return labels[type] ?? type;
+  };
 
   return (
     <ProtectedRoute>
@@ -27,17 +43,18 @@ export default function RecommendedExercisesPage() {
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Exercise Arena
+            {t("Quay lại Sân thi đấu bài tập")}
           </Link>
         </section>
 
         <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold tracking-tight">
-            Recommended For You
+            {t("Đề xuất cho bạn")}
           </h1>
           <p className="mt-1 text-slate-500">
-            Curated sets based on your latest attempts, weak skills, and level
-            progression.
+            {t(
+              "Các bộ được tuyển chọn dựa trên lần làm gần nhất, kỹ năng yếu và tiến độ cấp độ của bạn.",
+            )}
           </p>
         </section>
 
@@ -45,7 +62,7 @@ export default function RecommendedExercisesPage() {
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load recommended exercises.
+            {t("Không tải được bài tập đề xuất.")}
           </div>
         )}
 

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Bell, Languages, LogOut, User } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Bell, Languages, LogOut, ShieldCheck, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
 import {
@@ -15,11 +16,10 @@ import {
 import { LanguageSwitch } from "./language-switch";
 
 const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Exercises", href: "/exercises" },
-  { label: "Vocabulary", href: "/vocabulary" },
-  { label: "AI Speaking", href: "/ai" },
-  { label: "Progress", href: "/dashboard" },
+  { labelKey: "Trang chủ", href: "/" },
+  { labelKey: "Bài tập", href: "/exercises" },
+  { labelKey: "Từ vựng", href: "/vocabularies" },
+  { labelKey: "Nói với AI", href: "/learn" },
 ];
 
 const DEFAULT_AVATAR_URL =
@@ -27,10 +27,47 @@ const DEFAULT_AVATAR_URL =
 
 export function UserHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuth();
   const { t } = useI18n();
-  const profileName = user?.fullName || user?.name || t("Profile");
-  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  /** Tránh hydration mismatch: Redux đọc user từ localStorage chỉ phía client. */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const profileName = mounted
+    ? user?.fullName || user?.name || t("Profile")
+    : t("Profile");
+  const avatarUrl =
+    mounted && user?.avatarUrl ? user.avatarUrl : DEFAULT_AVATAR_URL;
+  const navLinks =
+    mounted && user?.role === "admin"
+      ? [...navItems, { labelKey: "Quản trị", href: "/admin" }]
+      : navItems;
+
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+    return pathname.startsWith(href);
+  };
+
+  const getActiveIndex = () => {
+    const activeItem = navLinks.find(
+      (item) => isActive(item.href) && item.labelKey !== "Quản trị",
+    );
+    return activeItem ? navLinks.indexOf(activeItem) : -1;
+  };
+
+  const getUnderlinePosition = () => {
+    const activeIndex = getActiveIndex();
+    if (activeIndex < 0) return 0;
+
+    // Base position for each item (gap-8 = 32px between items)
+    const basePositions = [0, 96, 192, 288]; // Approximate positions for each nav item
+    return basePositions[activeIndex] || 0;
+  };
 
   const handleLogout = () => {
     logout();
@@ -47,16 +84,30 @@ export function UserHeader() {
           <span className="text-xl font-bold tracking-tight">SmartLingo</span>
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-          {navItems.map((item) => (
+        <nav className="relative hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
+          {navLinks.map((item, index) => (
             <Link
-              key={item.label}
+              key={item.labelKey}
               href={item.href}
-              className="transition-colors hover:text-black"
+              className={`relative z-10 px-1 transition-colors duration-300 hover:text-black ${
+                isActive(item.href) && item.labelKey !== "Quản trị"
+                  ? "font-bold text-black"
+                  : ""
+              }`}
+              data-active={isActive(item.href) && item.labelKey !== "Quản trị"}
             >
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
+          {/* Sliding underline */}
+          <div
+            className="absolute bottom-[-4px] h-0.5 bg-black transition-all duration-500 ease-out"
+            style={{
+              width: "45px",
+              transform: `translateX(${getActiveIndex() >= 0 ? getUnderlinePosition() + 10 : 0}px)`,
+              opacity: getActiveIndex() >= 0 ? 1 : 0,
+            }}
+          />
         </nav>
 
         <div className="flex items-center gap-4">
@@ -87,6 +138,12 @@ export function UserHeader() {
                 <User className="h-4 w-4" />
                 {t("Profile")}
               </DropdownMenuItem>
+              {mounted && user?.role === "admin" && (
+                <DropdownMenuItem onClick={() => router.push("/admin")}>
+                  <ShieldCheck className="h-4 w-4" />
+                  Quản trị
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />

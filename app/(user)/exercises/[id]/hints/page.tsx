@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Lightbulb, WandSparkles } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TYPE_LABELS } from "../../data";
-import { HintsSkeleton } from "../../skeletons";
+import { HintsSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseHintsQuery,
-} from "@/lib/api/exercisesApi";
+} from "@/store/services/exercisesApi";
 
 export default function ExerciseHintsPage() {
   const params = useParams<{ id: string }>();

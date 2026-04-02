@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux'
-import { addNotification, removeNotification } from '@/lib/slices/notificationSlice'
+import { addNotification, removeNotification } from '@/store/slices/notificationSlice'
 import type { NotificationType } from '@/types'
 
 export function useNotification() {

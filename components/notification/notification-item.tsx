@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useDispatch } from 'react-redux'
-import { removeNotification } from '@/lib/slices/notificationSlice'
+import { removeNotification } from '@/store/slices/notificationSlice'
 import type { Notification } from '@/types'
 import { X, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 

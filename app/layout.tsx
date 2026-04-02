@@ -15,7 +15,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "My App",
+  title: "SmartLingo",
   description: "Frontend Application with RTK Query & Authentication",
   icons: {
     icon: [

@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Medal, Timer, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { formatDuration } from "../../data";
-import { LeaderboardSkeleton } from "../../skeletons";
+import { LeaderboardSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseLeaderboardQuery,
-} from "@/lib/api/exercisesApi";
+} from "@/store/services/exercisesApi";
 
 export default function ExerciseLeaderboardPage() {
   const params = useParams<{ id: string }>();

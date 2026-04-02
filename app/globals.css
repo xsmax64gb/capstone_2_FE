@@ -158,18 +158,18 @@
     stroke-dashoffset: 0;
   }
   to {
-    stroke-dashoffset: -44;
+    stroke-dashoffset: -36;
   }
 }
 
 .ai-connector-base {
-  filter: drop-shadow(0 0 4px rgba(15, 23, 42, 0.12));
+  filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
 }
 
 .ai-connector-flow {
-  stroke-dasharray: 3 8;
+  stroke-dasharray: 8 14;
   animation: ai-flow-dash 2.8s linear infinite;
-  opacity: 0.85;
+  opacity: 0.92;
 }
 
 .ai-node-glow::after {
@@ -183,6 +183,8 @@
 
 .ai-node-card {
   will-change: transform;
+  position: relative;
+  z-index: 1;
 }
 
 .ai-node-card:hover {
@@ -197,4 +199,45 @@
   .ai-connector-flow {
     animation: none;
   }
+}
+
+/* Custom Scrollbar Styles - High Priority */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 1px !important;
+  height: 1px !important;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  background: #000000 !important;
+  border-radius: 0px !important;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background: #333333 !important;
+}
+
+html::-webkit-scrollbar-corner,
+body::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* Firefox scrollbar - High Priority */
+html,
+body,
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: #000000 transparent !important;
 }

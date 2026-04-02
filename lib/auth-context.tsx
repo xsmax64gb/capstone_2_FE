@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '@/lib/store'
-import { setLoading, logout } from '@/lib/slices/authSlice'
+import type { RootState } from '@/store/store'
+import { setLoading, logout } from '@/store/slices/authSlice'
 import type { User } from '@/types'
 
 interface AuthContextType {

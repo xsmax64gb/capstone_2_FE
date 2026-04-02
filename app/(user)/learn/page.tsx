@@ -21,7 +21,7 @@ import {
   useGetLearnMapsQuery,
   type LearnMapItem,
   type MapProgressStatus,
-} from "@/lib/api/learnApi";
+} from "@/store/services/learnApi";
 
 type NodeVisualStatus = "completed" | "current" | "locked";
 

@@ -155,7 +155,14 @@ export interface AdminUsersQueryParams {
   level?: string;
   onboardingDone?: "all" | "true" | "false";
   isActive?: "all" | "true" | "false";
-  sortBy?: "createdAt" | "updatedAt" | "fullName" | "email" | "exp" | "placementScore" | "lastActiveAt";
+  sortBy?:
+    | "createdAt"
+    | "updatedAt"
+    | "fullName"
+    | "email"
+    | "exp"
+    | "placementScore"
+    | "lastActiveAt";
   sortOrder?: "asc" | "desc";
 }
 
@@ -359,11 +366,7 @@ export interface AdminAiLevelPayload {
 }
 
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
-export type PlacementSkillType =
-  | "grammar"
-  | "vocab"
-  | "reading"
-  | "listening";
+export type PlacementSkillType = "grammar" | "vocab" | "reading" | "listening";
 export type PlacementQuestionType = "mcq" | "true_false" | "fill_blank";
 
 export interface OnboardingProfileDraft {

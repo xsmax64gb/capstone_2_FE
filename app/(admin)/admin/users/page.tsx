@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ShieldAlert, ShieldCheck, UserCog, UserPlus, Users2 } from "lucide-react";
+import {
+  ShieldAlert,
+  ShieldCheck,
+  UserCog,
+  UserPlus,
+  Users2,
+} from "lucide-react";
 import {
   useCreateAdminUserMutation,
   useDeleteAdminUserMutation,
@@ -10,9 +16,12 @@ import {
   useUpdateAdminUserMutation,
   useUpdateAdminUserRoleMutation,
   useUpdateAdminUserStatusMutation,
-} from "@/lib/api/adminApi";
+} from "@/store/services/adminApi";
 import { formatDateTime, formatNumber, formatPercent } from "@/lib/admin";
-import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
+import {
+  AdminPageError,
+  AdminPageLoading,
+} from "@/components/admin/admin-query-state";
 import { useNotification } from "@/hooks/use-notification";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +32,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -147,17 +162,36 @@ export default function AdminUsersPage() {
       sortBy: "createdAt" as const,
       sortOrder: "desc" as const,
     }),
-    [levelFilter, limit, onboardingFilter, page, query, roleFilter, statusFilter],
+    [
+      levelFilter,
+      limit,
+      onboardingFilter,
+      page,
+      query,
+      roleFilter,
+      statusFilter,
+    ],
   );
 
-  const { data, isLoading, isError, error: queryError } = useGetAdminUsersQuery(queryParams);
+  const {
+    data,
+    isLoading,
+    isError,
+    error: queryError,
+  } = useGetAdminUsersQuery(queryParams);
 
-  const [createAdminUser, { isLoading: isCreating }] = useCreateAdminUserMutation();
-  const [updateAdminUser, { isLoading: isUpdatingUser }] = useUpdateAdminUserMutation();
-  const [updateAdminUserRole, { isLoading: isUpdatingRole }] = useUpdateAdminUserRoleMutation();
-  const [updateAdminUserStatus, { isLoading: isUpdatingStatus }] = useUpdateAdminUserStatusMutation();
-  const [resetAdminUserPassword, { isLoading: isResettingPassword }] = useResetAdminUserPasswordMutation();
-  const [deleteAdminUser, { isLoading: isDeletingUser }] = useDeleteAdminUserMutation();
+  const [createAdminUser, { isLoading: isCreating }] =
+    useCreateAdminUserMutation();
+  const [updateAdminUser, { isLoading: isUpdatingUser }] =
+    useUpdateAdminUserMutation();
+  const [updateAdminUserRole, { isLoading: isUpdatingRole }] =
+    useUpdateAdminUserRoleMutation();
+  const [updateAdminUserStatus, { isLoading: isUpdatingStatus }] =
+    useUpdateAdminUserStatusMutation();
+  const [resetAdminUserPassword, { isLoading: isResettingPassword }] =
+    useResetAdminUserPasswordMutation();
+  const [deleteAdminUser, { isLoading: isDeletingUser }] =
+    useDeleteAdminUserMutation();
 
   const isMutating =
     isCreating ||
@@ -217,7 +251,11 @@ export default function AdminUsersPage() {
 
   const onCreateUser = async () => {
     try {
-      if (!createForm.fullName.trim() || !createForm.email.trim() || !createForm.password.trim()) {
+      if (
+        !createForm.fullName.trim() ||
+        !createForm.email.trim() ||
+        !createForm.password.trim()
+      ) {
         error("Thiếu thông tin", "Họ tên, email và mật khẩu là bắt buộc.");
         return;
       }
@@ -233,7 +271,9 @@ export default function AdminUsersPage() {
         password: createForm.password,
         role: createForm.role,
         currentLevel: createForm.currentLevel,
-        exp: Number.isFinite(Number(createForm.exp)) ? Math.max(0, Number(createForm.exp)) : 0,
+        exp: Number.isFinite(Number(createForm.exp))
+          ? Math.max(0, Number(createForm.exp))
+          : 0,
         onboardingDone: createForm.onboardingDone,
         isActive: createForm.isActive,
         bio: createForm.bio,
@@ -242,12 +282,18 @@ export default function AdminUsersPage() {
         avatarUrl: createForm.avatarUrl,
       }).unwrap();
 
-      success("Tạo tài khoản thành công", "Tài khoản đã được tạo mà không cần xác thực Gmail.");
+      success(
+        "Tạo tài khoản thành công",
+        "Tài khoản đã được tạo mà không cần xác thực Gmail.",
+      );
       setCreateForm(INITIAL_CREATE_FORM);
       setIsCreateOpen(false);
       setPage(1);
     } catch (mutationError) {
-      error("Tạo tài khoản thất bại", toApiErrorMessage(mutationError, "Không thể tạo tài khoản."));
+      error(
+        "Tạo tài khoản thất bại",
+        toApiErrorMessage(mutationError, "Không thể tạo tài khoản."),
+      );
     }
   };
 
@@ -274,7 +320,9 @@ export default function AdminUsersPage() {
           email: editForm.email.trim().toLowerCase(),
           role: editForm.role,
           currentLevel: editForm.currentLevel,
-          exp: Number.isFinite(Number(editForm.exp)) ? Math.max(0, Number(editForm.exp)) : 0,
+          exp: Number.isFinite(Number(editForm.exp))
+            ? Math.max(0, Number(editForm.exp))
+            : 0,
           onboardingDone: editForm.onboardingDone,
           isActive: editForm.isActive,
           bio: editForm.bio,
@@ -288,7 +336,10 @@ export default function AdminUsersPage() {
       setEditTarget(null);
       setEditForm(null);
     } catch (mutationError) {
-      error("Cập nhật thất bại", toApiErrorMessage(mutationError, "Không thể cập nhật tài khoản."));
+      error(
+        "Cập nhật thất bại",
+        toApiErrorMessage(mutationError, "Không thể cập nhật tài khoản."),
+      );
     }
   };
 
@@ -298,22 +349,35 @@ export default function AdminUsersPage() {
       await updateAdminUserRole({ id: user.id, role: nextRole }).unwrap();
       success(
         "Đổi quyền thành công",
-        nextRole === "admin" ? "User đã được nâng quyền admin." : "Admin đã được chuyển về user.",
+        nextRole === "admin"
+          ? "User đã được nâng quyền admin."
+          : "Admin đã được chuyển về user.",
       );
     } catch (mutationError) {
-      error("Đổi quyền thất bại", toApiErrorMessage(mutationError, "Không thể cập nhật quyền."));
+      error(
+        "Đổi quyền thất bại",
+        toApiErrorMessage(mutationError, "Không thể cập nhật quyền."),
+      );
     }
   };
 
   const onToggleStatus = async (user: User, nextIsActive: boolean) => {
     try {
-      await updateAdminUserStatus({ id: user.id, isActive: nextIsActive }).unwrap();
+      await updateAdminUserStatus({
+        id: user.id,
+        isActive: nextIsActive,
+      }).unwrap();
       success(
         "Cập nhật trạng thái",
-        nextIsActive ? "Tài khoản đã được kích hoạt." : "Tài khoản đã được khóa.",
+        nextIsActive
+          ? "Tài khoản đã được kích hoạt."
+          : "Tài khoản đã được khóa.",
       );
     } catch (mutationError) {
-      error("Cập nhật thất bại", toApiErrorMessage(mutationError, "Không thể cập nhật trạng thái."));
+      error(
+        "Cập nhật thất bại",
+        toApiErrorMessage(mutationError, "Không thể cập nhật trạng thái."),
+      );
     }
   };
 
@@ -328,29 +392,46 @@ export default function AdminUsersPage() {
         return;
       }
 
-      await resetAdminUserPassword({ id: passwordTarget.id, newPassword: newPassword.trim() }).unwrap();
-      success("Đặt lại mật khẩu thành công", `Đã cập nhật mật khẩu cho ${passwordTarget.email}.`);
+      await resetAdminUserPassword({
+        id: passwordTarget.id,
+        newPassword: newPassword.trim(),
+      }).unwrap();
+      success(
+        "Đặt lại mật khẩu thành công",
+        `Đã cập nhật mật khẩu cho ${passwordTarget.email}.`,
+      );
       setNewPassword("");
       setPasswordTarget(null);
     } catch (mutationError) {
-      error("Đặt lại mật khẩu thất bại", toApiErrorMessage(mutationError, "Không thể đặt lại mật khẩu."));
+      error(
+        "Đặt lại mật khẩu thất bại",
+        toApiErrorMessage(mutationError, "Không thể đặt lại mật khẩu."),
+      );
     }
   };
 
   const onDeleteUser = async (user: User) => {
-    const confirmed = window.confirm(`Bạn có chắc muốn xóa tài khoản ${user.email}?`);
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn xóa tài khoản ${user.email}?`,
+    );
     if (!confirmed) {
       return;
     }
 
     try {
       await deleteAdminUser(user.id).unwrap();
-      success("Xóa tài khoản thành công", `${user.email} đã bị xóa khỏi hệ thống.`);
+      success(
+        "Xóa tài khoản thành công",
+        `${user.email} đã bị xóa khỏi hệ thống.`,
+      );
       if (data?.users.length === 1 && page > 1) {
         setPage((prev) => Math.max(1, prev - 1));
       }
     } catch (mutationError) {
-      error("Xóa tài khoản thất bại", toApiErrorMessage(mutationError, "Không thể xóa tài khoản."));
+      error(
+        "Xóa tài khoản thất bại",
+        toApiErrorMessage(mutationError, "Không thể xóa tài khoản."),
+      );
     }
   };
 
@@ -382,8 +463,8 @@ export default function AdminUsersPage() {
               Quản trị tài khoản người dùng toàn diện
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              Admin có thể tạo tài khoản mới (kể cả admin), cấp quyền, khóa tài khoản,
-              cập nhật hồ sơ, đặt lại mật khẩu và xóa tài khoản.
+              Admin có thể tạo tài khoản mới (kể cả admin), cấp quyền, khóa tài
+              khoản, cập nhật hồ sơ, đặt lại mật khẩu và xóa tài khoản.
             </p>
           </div>
           <Button
@@ -425,7 +506,8 @@ export default function AdminUsersPage() {
         <CardHeader>
           <CardTitle>Bộ lọc quản lý user</CardTitle>
           <CardDescription>
-            Lọc theo từ khóa, quyền, level, trạng thái onboarding và trạng thái hoạt động.
+            Lọc theo từ khóa, quyền, level, trạng thái onboarding và trạng thái
+            hoạt động.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -510,9 +592,14 @@ export default function AdminUsersPage() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-500">
-              Hiển thị {formatNumber(data.users.length)} / {formatNumber(pagination.total)} tài khoản.
+              Hiển thị {formatNumber(data.users.length)} /{" "}
+              {formatNumber(pagination.total)} tài khoản.
             </p>
-            <Button variant="outline" onClick={resetFilters} disabled={isMutating}>
+            <Button
+              variant="outline"
+              onClick={resetFilters}
+              disabled={isMutating}
+            >
               Xóa bộ lọc
             </Button>
           </div>
@@ -523,7 +610,8 @@ export default function AdminUsersPage() {
         <CardHeader>
           <CardTitle>Danh sách người dùng</CardTitle>
           <CardDescription>
-            Thao tác trực tiếp: cấp quyền, khóa/mở khóa, chỉnh sửa, đặt lại mật khẩu và xóa tài khoản.
+            Thao tác trực tiếp: cấp quyền, khóa/mở khóa, chỉnh sửa, đặt lại mật
+            khẩu và xóa tài khoản.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -544,15 +632,22 @@ export default function AdminUsersPage() {
             <TableBody>
               {data.users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center text-slate-500">
+                  <TableCell
+                    colSpan={9}
+                    className="h-24 text-center text-slate-500"
+                  >
                     Không có tài khoản phù hợp với bộ lọc hiện tại.
                   </TableCell>
                 </TableRow>
               ) : (
                 data.users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium text-slate-900">{user.fullName}</TableCell>
-                    <TableCell className="text-slate-600">{user.email}</TableCell>
+                    <TableCell className="font-medium text-slate-900">
+                      {user.fullName}
+                    </TableCell>
+                    <TableCell className="text-slate-600">
+                      {user.email}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
@@ -569,12 +664,16 @@ export default function AdminUsersPage() {
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={user.isActive !== false}
-                          onCheckedChange={(checked) => onToggleStatus(user, checked)}
+                          onCheckedChange={(checked) =>
+                            onToggleStatus(user, checked)
+                          }
                           disabled={isMutating}
                         />
                         <span
                           className={
-                            user.isActive === false ? "text-rose-600 text-xs" : "text-emerald-600 text-xs"
+                            user.isActive === false
+                              ? "text-rose-600 text-xs"
+                              : "text-emerald-600 text-xs"
                           }
                         >
                           {user.isActive === false ? "Inactive" : "Active"}
@@ -585,14 +684,20 @@ export default function AdminUsersPage() {
                     <TableCell>
                       <span
                         className={
-                          user.onboardingDone ? "text-emerald-600 text-xs" : "text-amber-600 text-xs"
+                          user.onboardingDone
+                            ? "text-emerald-600 text-xs"
+                            : "text-amber-600 text-xs"
                         }
                       >
                         {user.onboardingDone ? "Done" : "Pending"}
                       </span>
                     </TableCell>
-                    <TableCell>{formatPercent(user.placementScore || 0)}</TableCell>
-                    <TableCell className="text-slate-500">{formatDateTime(user.createdAt)}</TableCell>
+                    <TableCell>
+                      {formatPercent(user.placementScore || 0)}
+                    </TableCell>
+                    <TableCell className="text-slate-500">
+                      {formatDateTime(user.createdAt)}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
@@ -652,12 +757,22 @@ export default function AdminUsersPage() {
                           setPage((prev) => prev - 1);
                         }
                       }}
-                      className={pagination.page <= 1 ? "pointer-events-none opacity-50" : ""}
+                      className={
+                        pagination.page <= 1
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
                     />
                   </PaginationItem>
 
-                  {Array.from({ length: pagination.totalPages }, (_, index) => index + 1)
-                    .slice(Math.max(0, pagination.page - 3), Math.max(5, pagination.page + 2))
+                  {Array.from(
+                    { length: pagination.totalPages },
+                    (_, index) => index + 1,
+                  )
+                    .slice(
+                      Math.max(0, pagination.page - 3),
+                      Math.max(5, pagination.page + 2),
+                    )
                     .map((pageItem) => (
                       <PaginationItem key={pageItem}>
                         <PaginationLink
@@ -683,7 +798,9 @@ export default function AdminUsersPage() {
                         }
                       }}
                       className={
-                        pagination.page >= pagination.totalPages ? "pointer-events-none opacity-50" : ""
+                        pagination.page >= pagination.totalPages
+                          ? "pointer-events-none opacity-50"
+                          : ""
                       }
                     />
                   </PaginationItem>
@@ -699,7 +816,8 @@ export default function AdminUsersPage() {
           <DialogHeader>
             <DialogTitle>Tạo tài khoản mới</DialogTitle>
             <DialogDescription>
-              Admin có thể tạo tài khoản user/admin trực tiếp, không cần OTP email.
+              Admin có thể tạo tài khoản user/admin trực tiếp, không cần OTP
+              email.
             </DialogDescription>
           </DialogHeader>
 
@@ -709,7 +827,10 @@ export default function AdminUsersPage() {
               <Input
                 value={createForm.fullName}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, fullName: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    fullName: event.target.value,
+                  }))
                 }
                 placeholder="Nguyen Van A"
               />
@@ -721,7 +842,10 @@ export default function AdminUsersPage() {
                 type="email"
                 value={createForm.email}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, email: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    email: event.target.value,
+                  }))
                 }
                 placeholder="email@example.com"
               />
@@ -733,7 +857,10 @@ export default function AdminUsersPage() {
                 type="password"
                 value={createForm.password}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, password: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    password: event.target.value,
+                  }))
                 }
                 placeholder="Tối thiểu 6 ký tự"
               />
@@ -744,7 +871,10 @@ export default function AdminUsersPage() {
               <select
                 value={createForm.role}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, role: event.target.value as UserRole }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    role: event.target.value as UserRole,
+                  }))
                 }
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
               >
@@ -758,7 +888,10 @@ export default function AdminUsersPage() {
               <select
                 value={createForm.currentLevel}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, currentLevel: event.target.value as UserLevel }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    currentLevel: event.target.value as UserLevel,
+                  }))
                 }
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
               >
@@ -777,7 +910,10 @@ export default function AdminUsersPage() {
                 min={0}
                 value={createForm.exp}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, exp: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    exp: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -787,7 +923,10 @@ export default function AdminUsersPage() {
               <Input
                 value={createForm.nativeLanguage}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, nativeLanguage: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    nativeLanguage: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -797,7 +936,10 @@ export default function AdminUsersPage() {
               <Input
                 value={createForm.timezone}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, timezone: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    timezone: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -807,7 +949,10 @@ export default function AdminUsersPage() {
               <Input
                 value={createForm.avatarUrl}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, avatarUrl: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    avatarUrl: event.target.value,
+                  }))
                 }
                 placeholder="https://..."
               />
@@ -818,7 +963,10 @@ export default function AdminUsersPage() {
               <Textarea
                 value={createForm.bio}
                 onChange={(event) =>
-                  setCreateForm((prev) => ({ ...prev, bio: event.target.value }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    bio: event.target.value,
+                  }))
                 }
                 rows={3}
               />
@@ -829,7 +977,10 @@ export default function AdminUsersPage() {
               <Switch
                 checked={createForm.onboardingDone}
                 onCheckedChange={(checked) =>
-                  setCreateForm((prev) => ({ ...prev, onboardingDone: checked }))
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    onboardingDone: checked,
+                  }))
                 }
               />
             </div>
@@ -887,7 +1038,9 @@ export default function AdminUsersPage() {
                 <Input
                   value={editForm.fullName}
                   onChange={(event) =>
-                    setEditForm((prev) => (prev ? { ...prev, fullName: event.target.value } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, fullName: event.target.value } : prev,
+                    )
                   }
                 />
               </div>
@@ -897,7 +1050,9 @@ export default function AdminUsersPage() {
                 <Input
                   value={editForm.email}
                   onChange={(event) =>
-                    setEditForm((prev) => (prev ? { ...prev, email: event.target.value } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, email: event.target.value } : prev,
+                    )
                   }
                 />
               </div>
@@ -908,7 +1063,9 @@ export default function AdminUsersPage() {
                   value={editForm.role}
                   onChange={(event) =>
                     setEditForm((prev) =>
-                      prev ? { ...prev, role: event.target.value as UserRole } : prev,
+                      prev
+                        ? { ...prev, role: event.target.value as UserRole }
+                        : prev,
                     )
                   }
                   className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
@@ -924,7 +1081,12 @@ export default function AdminUsersPage() {
                   value={editForm.currentLevel}
                   onChange={(event) =>
                     setEditForm((prev) =>
-                      prev ? { ...prev, currentLevel: event.target.value as UserLevel } : prev,
+                      prev
+                        ? {
+                            ...prev,
+                            currentLevel: event.target.value as UserLevel,
+                          }
+                        : prev,
                     )
                   }
                   className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
@@ -944,7 +1106,9 @@ export default function AdminUsersPage() {
                   min={0}
                   value={editForm.exp}
                   onChange={(event) =>
-                    setEditForm((prev) => (prev ? { ...prev, exp: event.target.value } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, exp: event.target.value } : prev,
+                    )
                   }
                 />
               </div>
@@ -955,7 +1119,9 @@ export default function AdminUsersPage() {
                   value={editForm.nativeLanguage}
                   onChange={(event) =>
                     setEditForm((prev) =>
-                      prev ? { ...prev, nativeLanguage: event.target.value } : prev,
+                      prev
+                        ? { ...prev, nativeLanguage: event.target.value }
+                        : prev,
                     )
                   }
                 />
@@ -966,7 +1132,9 @@ export default function AdminUsersPage() {
                 <Input
                   value={editForm.timezone}
                   onChange={(event) =>
-                    setEditForm((prev) => (prev ? { ...prev, timezone: event.target.value } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, timezone: event.target.value } : prev,
+                    )
                   }
                 />
               </div>
@@ -976,7 +1144,9 @@ export default function AdminUsersPage() {
                 <Input
                   value={editForm.avatarUrl}
                   onChange={(event) =>
-                    setEditForm((prev) => (prev ? { ...prev, avatarUrl: event.target.value } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, avatarUrl: event.target.value } : prev,
+                    )
                   }
                 />
               </div>
@@ -986,7 +1156,9 @@ export default function AdminUsersPage() {
                 <Textarea
                   value={editForm.bio}
                   onChange={(event) =>
-                    setEditForm((prev) => (prev ? { ...prev, bio: event.target.value } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, bio: event.target.value } : prev,
+                    )
                   }
                   rows={3}
                 />
@@ -997,7 +1169,9 @@ export default function AdminUsersPage() {
                 <Switch
                   checked={editForm.onboardingDone}
                   onCheckedChange={(checked) =>
-                    setEditForm((prev) => (prev ? { ...prev, onboardingDone: checked } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, onboardingDone: checked } : prev,
+                    )
                   }
                 />
               </div>
@@ -1007,7 +1181,9 @@ export default function AdminUsersPage() {
                 <Switch
                   checked={editForm.isActive}
                   onCheckedChange={(checked) =>
-                    setEditForm((prev) => (prev ? { ...prev, isActive: checked } : prev))
+                    setEditForm((prev) =>
+                      prev ? { ...prev, isActive: checked } : prev,
+                    )
                   }
                 />
               </div>

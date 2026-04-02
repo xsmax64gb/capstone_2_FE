@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { notify } from "@/lib/admin";
-import { useGenerateAdminLearnMapWithAiMutation } from "@/lib/api/learnApi";
+import { useGenerateAdminLearnMapWithAiMutation } from "@/store/services/learnApi";
 import { handleApiError } from "@/lib/api-error-handler";
 import { saveLearnMapAiDraft } from "@/lib/learn-map-ai-draft";
 

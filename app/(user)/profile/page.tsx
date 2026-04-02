@@ -14,7 +14,7 @@ import {
   useGetProfileQuery,
   useUpdateProfileMutation,
   useUploadAvatarMutation,
-} from "@/lib/api/authApi";
+} from "@/store/services/authApi";
 import { notify } from "@/lib/admin";
 
 const DEFAULT_AVATAR_URL = "/placeholder-user.jpg";

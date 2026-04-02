@@ -26,7 +26,7 @@ import {
   useCreateAdminExerciseMutation,
   useGetAdminExercisesQuery,
   useUpdateAdminExerciseMutation,
-} from "@/lib/api/adminApi";
+} from "@/store/services/adminApi";
 import {
   ADMIN_EXERCISE_TYPE_OPTIONS,
   ADMIN_LEVEL_OPTIONS,

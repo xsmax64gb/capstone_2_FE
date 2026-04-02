@@ -28,7 +28,7 @@ import type {
   LearnBossBattleState,
   LearnMessage,
   LearnStep,
-} from "@/lib/api/learnApi";
+} from "@/store/services/learnApi";
 import { handleApiError } from "@/lib/api-error-handler";
 import { useI18n } from "@/lib/i18n/context";
 import {
@@ -36,7 +36,7 @@ import {
   useEndLearnConversationMutation,
   useSendLearnMessageQuickMutation,
   useStartLearnConversationMutation,
-} from "@/lib/api/learnApi";
+} from "@/store/services/learnApi";
 
 type Props = {
   slug: string;

@@ -1,4 +1,4 @@
-import type { AdminLearnStepAiDraft } from "@/lib/api/learnApi";
+import type { AdminLearnStepAiDraft } from "@/store/services/learnApi";
 
 const LEARN_STEP_AI_DRAFT_STORAGE_KEY = "admin-learn-step-ai-draft";
 

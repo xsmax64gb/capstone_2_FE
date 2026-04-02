@@ -7,7 +7,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import {
   useGetVocabularyByIdQuery,
   useSubmitVocabularyAttemptMutation,
-} from "@/lib/api/vocabulariesApi";
+} from "@/store/services/vocabulariesApi";
 import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
 
 export default function QuizPage() {

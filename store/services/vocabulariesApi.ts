@@ -1,4 +1,4 @@
-import { baseApi } from "./baseApi";
+import { baseApi } from "@/store/api/baseApi";
 import type { ApiResponse } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

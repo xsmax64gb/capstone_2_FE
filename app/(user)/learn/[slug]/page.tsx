@@ -11,7 +11,7 @@ import {
 } from '@/components/learn/zigzag-connector'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { ScrollReveal } from '@/components/ui/scroll-reveal'
-import { useGetLearnMapBySlugQuery, type LearnStep } from '@/lib/api/learnApi'
+import { useGetLearnMapBySlugQuery, type LearnStep } from '@/store/services/learnApi'
 
 type StepVisual = 'completed' | 'current' | 'locked'
 

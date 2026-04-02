@@ -11,8 +11,8 @@ import {
   Clock3,
   Send,
 } from "lucide-react";
-import type { ExerciseItem } from "@/lib/api/exercisesApi";
-import { useSubmitExerciseAttemptMutation } from "@/lib/api/exercisesApi";
+import type { ExerciseItem } from "@/store/services/exercisesApi";
+import { useSubmitExerciseAttemptMutation } from "@/store/services/exercisesApi";
 import { useAuth } from "@/lib/auth-context";
 
 type AttemptClientProps = {

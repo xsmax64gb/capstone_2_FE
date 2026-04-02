@@ -17,7 +17,7 @@ import { ExercisesListSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExercisesQuery,
   useGetExerciseSummaryQuery,
-} from "@/lib/api/exercisesApi";
+} from "@/store/services/exercisesApi";
 import { useI18n } from "@/lib/i18n/context";
 import {
   Pagination,

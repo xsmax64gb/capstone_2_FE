@@ -5,7 +5,7 @@ import { ArrowLeft, Sparkles, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, TYPE_LABELS } from "../data";
 import { RecommendedSkeleton } from "@/components/exercises/skeletons";
-import { useGetRecommendedExercisesQuery } from "@/lib/api/exercisesApi";
+import { useGetRecommendedExercisesQuery } from "@/store/services/exercisesApi";
 import { useI18n } from "@/lib/i18n/context";
 
 export default function RecommendedExercisesPage() {

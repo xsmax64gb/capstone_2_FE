@@ -1,4 +1,4 @@
-import { baseApi } from "./baseApi";
+import { baseApi } from "@/store/api/baseApi";
 import type {
   AdminAiLevelItem,
   AdminAiLevelPayload,
@@ -52,7 +52,11 @@ const toExerciseFormData = (payload: AdminExercisePayload) => {
   appendFormDataValue(formData, "durationMinutes", payload.durationMinutes);
   appendFormDataValue(formData, "rewardsXp", payload.rewardsXp);
   appendFormDataValue(formData, "skills", JSON.stringify(payload.skills ?? []));
-  appendFormDataValue(formData, "questions", JSON.stringify(payload.questions ?? []));
+  appendFormDataValue(
+    formData,
+    "questions",
+    JSON.stringify(payload.questions ?? []),
+  );
   appendFormDataValue(formData, "coverImageFile", payload.coverImageFile);
 
   return formData;
@@ -72,13 +76,17 @@ const toVocabularySetFormData = (payload: Partial<AdminVocabularyPayload>) => {
   return formData;
 };
 
-const toVocabularyWordBody = (payload: Partial<AdminVocabularyWordPayload>) => ({
+const toVocabularyWordBody = (
+  payload: Partial<AdminVocabularyWordPayload>,
+) => ({
   word: payload.word,
   meaning: payload.meaning,
   example: payload.example,
 });
 
-const toQueryString = (params?: Record<string, string | number | undefined>) => {
+const toQueryString = (
+  params?: Record<string, string | number | undefined>,
+) => {
   const searchParams = new URLSearchParams();
 
   Object.entries(params ?? {}).forEach(([key, value]) => {
@@ -104,7 +112,10 @@ export const adminApi = baseApi.injectEndpoints({
         response.data as AdminOverviewResponse,
     }),
 
-    getAdminUsers: builder.query<AdminUsersResponse, AdminUsersQueryParams | void>({
+    getAdminUsers: builder.query<
+      AdminUsersResponse,
+      AdminUsersQueryParams | void
+    >({
       query: (params) => ({
         url: `/admin/users${toQueryString({
           page: params?.page,
@@ -156,7 +167,10 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<User>) => response.data as User,
     }),
 
-    updateAdminUserRole: builder.mutation<User, { id: string; role: "user" | "admin" }>({
+    updateAdminUserRole: builder.mutation<
+      User,
+      { id: string; role: "user" | "admin" }
+    >({
       query: ({ id, role }) => ({
         url: `/admin/users/${id}/role`,
         method: "PATCH",
@@ -166,7 +180,10 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<User>) => response.data as User,
     }),
 
-    updateAdminUserStatus: builder.mutation<User, { id: string; isActive: boolean }>({
+    updateAdminUserStatus: builder.mutation<
+      User,
+      { id: string; isActive: boolean }
+    >({
       query: ({ id, isActive }) => ({
         url: `/admin/users/${id}/status`,
         method: "PATCH",
@@ -176,7 +193,10 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<User>) => response.data as User,
     }),
 
-    resetAdminUserPassword: builder.mutation<{ id: string }, { id: string; newPassword: string }>({
+    resetAdminUserPassword: builder.mutation<
+      { id: string },
+      { id: string; newPassword: string }
+    >({
       query: ({ id, newPassword }) => ({
         url: `/admin/users/${id}/password`,
         method: "PATCH",
@@ -217,7 +237,10 @@ export const adminApi = baseApi.injectEndpoints({
         response.data?.items ?? [],
     }),
 
-    createAdminExercise: builder.mutation<AdminExerciseItem, AdminExercisePayload>({
+    createAdminExercise: builder.mutation<
+      AdminExerciseItem,
+      AdminExercisePayload
+    >({
       query: (body) => ({
         url: "/admin/exercises",
         method: "POST",
@@ -342,13 +365,18 @@ export const adminApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["AdminVocabulary", "AdminOverview"],
-      transformResponse: (response: ApiResponse<AdminVocabularyWordsBulkResponse>) =>
-        response.data as AdminVocabularyWordsBulkResponse,
+      transformResponse: (
+        response: ApiResponse<AdminVocabularyWordsBulkResponse>,
+      ) => response.data as AdminVocabularyWordsBulkResponse,
     }),
 
     updateAdminVocabularyWord: builder.mutation<
       AdminVocabularyWordItem,
-      { setId: string; wordId: string; body: Partial<AdminVocabularyWordPayload> }
+      {
+        setId: string;
+        wordId: string;
+        body: Partial<AdminVocabularyWordPayload>;
+      }
     >({
       query: ({ setId, wordId, body }) => ({
         url: `/admin/vocabulary/${setId}/words/${wordId}`,
@@ -360,7 +388,10 @@ export const adminApi = baseApi.injectEndpoints({
         response.data as AdminVocabularyWordItem,
     }),
 
-    deleteAdminVocabularyWord: builder.mutation<void, { setId: string; wordId: string }>({
+    deleteAdminVocabularyWord: builder.mutation<
+      void,
+      { setId: string; wordId: string }
+    >({
       query: ({ setId, wordId }) => ({
         url: `/admin/vocabulary/${setId}/words/${wordId}`,
         method: "DELETE",
@@ -378,16 +409,18 @@ export const adminApi = baseApi.injectEndpoints({
         response.data?.items ?? [],
     }),
 
-    createAdminAiLevel: builder.mutation<AdminAiLevelItem, AdminAiLevelPayload>({
-      query: (body) => ({
-        url: "/admin/ai-levels",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["AdminAiLevels", "AdminReports", "AdminOverview"],
-      transformResponse: (response: ApiResponse<AdminAiLevelItem>) =>
-        response.data as AdminAiLevelItem,
-    }),
+    createAdminAiLevel: builder.mutation<AdminAiLevelItem, AdminAiLevelPayload>(
+      {
+        query: (body) => ({
+          url: "/admin/ai-levels",
+          method: "POST",
+          body,
+        }),
+        invalidatesTags: ["AdminAiLevels", "AdminReports", "AdminOverview"],
+        transformResponse: (response: ApiResponse<AdminAiLevelItem>) =>
+          response.data as AdminAiLevelItem,
+      },
+    ),
 
     updateAdminAiLevel: builder.mutation<
       AdminAiLevelItem,

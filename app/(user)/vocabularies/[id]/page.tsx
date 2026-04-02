@@ -16,7 +16,7 @@ import { VocabularyDetailSkeleton } from "@/components/vocabularies/skeletons";
 import {
   useGetVocabularyByIdQuery,
   useGetVocabularyLeaderboardQuery,
-} from "@/lib/api/vocabulariesApi";
+} from "@/store/services/vocabulariesApi";
 
 export default function VocabularyDetailPage() {
   const params = useParams<{ id: string }>();

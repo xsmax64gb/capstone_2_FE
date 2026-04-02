@@ -18,7 +18,7 @@ import {
   Users2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useGetAdminOverviewQuery } from "@/lib/api/adminApi";
+import { useGetAdminOverviewQuery } from "@/store/services/adminApi";
 import { formatCompactNumber, formatUptime } from "@/lib/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

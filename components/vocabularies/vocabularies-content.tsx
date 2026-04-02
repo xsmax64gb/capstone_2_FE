@@ -17,8 +17,8 @@ import { VocabulariesListSkeleton } from "@/components/vocabularies/skeletons";
 import {
   useGetVocabularySummaryQuery,
   useGetVocabulariesQuery,
-} from "@/lib/api/vocabulariesApi";
-import type { VocabularySet } from "@/lib/api/vocabulariesApi";
+} from "@/store/services/vocabulariesApi";
+import type { VocabularySet } from "@/store/services/vocabulariesApi";
 import {
   Pagination,
   PaginationContent,

@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "@/lib/store";
-import { addNotification } from "@/lib/slices/notificationSlice";
+import type { RootState } from "@/store/store";
+import { addNotification } from "@/store/slices/notificationSlice";
 import { NotificationContainer } from "@/components/notification/notification-container";
 
 export function NotificationProvider() {

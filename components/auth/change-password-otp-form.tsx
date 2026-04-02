@@ -23,7 +23,7 @@ import {
 import {
   useChangePasswordMutation,
   useSendChangePasswordOtpMutation,
-} from "@/lib/api/authApi";
+} from "@/store/services/authApi";
 import { useNotification } from "@/hooks/use-notification";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/auth-context";

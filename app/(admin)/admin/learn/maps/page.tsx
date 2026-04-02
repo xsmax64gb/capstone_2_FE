@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatNumber, notify } from "@/lib/admin";
-import { useDeleteAdminLearnMapMutation, useGetAdminLearnMapsQuery } from "@/lib/api/learnApi";
+import { useDeleteAdminLearnMapMutation, useGetAdminLearnMapsQuery } from "@/store/services/learnApi";
 import { handleApiError } from "@/lib/api-error-handler";
 
 function formatRequiredXp(value: number, totalXP: number) {

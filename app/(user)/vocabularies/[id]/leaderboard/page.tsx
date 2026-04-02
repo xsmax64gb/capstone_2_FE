@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Medal, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { VocabularyLeaderboardSkeleton } from "@/components/vocabularies/skeletons";
-import { useGetVocabularyLeaderboardQuery } from "@/lib/api/vocabulariesApi";
+import { useGetVocabularyLeaderboardQuery } from "@/store/services/vocabulariesApi";
 import { formatDuration } from "../../data";
 
 export default function VocabularyLeaderboardPage() {

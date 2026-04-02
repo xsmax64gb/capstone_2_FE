@@ -1,4 +1,4 @@
-import type { AdminLearnMapAiDraft } from "@/lib/api/learnApi";
+import type { AdminLearnMapAiDraft } from "@/store/services/learnApi";
 
 const LEARN_MAP_AI_DRAFT_STORAGE_KEY = "admin-learn-map-ai-draft";
 

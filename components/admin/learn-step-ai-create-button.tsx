@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { notify } from "@/lib/admin";
-import { useGenerateAdminLearnStepWithAiMutation } from "@/lib/api/learnApi";
+import { useGenerateAdminLearnStepWithAiMutation } from "@/store/services/learnApi";
 import { handleApiError } from "@/lib/api-error-handler";
 import { saveLearnStepAiDraft } from "@/lib/learn-step-ai-draft";
 

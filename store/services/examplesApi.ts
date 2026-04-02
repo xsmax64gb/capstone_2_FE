@@ -1,6 +1,6 @@
 // Ví dụ: Cách tạo API endpoints mới với RTK Query
 
-import { baseApi } from './baseApi'
+import { baseApi } from '@/store/api/baseApi'
 
 // Ví dụ cho Users API
 export const usersApi = baseApi.injectEndpoints({

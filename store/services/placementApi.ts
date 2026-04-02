@@ -1,5 +1,5 @@
-import { baseApi } from "./baseApi";
-import { setUser } from "@/lib/slices/authSlice";
+import { baseApi } from "@/store/api/baseApi";
+import { setUser } from "@/store/slices/authSlice";
 import type {
   AdminPlacementTestItem,
   AdminGeneratePlacementWithAiPayload,

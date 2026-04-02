@@ -17,7 +17,7 @@ import {
   useCreateAdminPlacementTestMutation,
   useGetAdminPlacementTestByIdQuery,
   useUpdateAdminPlacementTestMutation,
-} from "@/lib/api/placementApi";
+} from "@/store/services/placementApi";
 import {
   ADMIN_LEVEL_OPTIONS,
   ADMIN_PLACEMENT_QUESTION_TYPE_OPTIONS,

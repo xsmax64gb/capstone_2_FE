@@ -24,7 +24,7 @@ import {
   useGetAdminLearnMapsQuery,
   useGetAdminLearnStepsQuery,
   useUpdateAdminLearnStepMutation,
-} from "@/lib/api/learnApi";
+} from "@/store/services/learnApi";
 import { handleApiError } from "@/lib/api-error-handler";
 import {
   clearLearnStepAiDraft,

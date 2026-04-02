@@ -22,9 +22,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useLoginMutation } from "@/lib/api/authApi";
+import { useLoginMutation } from "@/store/services/authApi";
 import { useDispatch } from "react-redux";
-import { setAuthTokens, setUser } from "@/lib/slices/authSlice";
+import { setAuthTokens, setUser } from "@/store/slices/authSlice";
 import { useNotification } from "@/hooks/use-notification";
 import { Spinner } from "@/components/ui/spinner";
 import { useI18n } from "@/lib/i18n/context";

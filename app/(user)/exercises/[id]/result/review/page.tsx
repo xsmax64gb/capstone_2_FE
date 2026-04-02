@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Check, RotateCcw, X } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ReviewSkeleton } from "@/components/exercises/skeletons";
-import { useGetExerciseReviewQuery } from "@/lib/api/exercisesApi";
+import { useGetExerciseReviewQuery } from "@/store/services/exercisesApi";
 
 function parseAnswers(raw: string) {
   if (!raw.trim()) return null;

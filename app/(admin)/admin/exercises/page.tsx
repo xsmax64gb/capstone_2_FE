@@ -27,7 +27,7 @@ import {
 import {
   useDeleteAdminExerciseMutation,
   useGetAdminExercisesQuery,
-} from "@/lib/api/adminApi";
+} from "@/store/services/adminApi";
 import { formatDateTime, formatNumber, notify } from "@/lib/admin";
 
 export default function AdminExercisesPage() {

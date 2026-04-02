@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useNotification } from "@/hooks/use-notification";
-import { useSkipPlacementTestMutation } from "@/lib/api/placementApi";
+import { useSkipPlacementTestMutation } from "@/store/services/placementApi";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
 import type { AppLang } from "@/lib/i18n/messages";

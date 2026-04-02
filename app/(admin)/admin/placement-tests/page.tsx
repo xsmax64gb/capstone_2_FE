@@ -41,7 +41,7 @@ import {
   useDeleteAdminPlacementTestMutation,
   useGenerateAdminPlacementTestWithAiMutation,
   useGetAdminPlacementTestsQuery,
-} from "@/lib/api/placementApi";
+} from "@/store/services/placementApi";
 import { handleApiError } from "@/lib/api-error-handler";
 import { ADMIN_LEVEL_OPTIONS, formatDateTime, formatNumber, notify } from "@/lib/admin";
 import { savePlacementAiDraft } from "@/lib/placement-ai-draft";

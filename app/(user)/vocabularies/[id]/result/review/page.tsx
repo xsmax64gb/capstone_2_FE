@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { VocabularyReviewSkeleton } from "@/components/vocabularies/skeletons";
-import { useGetVocabularyByIdQuery } from "@/lib/api/vocabulariesApi";
+import { useGetVocabularyByIdQuery } from "@/store/services/vocabulariesApi";
 
 export default function VocabularyReviewPage() {
   const params = useParams<{ id: string }>();

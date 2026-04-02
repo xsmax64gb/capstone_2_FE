@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, RotateCcw, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ResultSkeleton } from "@/components/exercises/skeletons";
-import { useGetExerciseByIdQuery } from "@/lib/api/exercisesApi";
+import { useGetExerciseByIdQuery } from "@/store/services/exercisesApi";
 
 function toInt(value: string | null, fallback: number) {
   const num = Number.parseInt(value ?? "", 10);

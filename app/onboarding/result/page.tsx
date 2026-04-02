@@ -17,7 +17,7 @@ import { useNotification } from "@/hooks/use-notification";
 import {
   useConfirmPlacementResultMutation,
   useGetPlacementAttemptByIdQuery,
-} from "@/lib/api/placementApi";
+} from "@/store/services/placementApi";
 import { useI18n } from "@/lib/i18n/context";
 import type { AppLang } from "@/lib/i18n/messages";
 import { getLevelsAtOrBelow } from "@/lib/placement";

@@ -9,7 +9,7 @@ import { LeaderboardSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseLeaderboardQuery,
-} from "@/lib/api/exercisesApi";
+} from "@/store/services/exercisesApi";
 
 export default function ExerciseLeaderboardPage() {
   const params = useParams<{ id: string }>();

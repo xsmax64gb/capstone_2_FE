@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { useGetExerciseByIdQuery } from "@/lib/api/exercisesApi";
+import { useGetExerciseByIdQuery } from "@/store/services/exercisesApi";
 import { AttemptSkeleton } from "@/components/exercises/skeletons";
 import { AttemptClient } from "./attempt-client";
 

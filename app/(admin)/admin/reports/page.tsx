@@ -1,7 +1,7 @@
 "use client";
 
 import { Activity, BarChart3, TrendingUp } from "lucide-react";
-import { useGetAdminReportsQuery } from "@/lib/api/adminApi";
+import { useGetAdminReportsQuery } from "@/store/services/adminApi";
 import {
   formatMinutes,
   formatNumber,

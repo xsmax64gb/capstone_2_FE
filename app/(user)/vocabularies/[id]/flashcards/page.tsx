@@ -11,7 +11,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { useGetVocabularyByIdQuery } from "@/lib/api/vocabulariesApi";
+import { useGetVocabularyByIdQuery } from "@/store/services/vocabulariesApi";
 import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
 
 type StudyMode = "all" | "unknown";

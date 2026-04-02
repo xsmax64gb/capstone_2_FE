@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { useGetLearnMapBySlugQuery } from "@/lib/api/learnApi";
+import { useGetLearnMapBySlugQuery } from "@/store/services/learnApi";
 import { useI18n } from "@/lib/i18n/context";
 import { LearnStepClient } from "./learn-step-client";
 

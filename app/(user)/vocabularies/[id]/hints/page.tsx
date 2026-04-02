@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Lightbulb, Sparkles, Target } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { VocabularyHintsSkeleton } from "@/components/vocabularies/skeletons";
-import { useGetVocabularyHintsQuery } from "@/lib/api/vocabulariesApi";
+import { useGetVocabularyHintsQuery } from "@/store/services/vocabulariesApi";
 
 export default function VocabularyHintsPage() {
   const params = useParams<{ id: string }>();

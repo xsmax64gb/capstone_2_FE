@@ -5,7 +5,7 @@ import { ArrowLeft, BookOpen, History, Layers3 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { MODE_LABELS } from "../data";
 import { VocabularyHistorySkeleton } from "@/components/vocabularies/skeletons";
-import { useGetVocabularyHistoryQuery } from "@/lib/api/vocabulariesApi";
+import { useGetVocabularyHistoryQuery } from "@/store/services/vocabulariesApi";
 import { formatDuration } from "../data";
 
 export default function VocabularyHistoryPage() {

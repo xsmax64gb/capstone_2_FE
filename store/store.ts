@@ -1,7 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { baseApi } from './api/baseApi'
-import './api/learnApi'
-import './api/placementApi'
+import './services/adminApi'
+import './services/authApi'
+import './services/exercisesApi'
+import './services/learnApi'
+import './services/placementApi'
+import './services/vocabulariesApi'
 import authReducer from './slices/authSlice'
 import notificationReducer from './slices/notificationSlice'
 

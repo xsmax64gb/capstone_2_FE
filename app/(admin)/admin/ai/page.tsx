@@ -7,7 +7,7 @@ import {
   useDeleteAdminAiLevelMutation,
   useGetAdminAiLevelsQuery,
   useUpdateAdminAiLevelMutation,
-} from "@/lib/api/adminApi";
+} from "@/store/services/adminApi";
 import { ADMIN_LEVEL_OPTIONS, formatDateTime, formatNumber, notify } from "@/lib/admin";
 import type { AdminAiLevelItem, AdminAiLevelPayload } from "@/types";
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";

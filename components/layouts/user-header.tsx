@@ -55,8 +55,7 @@ export function UserHeader() {
 
   const getActiveIndex = () => {
     const activeItem = navLinks.find(
-      (item) =>
-        isActive(item.href) && (item.labelKey || item.label) !== "Quản trị",
+      (item) => isActive(item.href) && item.labelKey !== "Quản trị",
     );
     return activeItem ? navLinks.indexOf(activeItem) : -1;
   };
@@ -88,20 +87,16 @@ export function UserHeader() {
         <nav className="relative hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
           {navLinks.map((item, index) => (
             <Link
-              key={item.labelKey || item.label}
+              key={item.labelKey}
               href={item.href}
               className={`relative z-10 px-1 transition-colors duration-300 hover:text-black ${
-                isActive(item.href) &&
-                (item.labelKey || item.label) !== "Quản trị"
+                isActive(item.href) && item.labelKey !== "Quản trị"
                   ? "font-bold text-black"
                   : ""
               }`}
-              data-active={
-                isActive(item.href) &&
-                (item.labelKey || item.label) !== "Quản trị"
-              }
+              data-active={isActive(item.href) && item.labelKey !== "Quản trị"}
             >
-              {item.labelKey ? t(item.labelKey) : item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
           {/* Sliding underline */}

@@ -1,6 +1,6 @@
-import { baseApi } from "./baseApi";
+import { baseApi } from "@/store/api/baseApi";
 import { API_ENDPOINTS } from "@/config/api";
-import { setUser } from "@/lib/slices/authSlice";
+import { setUser } from "@/store/slices/authSlice";
 import type {
   ApiResponse,
   AuthResponse,

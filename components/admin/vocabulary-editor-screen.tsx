@@ -18,7 +18,7 @@ import {
   useCreateAdminVocabularyWordsBulkMutation,
   useGetAdminVocabularyByIdQuery,
   useUpdateAdminVocabularyMutation,
-} from "@/lib/api/adminApi";
+} from "@/store/services/adminApi";
 import { ADMIN_LEVEL_OPTIONS, notify } from "@/lib/admin";
 import type { AdminVocabularySetItem, AdminVocabularyWordPayload } from "@/types";
 

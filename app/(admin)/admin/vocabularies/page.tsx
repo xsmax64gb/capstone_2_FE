@@ -18,7 +18,7 @@ import {
 import {
   useDeleteAdminVocabularyMutation,
   useGetAdminVocabularyQuery,
-} from "@/lib/api/adminApi";
+} from "@/store/services/adminApi";
 import { formatDateTime, notify } from "@/lib/admin";
 
 export default function AdminVocabulariesPage() {

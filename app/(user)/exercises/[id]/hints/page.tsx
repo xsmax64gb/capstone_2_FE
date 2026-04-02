@@ -9,7 +9,7 @@ import { HintsSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseHintsQuery,
-} from "@/lib/api/exercisesApi";
+} from "@/store/services/exercisesApi";
 
 export default function ExerciseHintsPage() {
   const params = useParams<{ id: string }>();

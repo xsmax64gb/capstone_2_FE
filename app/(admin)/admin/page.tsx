@@ -10,7 +10,7 @@ import {
   Sparkles,
   Users2,
 } from "lucide-react";
-import { useGetAdminOverviewQuery } from "@/lib/api/adminApi";
+import { useGetAdminOverviewQuery } from "@/store/services/adminApi";
 import { formatCompactNumber, formatDateTime, formatUptime } from "@/lib/admin";
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { Badge } from "@/components/ui/badge";

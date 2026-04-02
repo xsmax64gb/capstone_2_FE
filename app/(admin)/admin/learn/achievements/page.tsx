@@ -17,7 +17,7 @@ import {
   useCreateAdminLearnAchievementMutation,
   useDeleteAdminLearnAchievementMutation,
   useGetAdminLearnAchievementsQuery,
-} from '@/lib/api/learnApi'
+} from '@/store/services/learnApi'
 import { handleApiError } from '@/lib/api-error-handler'
 
 export default function AdminLearnAchievementsPage() {

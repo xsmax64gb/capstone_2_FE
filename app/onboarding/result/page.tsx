@@ -152,9 +152,12 @@ function PlacementResultContent() {
   const attemptId = searchParams.get("attemptId") || "";
   const { success, error } = useNotification();
   const { lang } = useI18n();
-  const { data: result, isLoading } = useGetPlacementAttemptByIdQuery(attemptId, {
-    skip: !attemptId,
-  });
+  const { data: result, isLoading } = useGetPlacementAttemptByIdQuery(
+    attemptId,
+    {
+      skip: !attemptId,
+    },
+  );
   const [confirmPlacementResult, { isLoading: isConfirming }] =
     useConfirmPlacementResultMutation();
 
@@ -170,13 +173,18 @@ function PlacementResultContent() {
 
   useEffect(() => {
     if (result) {
-      setSelectedLevel((result.confirmedLevel || result.detectedLevel) as CefrLevel);
+      setSelectedLevel(
+        (result.confirmedLevel || result.detectedLevel) as CefrLevel,
+      );
     }
   }, [result]);
 
   const profile = loadOnboardingProfileDraft();
   const levelOptions = useMemo(
-    () => (result ? getLevelsAtOrBelow(result.detectedLevel) : (["A1"] as CefrLevel[])),
+    () =>
+      result
+        ? getLevelsAtOrBelow(result.detectedLevel)
+        : (["A1"] as CefrLevel[]),
     [result],
   );
 
@@ -285,7 +293,9 @@ function PlacementResultContent() {
               <Card className="border-slate-200 py-5">
                 <CardHeader>
                   <CardTitle>{copy.chooseLevelTitle}</CardTitle>
-                  <CardDescription>{copy.chooseLevelDescription}</CardDescription>
+                  <CardDescription>
+                    {copy.chooseLevelDescription}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid gap-3 md:grid-cols-3">

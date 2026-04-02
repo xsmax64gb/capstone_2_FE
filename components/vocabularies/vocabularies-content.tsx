@@ -27,10 +27,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function VocabulariesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [selectedLevel, setSelectedLevel] = useState<string>(
     searchParams.get("level") || "all",
@@ -111,11 +113,12 @@ export default function VocabulariesContent() {
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
-                Vocabulary Lab
+                {t("Phòng thí nghiệm từ vựng")}
               </h1>
               <p className="mt-1 text-slate-500">
-                Master vocabulary through flashcards and quizzes, powered by
-                real data.
+                {t(
+                  "Học từ vựng thông qua flashcards và quiz, được hỗ trợ bởi dữ liệu thực tế.",
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -124,21 +127,21 @@ export default function VocabulariesContent() {
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Layers3 className="mr-1.5 h-4 w-4" />
-                Overview Table
+                {t("Bảng tổng quan từ vựng")}
               </Link>
               <Link
                 href="/vocabularies/recommended"
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Sparkles className="mr-1.5 h-4 w-4" />
-                Recommended
+                {t("Gợi ý")}
               </Link>
               <Link
                 href="/vocabularies/history"
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <History className="mr-1.5 h-4 w-4" />
-                History
+                {t("Lịch sử")}
               </Link>
             </div>
           </div>
@@ -147,23 +150,23 @@ export default function VocabulariesContent() {
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
               <p className="text-2xl font-bold">{totalSets}</p>
-              <p className="text-xs text-slate-500">Total Sets</p>
+              <p className="text-xs text-slate-500">{t("Tổng số bộ")}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
               <p className="text-2xl font-bold">{totalWords}</p>
-              <p className="text-xs text-slate-500">Total Words</p>
+              <p className="text-xs text-slate-500">{t("Tổng số từ")}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
               <p className="text-2xl font-bold">
                 {summaryData?.masteredCount ?? 0}
               </p>
-              <p className="text-xs text-slate-500">Mastered</p>
+              <p className="text-xs text-slate-500">{t("Đã thuộc")}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
               <p className="text-2xl font-bold">
                 {summaryData?.learningCount ?? 0}
               </p>
-              <p className="text-xs text-slate-500">Learning</p>
+              <p className="text-xs text-slate-500">{t("Đang học")}</p>
             </div>
           </div>
 
@@ -177,7 +180,7 @@ export default function VocabulariesContent() {
                   setQuery(e.target.value);
                   updateFilters({ query: e.target.value, page: 1 });
                 }}
-                placeholder="Search sets, words..."
+                placeholder={t("Tìm bộ từ, từ...")}
                 className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-black"
               />
             </label>
@@ -190,13 +193,13 @@ export default function VocabulariesContent() {
               }}
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
-              <option value="all">All levels</option>
-              <option value="A1">A1 — Beginner</option>
-              <option value="A2">A2 — Elementary</option>
-              <option value="B1">B1 — Intermediate</option>
-              <option value="B2">B2 — Upper Intermediate</option>
-              <option value="C1">C1 — Advanced</option>
-              <option value="C2">C2 — Mastery</option>
+              <option value="all">{t("Tất cả cấp độ")}</option>
+              <option value="A1">{t("A1 — Người mới bắt đầu")}</option>
+              <option value="A2">{t("A2 — Sơ cấp")}</option>
+              <option value="B1">{t("B1 — Trung cấp")}</option>
+              <option value="B2">{t("B2 — Trung cấp cao")}</option>
+              <option value="C1">{t("C1 — Nâng cao")}</option>
+              <option value="C2">{t("C2 — Thành thạo")}</option>
             </select>
 
             <select
@@ -207,11 +210,11 @@ export default function VocabulariesContent() {
               }}
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
-              <option value="all">All topics</option>
-              <option value="daily-life">Daily Life</option>
-              <option value="work">Work</option>
-              <option value="travel">Travel</option>
-              <option value="technology">Technology</option>
+              <option value="all">{t("Tất cả chủ đề")}</option>
+              <option value="daily-life">{t("Đời sống hằng ngày")}</option>
+              <option value="work">{t("Công việc")}</option>
+              <option value="travel">{t("Du lịch")}</option>
+              <option value="technology">{t("Công nghệ")}</option>
             </select>
           </div>
         </section>
@@ -222,16 +225,18 @@ export default function VocabulariesContent() {
         {/* Error state */}
         {isError && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load vocabularies. Please try again.
+            {t("Không tải được từ vựng. Vui lòng thử lại.")}
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && !isError && items.length === 0 && (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="font-semibold">No vocabulary sets found</p>
+            <p className="font-semibold">
+              {t("Không tìm thấy bộ từ vựng nào")}
+            </p>
             <p className="mt-1 text-sm text-slate-500">
-              Try changing your keyword, level, or topic filter.
+              {t("Hãy thử thay đổi từ khóa, cấp độ hoặc chủ đề lọc.")}
             </p>
           </div>
         )}
@@ -269,7 +274,7 @@ export default function VocabulariesContent() {
                 <div className="space-y-3 p-5">
                   {/* Description */}
                   <p className="line-clamp-2 text-sm text-slate-600">
-                    {item.description || "No description available."}
+                    {item.description || t("Không có mô tả.")}
                   </p>
 
                   {/* Badges */}
@@ -282,7 +287,7 @@ export default function VocabulariesContent() {
                       {TOPIC_LABELS[item.topic] ?? item.topic}
                     </span>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                      {item.wordCount} words
+                      {item.wordCount} {t("từ")}
                     </span>
                   </div>
 
@@ -292,19 +297,19 @@ export default function VocabulariesContent() {
                       href={`/vocabularies/${item.id}`}
                       className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                     >
-                      Detail
+                      {t("Chi tiết")}
                     </Link>
                     <Link
                       href={`/vocabularies/${item.id}/flashcards`}
                       className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                     >
-                      Flashcard
+                      {t("Flashcard")}
                     </Link>
                     <Link
                       href={`/vocabularies/${item.id}/quiz`}
                       className="inline-flex items-center justify-center rounded-lg bg-black px-2 py-2 text-xs font-semibold text-white hover:bg-slate-800"
                     >
-                      Quiz
+                      {t("Quiz")}
                     </Link>
                     <Link
                       href={`/vocabularies/${item.id}`}
@@ -383,13 +388,12 @@ export default function VocabulariesContent() {
           <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="inline-flex items-center text-lg font-bold">
               <Sparkles className="mr-2 h-4 w-4" />
-              Suggested Route
+              {t("Lộ trình gợi ý")}
             </h3>
             <p className="mt-2 text-sm text-slate-600">
-              Open <span className="font-semibold">Overview Table</span> to scan
-              all words, then study with{" "}
-              <span className="font-semibold">Flashcards</span>, and finish with{" "}
-              <span className="font-semibold">Quiz</span>.
+              {t(
+                "Mở Bảng tổng quan từ vựng để xem tất cả từ, sau đó học với Flashcards, và hoàn thành với Quiz.",
+              )}
             </p>
           </section>
         )}

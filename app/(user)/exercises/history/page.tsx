@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock3, FileClock, RotateCcw } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, formatDuration } from "../data";
-import { HistorySkeleton } from "../skeletons";
+import { HistorySkeleton } from "@/components/exercises/skeletons";
 import { useGetExerciseHistoryQuery } from "@/lib/api/exercisesApi";
 import { useI18n } from "@/lib/i18n/context";
 

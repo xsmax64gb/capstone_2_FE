@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, RotateCcw, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { ResultSkeleton } from "../../skeletons";
+import { ResultSkeleton } from "@/components/exercises/skeletons";
 import { useGetExerciseByIdQuery } from "@/lib/api/exercisesApi";
 
 function toInt(value: string | null, fallback: number) {

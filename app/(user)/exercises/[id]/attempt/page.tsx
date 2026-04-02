@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useGetExerciseByIdQuery } from "@/lib/api/exercisesApi";
-import { AttemptSkeleton } from "../../skeletons";
+import { AttemptSkeleton } from "@/components/exercises/skeletons";
 import { AttemptClient } from "./attempt-client";
 
 export default function ExerciseAttemptPage() {

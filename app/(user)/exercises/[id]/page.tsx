@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, TYPE_LABELS } from "../data";
-import { ExerciseDetailSkeleton } from "../skeletons";
+import { ExerciseDetailSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseLeaderboardQuery,

@@ -165,7 +165,7 @@ const PHRASES: PhraseValue[] = [
   // Homepage phrases
   { vi: "Học tiếng Anh với AI", en: "English Learning with AI" },
   {
-    vi: "Trung tâm luyện tập tiếng Anh hoàn chỉnh của bạn được xây dựng cho đà học tập hàng ngày",
+    vi: "Trung tâm tiếng Anh của bạn cho việc học hàng ngày",
     en: "Your Complete English Practice Hub Built For Daily Momentum",
   },
   {

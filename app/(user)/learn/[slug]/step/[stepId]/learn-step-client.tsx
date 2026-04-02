@@ -125,7 +125,9 @@ function translateSpeechError(error: string | undefined, pick: PairTextPicker) {
 }
 
 function compactDisplayLabel(value: string, maxLength = 32) {
-  const normalized = String(value || "").replace(/\s+/g, " ").trim();
+  const normalized = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (!normalized) {
     return "";
@@ -277,6 +279,7 @@ function Meter({
 
 export function LearnStepClient({ slug, step }: Props) {
   const { lang } = useI18n();
+  console.log("=== LearnStepClient rendering ===");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<StepChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -577,17 +580,20 @@ export function LearnStepClient({ slug, step }: Props) {
 
     try {
       const response = await endConversation(conversationId).unwrap();
+      console.log("Response:", response);
+      console.log("Setting ended state...");
       setEnded({
-        passed: response.passed,
-        feedback: response.conversation.aiFeedback,
-        score: response.conversation.score,
-        xp: response.conversation.xpEarned,
+        passed: response.passed ?? false,
+        feedback: response.conversation?.aiFeedback ?? "",
+        score: response.conversation?.score ?? null,
+        xp: response.conversation?.xpEarned ?? 0,
         requiredScore: response.requiredScore,
         mapCompleted: response.mapCompleted,
         currentMapXP: response.currentMapXP,
         requiredMapXP: response.requiredMapXP,
         replayAttempt: response.replayAttempt,
       });
+      setEnding(false);
     } catch (error) {
       const apiError = handleApiError(error);
       setEndError(
@@ -602,7 +608,7 @@ export function LearnStepClient({ slug, step }: Props) {
             ),
       );
     } finally {
-      setEnding(false);
+      // State already updated in try block
     }
   };
 
@@ -1078,6 +1084,7 @@ export function LearnStepClient({ slug, step }: Props) {
 
         {ended || ending ? (
           <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-xl">
+            {console.log("RENDER DECISION - ending:", ending, "ended:", ended)}
             {ending && !ended ? (
               <>
                 <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white">
@@ -1085,7 +1092,10 @@ export function LearnStepClient({ slug, step }: Props) {
                   {bi("Đang chấm điểm", "Grading in progress")}
                 </Badge>
                 <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
-                  {bi("AI đang chấm buổi học của bạn", "AI is grading your lesson")}
+                  {bi(
+                    "AI đang chấm buổi học của bạn",
+                    "AI is grading your lesson",
+                  )}
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                   {bi(
@@ -1114,6 +1124,7 @@ export function LearnStepClient({ slug, step }: Props) {
               </>
             ) : ended ? (
               <>
+                {console.log("=== RENDERING ENDED SECTION ===", ended)}
                 <Badge
                   className={`rounded-full px-3 py-1 ${ended.passed ? "bg-emerald-600 text-white" : "bg-slate-900 text-white"}`}
                 >
@@ -1122,12 +1133,15 @@ export function LearnStepClient({ slug, step }: Props) {
                     : bi("Xem lại và thử lại", "Review and retry")}
                 </Badge>
                 <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
+                  {console.log("=== RENDERING TITLE ===", ended.passed)}
                   {ended.passed
                     ? bi("Buổi học hoàn thành", "Lesson completed")
                     : bi("Phiên học đã kết thúc", "Lesson session ended")}
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                  {ended.feedback}
+                  {console.log("=== RENDERING FEEDBACK ===", ended.feedback)}
+                  {ended.feedback ||
+                    bi("Không có nhận xét AI.", "No AI feedback available.")}
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -1169,7 +1183,10 @@ export function LearnStepClient({ slug, step }: Props) {
                     </p>
                   ) : ended.mapCompleted ? (
                     <p>
-                      {bi("Bạn đã hoàn thành map này.", "You completed this map.")}
+                      {bi(
+                        "Bạn đã hoàn thành map này.",
+                        "You completed this map.",
+                      )}
                     </p>
                   ) : null}
                 </div>

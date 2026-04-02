@@ -469,6 +469,7 @@ export const learnApi = baseApi.injectEndpoints({
       invalidatesTags: ["AdminLearnAchievements"],
     }),
   }),
+  overrideExisting: true,
 });
 
 export const {

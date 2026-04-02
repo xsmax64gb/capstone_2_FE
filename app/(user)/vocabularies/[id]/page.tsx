@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "../data";
-import { VocabularyDetailSkeleton } from "../skeletons";
+import { VocabularyDetailSkeleton } from "@/components/vocabularies/skeletons";
 import {
   useGetVocabularyByIdQuery,
   useGetVocabularyLeaderboardQuery,

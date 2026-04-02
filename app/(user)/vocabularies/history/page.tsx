@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, History, Layers3 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { MODE_LABELS } from "../data";
-import { VocabularyHistorySkeleton } from "../skeletons";
+import { VocabularyHistorySkeleton } from "@/components/vocabularies/skeletons";
 import { useGetVocabularyHistoryQuery } from "@/lib/api/vocabulariesApi";
 import { formatDuration } from "../data";
 

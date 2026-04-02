@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { VocabularyReviewSkeleton } from "../../../skeletons";
+import { VocabularyReviewSkeleton } from "@/components/vocabularies/skeletons";
 import { useGetVocabularyByIdQuery } from "@/lib/api/vocabulariesApi";
 
 export default function VocabularyReviewPage() {

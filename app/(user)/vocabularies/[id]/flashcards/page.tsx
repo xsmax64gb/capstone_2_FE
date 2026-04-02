@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useGetVocabularyByIdQuery } from "@/lib/api/vocabulariesApi";
-import { VocabularyAttemptSkeleton } from "../../skeletons";
+import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
 
 type StudyMode = "all" | "unknown";
 

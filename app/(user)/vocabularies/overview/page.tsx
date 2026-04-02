@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, Layers3 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "../data";
-import { VocabulariesListSkeleton } from "../skeletons";
+import { VocabulariesListSkeleton } from "@/components/vocabularies/skeletons";
 import { useGetVocabulariesQuery } from "@/lib/api/vocabulariesApi";
 
 export default function VocabulariesOverviewPage() {

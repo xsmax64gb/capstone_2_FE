@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Clock3 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useGetVocabularyByIdQuery, useSubmitVocabularyAttemptMutation } from "@/lib/api/vocabulariesApi";
-import { VocabularyAttemptSkeleton } from "../../skeletons";
+import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
 
 export default function QuizPage() {
   const params = useParams<{ id: string }>();

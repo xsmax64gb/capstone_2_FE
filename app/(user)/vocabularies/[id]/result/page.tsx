@@ -15,7 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { VocabularyResultSkeleton } from "../../skeletons";
+import { VocabularyResultSkeleton } from "@/components/vocabularies/skeletons";
 import { RESULT_LABELS } from "../../data";
 
 function ResultContent() {

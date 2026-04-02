@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Medal, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { VocabularyLeaderboardSkeleton } from "../../skeletons";
+import { VocabularyLeaderboardSkeleton } from "@/components/vocabularies/skeletons";
 import { useGetVocabularyLeaderboardQuery } from "@/lib/api/vocabulariesApi";
 import { formatDuration } from "../../data";
 

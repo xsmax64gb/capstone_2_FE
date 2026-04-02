@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, BookOpen, Clock3, Sparkles } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "../data";
-import { RecommendedVocabulariesSkeleton } from "../skeletons";
+import { RecommendedVocabulariesSkeleton } from "@/components/vocabularies/skeletons";
 import {
   useGetRecommendedVocabulariesQuery,
 } from "@/lib/api/vocabulariesApi";

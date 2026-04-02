@@ -12,8 +12,8 @@ import {
   Trophy,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { TOPIC_LABELS, TYPE_LABELS } from "./data";
-import { ExercisesListSkeleton } from "./skeletons";
+import { TOPIC_LABELS, TYPE_LABELS } from "@/app/(user)/exercises/data";
+import { ExercisesListSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExercisesQuery,
   useGetExerciseSummaryQuery,

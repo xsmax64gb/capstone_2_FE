@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import ExercisesContent from "./content";
+import ExercisesContent from "@/components/exercises/exercises-content";
 
 export default function ExercisesPage() {
   return (

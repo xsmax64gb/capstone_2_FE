@@ -17,8 +17,10 @@ import {
   useGetExercisesQuery,
   useGetExerciseSummaryQuery,
 } from "@/lib/api/exercisesApi";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function ExercisesPage() {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<
     "all" | "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
@@ -44,10 +46,24 @@ export default function ExercisesPage() {
   const totalXp = summaryData?.totalXp ?? 0;
   const pastAttempts = summaryData?.pastAttempts ?? 0;
 
-  const getTopicLabel = (topic: string) =>
-    TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic;
-  const getTypeLabel = (type: string) =>
-    TYPE_LABELS[type as keyof typeof TYPE_LABELS] ?? type;
+  const getTopicLabel = (topic: string) => {
+    const labels: Record<string, string> = {
+      "daily-life": t("Đời sống hằng ngày"),
+      work: t("Công việc"),
+      travel: t("Du lịch"),
+      technology: t("Công nghệ"),
+    };
+    return labels[topic] ?? topic;
+  };
+
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      mcq: t("Trắc nghiệm lựa chọn"),
+      fill_blank: t("Điền vào chỗ trống"),
+      matching: t("Nối cặp"),
+    };
+    return labels[type] ?? type;
+  };
 
   return (
     <ProtectedRoute>
@@ -56,11 +72,10 @@ export default function ExercisesPage() {
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
-                Exercise Arena
+                {t("Sân thi đấu bài tập")}
               </h1>
               <p className="mt-1 text-slate-500">
-                Full practice hub with attempt flow, result analysis, and review
-                pages.
+                {t("Trung tâm luyện tập đầy đủ với luồng làm bài, phân tích kết quả và trang xem lại.")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -69,14 +84,14 @@ export default function ExercisesPage() {
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Sparkles className="mr-1.5 h-4 w-4" />
-                Recommended
+                {t("Gợi ý")}
               </Link>
               <Link
                 href="/exercises/history"
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <History className="mr-1.5 h-4 w-4" />
-                Attempt History
+                {t("Lịch sử làm bài")}
               </Link>
             </div>
           </div>
@@ -84,19 +99,19 @@ export default function ExercisesPage() {
           <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase text-slate-500">
-                Question Bank
+                {t("Ngân hàng câu hỏi")}
               </p>
               <p className="mt-1 text-xl font-bold">{totalQuestions}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase text-slate-500">
-                Potential XP
+                {t("XP tiềm năng")}
               </p>
               <p className="mt-1 text-xl font-bold">{totalXp}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase text-slate-500">
-                Past Attempts
+                {t("Lượt làm trước")}
               </p>
               <p className="mt-1 text-xl font-bold">{pastAttempts}</p>
             </div>
@@ -108,7 +123,7 @@ export default function ExercisesPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search exercise, skill..."
+                placeholder={t("Tìm bài tập, kỹ năng...")}
                 className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-black"
               />
             </label>
@@ -129,7 +144,7 @@ export default function ExercisesPage() {
               }
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
-              <option value="all">All levels</option>
+              <option value="all">{t("Tất cả cấp độ")}</option>
               <option value="A1">A1</option>
               <option value="A2">A2</option>
               <option value="B1">B1</option>
@@ -145,10 +160,10 @@ export default function ExercisesPage() {
               }
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
-              <option value="all">All types</option>
-              <option value="mcq">Multiple Choice</option>
-              <option value="fill_blank">Fill in the Blank</option>
-              <option value="matching">Matching</option>
+              <option value="all">{t("Tất cả dạng bài")}</option>
+              <option value="mcq">{t("Trắc nghiệm lựa chọn")}</option>
+              <option value="fill_blank">{t("Điền vào chỗ trống")}</option>
+              <option value="matching">{t("Nối cặp")}</option>
             </select>
           </div>
         </section>
@@ -157,8 +172,7 @@ export default function ExercisesPage() {
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load exercises. Please check login token or backend
-            connection.
+            {t("Không tải được bài tập. Vui lòng kiểm tra token đăng nhập hoặc kết nối backend.")}
           </div>
         )}
 
@@ -199,11 +213,11 @@ export default function ExercisesPage() {
                   </span>
                   <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
                     <BookCheck className="mr-1 h-3.5 w-3.5" />
-                    {item.questionCount} questions
+                    {item.questionCount} {t("câu hỏi")}
                   </span>
                   <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
                     <Clock3 className="mr-1 h-3.5 w-3.5" />
-                    {item.durationMinutes} mins
+                    {item.durationMinutes} {t("phút")}
                   </span>
                   <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
                     <Trophy className="mr-1 h-3.5 w-3.5" />+{item.rewardsXp} XP
@@ -215,25 +229,25 @@ export default function ExercisesPage() {
                     href={`/exercises/${item.id}`}
                     className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
-                    Detail
+                    {t("Chi tiết")}
                   </Link>
                   <Link
                     href={`/exercises/${item.id}/attempt`}
                     className="inline-flex items-center justify-center rounded-lg bg-black px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
                   >
-                    Start
+                    {t("Bắt đầu")}
                   </Link>
                   <Link
                     href={`/exercises/${item.id}/hints`}
                     className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
-                    Hints
+                    {t("Gợi ý")}
                   </Link>
                   <Link
                     href={`/exercises/${item.id}/leaderboard`}
                     className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
-                    Rank
+                    {t("Xếp hạng")}
                   </Link>
                 </div>
               </div>
@@ -243,9 +257,9 @@ export default function ExercisesPage() {
 
         {!isLoading && !isError && items.length === 0 && (
           <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="font-semibold">No exercise found</p>
+            <p className="font-semibold">{t("Không tìm thấy bài tập")}</p>
             <p className="mt-1 text-sm text-slate-500">
-              Try another keyword, level, or exercise type.
+              {t("Thử từ khóa khác, cấp độ hoặc dạng bài tập khác.")}
             </p>
           </div>
         )}

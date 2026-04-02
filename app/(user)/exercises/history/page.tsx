@@ -6,15 +6,24 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, formatDuration } from "../data";
 import { HistorySkeleton } from "../skeletons";
 import { useGetExerciseHistoryQuery } from "@/lib/api/exercisesApi";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function ExerciseHistoryPage() {
+  const { t } = useI18n();
   const {
     data: history = [],
     isLoading,
     isError,
   } = useGetExerciseHistoryQuery({ limit: 50 });
-  const getTopicLabel = (topic: string) =>
-    TOPIC_LABELS[topic as keyof typeof TOPIC_LABELS] ?? topic;
+  const getTopicLabel = (topic: string) => {
+    const labels: Record<string, string> = {
+      "daily-life": t("Đời sống hằng ngày"),
+      work: t("Công việc"),
+      travel: t("Du lịch"),
+      technology: t("Công nghệ"),
+    };
+    return labels[topic] ?? topic;
+  };
 
   return (
     <ProtectedRoute>
@@ -25,14 +34,14 @@ export default function ExerciseHistoryPage() {
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Exercise Arena
+            {t("Quay lại Sân thi đấu bài tập")}
           </Link>
         </section>
 
         <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold tracking-tight">Attempt History</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("Lịch sử làm bài")}</h1>
           <p className="mt-1 text-slate-500">
-            Track your recent submissions, scores, and completion speed.
+            {t("Theo dõi các bài nộp gần đây, điểm số và tốc độ hoàn thành của bạn.")}
           </p>
         </section>
 
@@ -40,7 +49,7 @@ export default function ExerciseHistoryPage() {
 
         {isError && (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load attempt history.
+            {t("Không tải được lịch sử làm bài.")}
           </div>
         )}
 
@@ -90,7 +99,7 @@ export default function ExerciseHistoryPage() {
                   </div>
                   <div className="rounded-lg bg-slate-50 p-3">
                     <p className="text-xs font-semibold uppercase text-slate-500">
-                      Submitted
+                      {t("Thời điểm nộp")}
                     </p>
                     <p className="mt-1 inline-flex items-center text-sm font-semibold">
                       <FileClock className="mr-1 h-4 w-4" />
@@ -104,14 +113,14 @@ export default function ExerciseHistoryPage() {
                     href={`/exercises/${item.exerciseId}/result?score=${item.score}&total=${item.total}&time=${item.durationSec}&answers=${encodeURIComponent((item.answers ?? []).join(","))}`}
                     className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
-                    Open result
+                    {t("Mở kết quả")}
                   </Link>
                   <Link
                     href={`/exercises/${item.exerciseId}/attempt`}
                     className="inline-flex items-center rounded-lg bg-black px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
                   >
                     <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                    Retry
+                    {t("Làm lại")}
                   </Link>
                 </div>
               </article>
@@ -121,9 +130,9 @@ export default function ExerciseHistoryPage() {
 
         {!isLoading && !isError && history.length === 0 && (
           <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="font-semibold">No attempt history yet</p>
+            <p className="font-semibold">{t("Chưa có lịch sử làm bài")}</p>
             <p className="mt-1 text-sm text-slate-500">
-              Start an exercise to create your first history record.
+              {t("Bắt đầu một bài tập để tạo bản ghi lịch sử đầu tiên của bạn.")}
             </p>
           </div>
         )}

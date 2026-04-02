@@ -17,31 +17,36 @@ import {
   Waves,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { useI18n } from "@/lib/i18n/context";
 
 const coreFeatures = [
   {
-    title: "AI Voice Practice",
-    description: "Talk with AI in real-time and get instant speaking feedback.",
+    title: t("Luyện tập giọng nói AI"),
+    description: t(
+      "Trò chuyện với AI theo thời gian thực và nhận phản hồi tức thì về khả năng nói.",
+    ),
     href: "/ai",
-    action: "Start speaking",
+    action: t("Bắt đầu nói"),
     icon: Mic,
     image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuD63g8SzYGC_Qj0D_8rLiYR5YLZW3txwqA7GsKUeGyktjpKO4Q6DSoguMh8BmtJGJ47GPtAoUTXR5b0FHhBWOg3GpF7A7mwYtZnYhXbPlirLarrZY-_JhWK3ehXBLWSP6-rKNi1BdoRmYOIsjRtiXMC1cRYNx74_N_HgsvbXGbGUB_seGuULLbSuO5serMXGI83KlH--HZecV6rTqImexRVhEFTevOxFCv9xsPUwSnCdgKs2qYei1ChsIcTSL7yOjDD_iAjmjXFeapd",
   },
   {
-    title: "Vocabulary Builder",
-    description: "Learn words by topic and level with context-rich examples.",
+    title: t("Trình tạo từ vựng"),
+    description: t("Học từ theo chủ đề và cấp độ với ví dụ giàu ngữ cảnh."),
     href: "/vocabulary",
-    action: "Open vocabulary",
+    action: t("Mở từ vựng"),
     icon: BookOpen,
     image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuDkHd8UJkk0tKsH-WI92KXxEhjDAj97l5oVuGnrGlRzvqls_sdBENfU7YbC15_QFl2lGHD8koNlLhZ4NB2nAHzUCzC7wMxzsAee6uEBwx2IDNJzA_PkbjOl_TquQrhRC_PwAjSPDRQg5OSbk3k5KgMJIylwsBFSaFaWAu35K2JeKBVwU9XscP5BLq_7BlucwCTIO7-hlgoEynBsa5C8t4ZV8S4s3U-SoITsiu9k_k8YfUmos-YFAkxJKCY9N76gtfRZMgC3-Z678t4M",
   },
   {
-    title: "Exercise Arena",
-    description: "Do grammar and reading drills with level-based challenges.",
+    title: t("Sân thi đấu bài tập"),
+    description: t(
+      "Làm bài tập ngữ pháp và đọc hiểu với thử thách theo cấp độ.",
+    ),
     href: "/exercises",
-    action: "Start exercises",
+    action: t("Bắt đầu bài tập"),
     icon: ListChecks,
     image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuD--BLKmCk2XERkZsjBk2Knjtbv8AERjUvskv5mAiB31qRGd1P_ViekbdMKjmXuyM0uNk0GGZyIyC9pp2ksPGD_Nc_FHjM_CJkkobhtpkR-phm0OlqZ-GbvKv-D7mqSUPs-hynj9nqRjfU-rBZkSQE81LXgNZX4rPlnzEAF4Vhtfi9w3PCSYRwvy-jDwb90w7WkMpRUwdTQYLc7WlrGq5uDXaFxE6S7SsKFDp7DRB08AXEftsZfJO1bynMGAZP96fx57xUfqbU9LL5j",
@@ -49,104 +54,124 @@ const coreFeatures = [
 ];
 
 const quickStats = [
-  { label: "Daily speaking target", value: "15-20 min" },
-  { label: "Vocabulary focus", value: "20 words/week" },
-  { label: "Practice style", value: "Short loops, high frequency" },
-  { label: "Recommended streak", value: "30+ days" },
+  { label: t("Mục tiêu nói hàng ngày"), value: "15-20 min" },
+  { label: t("Trọng tâm từ vựng"), value: "20 words/week" },
+  { label: t("Phong cách luyện tập"), value: "Short loops, high frequency" },
+  { label: t("Chuỗi khuyến nghị"), value: "30+ days" },
 ];
 
 const learningSteps = [
   {
-    title: "Listen and repeat",
-    detail:
-      "Start with guided prompts to warm up pronunciation, rhythm, and sentence stress before free conversation.",
+    title: t("Nghe và lặp lại"),
+    detail: t(
+      "Bắt đầu với các lời nhắc có hướng dẫn để làm nóng phát âm, nhịp điệu và trọng âm câu trước khi trò chuyện tự do.",
+    ),
     icon: Waves,
   },
   {
-    title: "Talk with AI partner",
-    detail:
-      "Move into short real-time dialogues to train reaction speed, confidence, and spontaneous speaking.",
+    title: t("Trò chuyện với đối tác AI"),
+    detail: t(
+      "Chuyển sang các cuộc đối thoại thời gian thực ngắn để rèn luyện tốc độ phản ứng, sự tự tin và khả năng nói tự phát.",
+    ),
     icon: MessageSquare,
   },
   {
-    title: "Collect useful words",
-    detail:
-      "Save words from your sessions into topic-based sets so vocabulary stays connected to context.",
+    title: t("Thu thập từ hữu ích"),
+    detail: t(
+      "Lưu từ từ các phiên của bạn vào các bộ theo chủ đề để từ vựng luôn kết nối với ngữ cảnh.",
+    ),
     icon: BookOpen,
   },
   {
-    title: "Lock in with exercises",
-    detail:
-      "Use focused drills to reinforce grammar and comprehension around the same language patterns.",
+    title: t("Khóa lại với bài tập"),
+    detail: t(
+      "Sử dụng bài tập tập trung để củng cố ngữ pháp và hiểu biết xung quanh cùng các mẫu ngôn ngữ.",
+    ),
     icon: ListChecks,
   },
 ];
 
 const weeklyPlan = [
   {
-    day: "Mon",
-    focus: "Voice warm-up + pronunciation",
-    tasks: ["10 min guided speaking", "5 min shadowing", "Feedback review"],
-  },
-  {
-    day: "Tue",
-    focus: "Daily conversation topic",
-    tasks: ["2 AI role-play rounds", "Save 8 new words", "Quick recap notes"],
-  },
-  {
-    day: "Wed",
-    focus: "Grammar in context",
-    tasks: ["Targeted exercise set", "Error pattern check", "1 retry session"],
-  },
-  {
-    day: "Thu",
-    focus: "Vocabulary deep review",
+    day: t("Thứ Hai"),
+    focus: t("Làm nóng giọng nói + phát âm"),
     tasks: [
-      "Spaced repetition",
-      "Example sentence writing",
-      "Speak with saved words",
+      t("10 phút nói có hướng dẫn"),
+      t("5 phút lặp lại bóng"),
+      t("Xem lại phản hồi"),
     ],
   },
   {
-    day: "Fri",
-    focus: "Speed speaking challenge",
-    tasks: ["Timed prompts", "Fluency score compare", "Pronunciation snapshot"],
+    day: t("Thứ Ba"),
+    focus: t("Chủ đề trò chuyện hàng ngày"),
+    tasks: [t("2 vòng vai diễn AI"), t("Lưu 8 từ mới"), t("Tóm tắt nhanh")],
   },
   {
-    day: "Sat",
-    focus: "Reading + comprehension drills",
-    tasks: ["Short passage set", "Inference questions", "Error notes"],
+    day: t("Thứ Tư"),
+    focus: t("Ngữ pháp trong ngữ cảnh"),
+    tasks: [
+      t("Bộ bài tập mục tiêu"),
+      t("Kiểm tra mẫu lỗi"),
+      t("1 phiên làm lại"),
+    ],
   },
   {
-    day: "Sun",
-    focus: "Weekly checkpoint",
-    tasks: ["Progress reflection", "Pick next themes", "Plan next week"],
+    day: t("Thứ Năm"),
+    focus: t("Ôn tập từ vựng sâu"),
+    tasks: [t("Ôn tập cách biệt"), t("Viết câu ví dụ"), t("Nói với từ đã lưu")],
+  },
+  {
+    day: t("Thứ Sáu"),
+    focus: t("Thử thách nói nhanh"),
+    tasks: [
+      t("Lời nhắc theo thời gian"),
+      t("So sánh điểm số trôi chảy"),
+      t("Ảnh chụp phát âm"),
+    ],
+  },
+  {
+    day: t("Thứ Bảy"),
+    focus: t("Bài tập đọc + hiểu biết"),
+    tasks: [t("Bộ đoạn ngắn"), t("Câu hỏi suy luận"), t("Ghi chú lỗi")],
+  },
+  {
+    day: t("Chủ Nhật"),
+    focus: t("Điểm kiểm tra hàng tuần"),
+    tasks: [
+      t("Phản ánh tiến độ"),
+      t("Chọn chủ đề tiếp theo"),
+      t("Lập kế hoạch tuần tiếp theo"),
+    ],
   },
 ];
 
 const trustPoints = [
   {
-    title: "Clear progression",
-    detail:
-      "Each activity has a role in a connected learning loop, not random tasks.",
+    title: t("Tiến bộ rõ ràng"),
+    detail: t(
+      "Mỗi hoạt động có vai trò trong vòng lặp học tập kết nối, không phải nhiệm vụ ngẫu nhiên.",
+    ),
     icon: TrendingUp,
   },
   {
-    title: "Practical context",
-    detail:
-      "Vocabulary and grammar appear in speaking scenarios you can actually use.",
+    title: t("Ngữ cảnh thực tế"),
+    detail: t(
+      "Từ vựng và ngữ pháp xuất hiện trong các tình huống nói mà bạn thực sự có thể sử dụng.",
+    ),
     icon: Compass,
   },
   {
-    title: "Habit-friendly rhythm",
-    detail:
-      "Short sessions and daily structure make consistency realistic for busy schedules.",
+    title: t("Nhịp điệu thân thiện với thói quen"),
+    detail: t(
+      "Các phiên ngắn và cấu trúc hàng ngày làm cho sự nhất quán thực tế với lịch trình bận rộn.",
+    ),
     icon: Clock3,
   },
   {
-    title: "AI-supported feedback",
-    detail:
-      "Get immediate, actionable signals instead of waiting for delayed correction.",
+    title: t("Phản hồi được hỗ trợ bởi AI"),
+    detail: t(
+      "Nhận tín hiệu có thể hành động ngay lập tức thay vì chờ sửa chữa bị trì hoãn.",
+    ),
     icon: Brain,
   },
 ];
@@ -154,44 +179,56 @@ const trustPoints = [
 const testimonials = [
   {
     name: "Linh N.",
-    role: "University student",
-    quote:
-      "I stopped avoiding speaking tasks. The short daily flow made practice less scary and more natural.",
+    role: t("Sinh viên đại học"),
+    quote: t(
+      "Tôi đã ngừng tránh các nhiệm vụ nói. Luồng hàng ngày ngắn làm cho việc luyện tập ít đáng sợ hơn và tự nhiên hơn.",
+    ),
   },
   {
     name: "Minh T.",
-    role: "Junior developer",
-    quote:
-      "The voice sessions plus vocab review gave me language I could use in standups and team chat quickly.",
+    role: t("Nhà phát triển trẻ"),
+    quote: t(
+      "Các phiên giọng nói cộng với ôn tập từ vựng đã mang lại cho tôi ngôn ngữ mà tôi có thể sử dụng trong các cuộc họp nhóm và trò chuyện nhóm nhanh chóng.",
+    ),
   },
   {
     name: "Phuong A.",
-    role: "Customer support trainee",
-    quote:
-      "I like that every week has structure. I know what to do each day and I can see progress clearly.",
+    role: t("Ứng viên hỗ trợ khách hàng"),
+    quote: t(
+      "Tôi thích rằng mỗi tuần có cấu trúc. Tôi biết phải làm gì mỗi ngày và tôi có thể thấy tiến độ rõ ràng.",
+    ),
   },
 ];
 
 const faqItems = [
   {
-    q: "Do I need advanced English to start?",
-    a: "No. The flow is designed to scale from foundation levels. You can start with short guided prompts and increase complexity over time.",
+    q: t("Tôi có cần tiếng Anh nâng cao để bắt đầu không?"),
+    a: t(
+      "Không. Luồng được thiết kế để mở rộng từ các cấp độ cơ bản. Bạn có thể bắt đầu với các lời nhắc có hướng dẫn ngắn và tăng độ phức tạp theo thời gian.",
+    ),
   },
   {
-    q: "How long should I practice each day?",
-    a: "A focused 15-25 minute session is enough for most learners when done consistently across the week.",
+    q: t("Tôi nên luyện tập bao lâu mỗi ngày?"),
+    a: t(
+      "Một phiên tập trung 15-25 phút là đủ cho hầu hết người học khi thực hiện nhất quán trong tuần.",
+    ),
   },
   {
-    q: "Can I focus only on speaking?",
-    a: "Yes, but best results come from combining speaking with vocabulary and short reinforcement exercises.",
+    q: t("Tôi có thể chỉ tập trung vào nói không?"),
+    a: t(
+      "Có, nhưng kết quả tốt nhất đến từ việc kết hợp nói với từ vựng và bài tập củng cố ngắn.",
+    ),
   },
   {
-    q: "What if I miss a day?",
-    a: "Resume with the next session. The weekly structure is flexible and designed for real schedules.",
+    q: t("Nếu tôi bỏ lỡ một ngày thì sao?"),
+    a: t(
+      "Tiếp tục với phiên tiếp theo. Cấu trúc hàng tuần linh hoạt và được thiết kế cho lịch trình thực tế.",
+    ),
   },
 ];
 
 export default function UserHomePage() {
+  const { t } = useI18n();
   return (
     <main className="mx-auto max-w-7xl px-6 pb-28">
       <ScrollReveal>
@@ -202,31 +239,32 @@ export default function UserHomePage() {
             <div className="max-w-2xl">
               <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm ring-1 ring-slate-200">
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                English Learning with AI
+                {t("Học tiếng Anh với AI")}
               </span>
               <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-6xl">
-                Your Complete English Practice Hub{" "}
+                {t(
+                  "Trung tâm luyện tập tiếng Anh hoàn chỉnh của bạn được xây dựng cho đà học tập hàng ngày",
+                )}{" "}
                 <br className="hidden md:block" />
-                Built For Daily Momentum
+                {t("Built For Daily Momentum")}
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 md:text-lg">
-                SmartLingo gives you a full routine from speaking to vocabulary
-                and structured drills. Instead of random lessons, you get a
-                long-form learning journey you can follow every day with clear
-                direction and measurable progress.
+                {t(
+                  "SmartLingo cung cấp cho bạn một routine đầy đủ từ nói chuyện đến từ vựng và bài tập có cấu trúc. Thay vì bài học ngẫu nhiên, bạn nhận được hành trình học tập dài hạn mà bạn có thể theo dõi mỗi ngày với hướng dẫn rõ ràng và tiến độ đo lường được.",
+                )}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/learn"
                   className="rounded-lg bg-black px-7 py-3 text-sm font-semibold text-white transition-all hover:translate-y-[-1px] hover:bg-slate-800"
                 >
-                  Start AI Voice
+                  {t("Bắt đầu luyện nói AI")}
                 </Link>
                 <Link
                   href="/vocabulary"
                   className="rounded-lg border border-slate-300 bg-white px-7 py-3 text-sm font-semibold text-slate-700 transition-all hover:translate-y-[-1px] hover:bg-slate-50"
                 >
-                  Open Vocabulary
+                  {t("Mở từ vựng")}
                 </Link>
               </div>
             </div>
@@ -242,19 +280,20 @@ export default function UserHomePage() {
                   <div className="h-5 w-1 rounded-full bg-white/50" />
                   <div className="h-3 w-1 rounded-full bg-white/30" />
                 </div>
-                <h3 className="text-xl font-bold">AI Voice Session</h3>
+                <h3 className="text-xl font-bold">{t("Phiên luyện nói AI")}</h3>
                 <p className="mt-2 text-sm text-slate-300">
-                  Speak naturally and receive immediate cues on fluency,
-                  pronunciation, and clarity.
+                  {t(
+                    "Nói tự nhiên và nhận phản hồi ngay lập tức về độ trôi chảy, phát âm và rõ ràng.",
+                  )}
                 </p>
                 <button className="mt-6 inline-flex items-center rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black transition-transform hover:scale-105">
                   <Waves className="mr-2 h-4 w-4" />
-                  Live Practice
+                  {t("Luyện tập trực tiếp")}
                 </button>
               </div>
               <div className="absolute -right-2 -top-4 hidden rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm md:block">
                 <Mic className="mr-1 inline h-3.5 w-3.5" />
-                Voice First
+                {t("Ưu tiên giọng nói")}
               </div>
             </div>
           </div>
@@ -285,10 +324,12 @@ export default function UserHomePage() {
         <section className="py-14">
           <div className="mb-8">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-              Core Features
+              {t("Tính năng cốt lõi")}
             </h2>
             <p className="mt-1 text-sm text-slate-500 md:text-base">
-              No extra clutter, only what your product really offers.
+              {t(
+                "Không có thứ gì thừa, chỉ những gì sản phẩm thực sự cung cấp.",
+              )}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -310,7 +351,7 @@ export default function UserHomePage() {
                     <div className="p-5">
                       <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
                         <Icon className="mr-1.5 h-3.5 w-3.5" />
-                        Main Flow
+                        {t("Luồng chính")}
                       </span>
                       <h3 className="mt-3 text-xl font-bold tracking-tight">
                         {item.title}
@@ -335,26 +376,28 @@ export default function UserHomePage() {
           <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-white p-6 md:grid-cols-3 md:p-8">
             <div className="rounded-xl bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                AI Voice
+                {t("Giọng nói AI")}
               </p>
               <p className="mt-2 text-sm text-slate-700">
-                Build speaking confidence with live AI conversation.
+                {t(
+                  "Xây dựng sự tự tin khi nói với cuộc trò chuyện AI trực tiếp.",
+                )}
               </p>
             </div>
             <div className="rounded-xl bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Vocabulary
+                {t("Từ vựng")}
               </p>
               <p className="mt-2 text-sm text-slate-700">
-                Learn and review words with level-based topics.
+                {t("Học và ôn lại từ với chủ đề theo cấp độ.")}
               </p>
             </div>
             <div className="rounded-xl bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Exercises
+                {t("Bài tập")}
               </p>
               <p className="mt-2 text-sm text-slate-700">
-                Practice grammar and comprehension with quick drills.
+                {t("Luyện tập ngữ pháp và hiểu biết với bài tập nhanh.")}
               </p>
             </div>
           </div>
@@ -365,12 +408,12 @@ export default function UserHomePage() {
         <section className="py-14">
           <div className="mb-8 max-w-3xl">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-              How The Learning Loop Works
+              {t("Cách vòng lặp học tập hoạt động")}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 md:text-base">
-              A longer, more complete workflow means you always know what to do
-              next. Every step feeds the next one, so your speaking, word
-              choice, and grammar improve together.
+              {t(
+                "Một workflow dài hơn, hoàn chỉnh hơn có nghĩa là bạn luôn biết phải làm gì tiếp theo. Mỗi bước nuôi dưỡng bước tiếp theo, vì vậy khả năng nói, lựa chọn từ và ngữ pháp của bạn cải thiện cùng nhau.",
+              )}
             </p>
           </div>
 
@@ -382,7 +425,7 @@ export default function UserHomePage() {
                   <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                       <Icon className="mr-1.5 h-3.5 w-3.5" />
-                      Step {index + 1}
+                      {t("Bước")} {index + 1}
                     </div>
                     <h3 className="mt-4 text-xl font-bold tracking-tight text-slate-900">
                       {step.title}
@@ -403,12 +446,12 @@ export default function UserHomePage() {
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-3xl">
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-                A Full Weekly Plan You Can Follow
+                {t("Kế hoạch hàng tuần đầy đủ bạn có thể theo dõi")}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 md:text-base">
-                This sample routine turns your home page into a practical guide,
-                not just a short intro. Use it as your default structure and
-                adjust intensity by level.
+                {t(
+                  "Routine mẫu này biến trang chủ của bạn thành hướng dẫn thực tế, không chỉ là phần giới thiệu ngắn. Sử dụng nó như cấu trúc mặc định và điều chỉnh cường độ theo cấp độ.",
+                )}
               </p>
             </div>
             <Link
@@ -416,7 +459,7 @@ export default function UserHomePage() {
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <Target className="mr-2 h-4 w-4" />
-              Apply This Plan
+              {t("Áp dụng kế hoạch này")}
             </Link>
           </div>
 
@@ -454,25 +497,25 @@ export default function UserHomePage() {
             <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 to-black p-7 text-white md:p-9">
               <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
                 <GraduationCap className="mr-1.5 h-3.5 w-3.5" />
-                Why learners stay consistent
+                {t("Tại sao người học duy trì nhất quán")}
               </span>
               <h2 className="mt-5 text-2xl font-bold tracking-tight md:text-3xl">
-                Long-form home content guides action, not just attention
+                {t("Long-form home content guides action, not just attention")}
               </h2>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-200 md:text-base">
-                A detailed page helps users understand the full product value
-                before they click the first button. It sets expectation, builds
-                trust, and gives a practical path from day one.
+                {t(
+                  "A detailed page helps users understand the full product value before they click the first button. It sets expectation, builds trust, and gives a practical path from day one.",
+                )}
               </p>
               <div className="mt-6 space-y-3">
                 <div className="rounded-xl bg-white/10 p-3 text-sm">
-                  Clear next steps reduce drop-off.
+                  {t("Clear next steps reduce drop-off.")}
                 </div>
                 <div className="rounded-xl bg-white/10 p-3 text-sm">
-                  Visible routines increase daily return rate.
+                  {t("Visible routines increase daily return rate.")}
                 </div>
                 <div className="rounded-xl bg-white/10 p-3 text-sm">
-                  Context-rich copy improves user confidence.
+                  {t("Context-rich copy improves user confidence.")}
                 </div>
               </div>
             </div>
@@ -487,7 +530,7 @@ export default function UserHomePage() {
                   >
                     <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
                       <Icon className="mr-1.5 h-3.5 w-3.5" />
-                      Trust Signal
+                      {t("Tín hiệu tin cậy")}
                     </span>
                     <h3 className="mt-3 text-lg font-bold tracking-tight text-slate-900">
                       {point.title}
@@ -507,12 +550,12 @@ export default function UserHomePage() {
         <section className="py-14">
           <div className="mb-8 max-w-2xl">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-              Learner Feedback
+              {t("Phản hồi của người học")}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 md:text-base">
-              Real users often mention confidence and structure first. These
-              testimonials show what improves when sessions are short, frequent,
-              and connected.
+              {t(
+                "Real users often mention confidence and structure first. These testimonials show what improves when sessions are short, frequent, and connected.",
+              )}
             </p>
           </div>
 
@@ -547,7 +590,7 @@ export default function UserHomePage() {
             <div className="mb-7 flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-slate-700" />
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-                Frequently Asked Questions
+                {t("Câu hỏi thường gặp")}
               </h2>
             </div>
             <div className="space-y-4">
@@ -578,15 +621,17 @@ export default function UserHomePage() {
               <div className="max-w-2xl">
                 <span className="inline-flex items-center rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  Ready to start your long-run routine?
+                  {t("Sẵn sàng bắt đầu routine dài hạn của bạn?")}
                 </span>
                 <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                  Turn small daily sessions into visible English growth
+                  {t(
+                    "Biến các phiên hàng ngày nhỏ thành sự phát triển tiếng Anh có thể thấy",
+                  )}
                 </h2>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600 md:text-base">
-                  Open your dashboard, pick a topic, and run your first guided
-                  speaking loop today. Keep momentum for one week and you will
-                  feel the difference.
+                  {t(
+                    "Mở bảng điều khiển của bạn, chọn một chủ đề và chạy vòng lặp nói có hướng dẫn đầu tiên của bạn hôm nay. Duy trì đà trong một tuần và bạn sẽ cảm nhận sự khác biệt.",
+                  )}
                 </p>
               </div>
 
@@ -595,13 +640,13 @@ export default function UserHomePage() {
                   href="/learn"
                   className="rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800"
                 >
-                  Open AI Map
+                  {t("Mở bản đồ AI")}
                 </Link>
                 <Link
                   href="/exercises"
                   className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-slate-50"
                 >
-                  View Exercise Flow
+                  {t("Xem luồng bài tập")}
                 </Link>
               </div>
             </div>

@@ -40,8 +40,18 @@ function translateDom(lang: AppLang) {
     const base = rawOriginal ?? node.textContent ?? ''
     if (!rawOriginal) node.setAttribute(ATTR_KEY, base)
     const next = translateText(base, lang)
-    if ((node.textContent ?? '') !== next) {
-      node.textContent = next
+
+    // Keep the original Text node identity so React can unmount safely.
+    const firstChild = node.firstChild
+    const isSingleTextChild =
+      node.childNodes.length === 1 &&
+      firstChild?.nodeType === Node.TEXT_NODE
+
+    if (!isSingleTextChild) return
+
+    const textNode = firstChild as Text
+    if ((textNode.nodeValue ?? '') !== next) {
+      textNode.nodeValue = next
     }
   })
 

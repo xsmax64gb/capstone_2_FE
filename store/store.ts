@@ -4,6 +4,7 @@ import "./services/adminApi";
 import "./services/authApi";
 import "./services/exercisesApi";
 import "./services/learnApi";
+import "./services/paymentApi";
 import "./services/placementApi";
 import "./services/vocabulariesApi";
 import authReducer from "./slices/authSlice";

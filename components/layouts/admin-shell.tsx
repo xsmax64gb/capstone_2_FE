@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   BarChart3,
   BookOpen,
+  CircleDollarSign,
   ChevronRight,
   FileText,
   LayoutDashboard,
@@ -16,6 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users2,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useGetAdminOverviewQuery } from "@/store/services/adminApi";
@@ -88,6 +90,18 @@ const adminNavigation = [
     heading: "Theo dõi hiệu suất và cảnh báo",
     href: "/admin/reports",
     icon: BarChart3,
+  },
+  {
+    title: "Gói thanh toán",
+    heading: "Quản lý gói, quyền và quota theo module",
+    href: "/admin/payment-packages",
+    icon: Wallet,
+  },
+  {
+    title: "Doanh thu",
+    heading: "Phân tích doanh thu và đối soát thanh toán",
+    href: "/admin/revenue",
+    icon: CircleDollarSign,
   },
 ] as const;
 
@@ -270,7 +284,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <p className="truncate text-sm font-semibold text-slate-900">
                   {displayName}
                 </p>
-                <p className="text-xs text-slate-500">{user?.email || roleLabel}</p>
+                <p className="text-xs text-slate-500">
+                  {user?.email || roleLabel}
+                </p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between gap-3">

@@ -19,6 +19,7 @@ const navItems = [
   { labelKey: "Trang chủ", href: "/" },
   { labelKey: "Bài tập", href: "/exercises" },
   { labelKey: "Từ vựng", href: "/vocabularies" },
+  { labelKey: "Thanh toán", href: "/payments" },
   { labelKey: "Nói với AI", href: "/learn" },
 ];
 
@@ -64,9 +65,7 @@ export function UserHeader() {
     const activeIndex = getActiveIndex();
     if (activeIndex < 0) return 0;
 
-    // Base position for each item (gap-8 = 32px between items)
-    const basePositions = [0, 96, 192, 288]; // Approximate positions for each nav item
-    return basePositions[activeIndex] || 0;
+    return activeIndex * 96;
   };
 
   const handleLogout = () => {
@@ -85,7 +84,7 @@ export function UserHeader() {
         </Link>
 
         <nav className="relative hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-          {navLinks.map((item, index) => (
+          {navLinks.map((item) => (
             <Link
               key={item.labelKey}
               href={item.href}

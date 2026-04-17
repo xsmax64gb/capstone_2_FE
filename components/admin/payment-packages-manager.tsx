@@ -234,7 +234,8 @@ const buildSlug = (value: string) =>
 
 const toApiErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error === "object" && error && "data" in error) {
-    const data = (error as { data?: { message?: string; error?: string } }).data;
+    const data = (error as { data?: { message?: string; error?: string } })
+      .data;
     if (data?.message) {
       return data.message;
     }
@@ -327,14 +328,21 @@ const synchronizeFeatureScopes = ({
   });
 };
 
-const toFormState = (paymentPackage?: PaymentPackage | null): PaymentPackageFormState => {
+const toFormState = (
+  paymentPackage?: PaymentPackage | null,
+): PaymentPackageFormState => {
   if (!paymentPackage) {
     return INITIAL_FORM_STATE;
   }
 
-  const tier = resolvePresetTier(`${paymentPackage.slug} ${paymentPackage.name}`);
+  const tier = resolvePresetTier(
+    `${paymentPackage.slug} ${paymentPackage.name}`,
+  );
   const scopeMap = new Map(
-    (paymentPackage.featureScopes ?? []).map((scope) => [scope.featureKey, scope]),
+    (paymentPackage.featureScopes ?? []).map((scope) => [
+      scope.featureKey,
+      scope,
+    ]),
   );
 
   const featureScopes = paymentPackage.featureKeys.map((featureKey) => {
@@ -375,19 +383,21 @@ const summarizeQuota = (scope: PaymentFeatureScope) => {
 };
 
 export function PaymentPackagesManager() {
-  const { data, isLoading, isError, error, refetch } = useGetPaymentPackagesQuery({
-    includeInactive: true,
-  });
+  const { data, isLoading, isError, error, refetch } =
+    useGetPaymentPackagesQuery({
+      includeInactive: true,
+    });
   const [createPaymentPackage, { isLoading: isCreating }] =
     useCreatePaymentPackageMutation();
   const [updatePaymentPackage, { isLoading: isUpdating }] =
     useUpdatePaymentPackageMutation();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<PaymentPackage | null>(null);
-  const [formState, setFormState] = useState<PaymentPackageFormState>(
-    INITIAL_FORM_STATE,
+  const [editingPackage, setEditingPackage] = useState<PaymentPackage | null>(
+    null,
   );
+  const [formState, setFormState] =
+    useState<PaymentPackageFormState>(INITIAL_FORM_STATE);
   const [slugTouched, setSlugTouched] = useState(false);
 
   const packages = data?.packages ?? [];
@@ -405,7 +415,8 @@ export function PaymentPackagesManager() {
     data?.scopeConfig?.quotaPeriodOptions ?? DEFAULT_QUOTA_PERIOD_OPTIONS;
 
   const featureLabelLookup = useMemo(
-    () => new Map(featureCatalog.map((feature) => [feature.key, feature.label])),
+    () =>
+      new Map(featureCatalog.map((feature) => [feature.key, feature.label])),
     [featureCatalog],
   );
 
@@ -587,9 +598,13 @@ export function PaymentPackagesManager() {
       }
 
       const normalizedQuota = scope.quota.trim();
-      const quotaValue = normalizedQuota === "" ? null : Number(normalizedQuota);
+      const quotaValue =
+        normalizedQuota === "" ? null : Number(normalizedQuota);
 
-      if (quotaValue !== null && (!Number.isFinite(quotaValue) || quotaValue < 0)) {
+      if (
+        quotaValue !== null &&
+        (!Number.isFinite(quotaValue) || quotaValue < 0)
+      ) {
         notify({
           title: "Quota không hợp lệ",
           message: `Quota của chức năng ${featureLabelLookup.get(featureKey) ?? featureKey} phải là số không âm hoặc để trống.`,
@@ -659,7 +674,9 @@ export function PaymentPackagesManager() {
       setSlugTouched(false);
     } catch (submitError) {
       notify({
-        title: editingPackage ? "Không cập nhật được gói" : "Không tạo được gói",
+        title: editingPackage
+          ? "Không cập nhật được gói"
+          : "Không tạo được gói",
         message: toApiErrorMessage(
           submitError,
           "Backend từ chối dữ liệu gói thanh toán. Kiểm tra lại thông tin.",
@@ -680,7 +697,10 @@ export function PaymentPackagesManager() {
   if (isError && !data) {
     return (
       <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-6 py-6 text-sm text-rose-700">
-        {toApiErrorMessage(error, "Không tải được dữ liệu gói thanh toán từ backend.")}
+        {toApiErrorMessage(
+          error,
+          "Không tải được dữ liệu gói thanh toán từ backend.",
+        )}
       </div>
     );
   }
@@ -754,7 +774,8 @@ export function PaymentPackagesManager() {
             </h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
               Mỗi gói sẽ có quy định rõ chức năng nào được mở, ở mức độ nào và
-              quota bao nhiêu lượt theo chu kỳ để frontend hiển thị đúng quyền lợi.
+              quota bao nhiêu lượt theo chu kỳ để frontend hiển thị đúng quyền
+              lợi.
             </p>
           </div>
 
@@ -830,11 +851,16 @@ export function PaymentPackagesManager() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {formatCurrency(paymentPackage.price, paymentPackage.currency)}
+                        {formatCurrency(
+                          paymentPackage.price,
+                          paymentPackage.currency,
+                        )}
                       </TableCell>
                       <TableCell>{paymentPackage.billingCycle}</TableCell>
                       <TableCell>{paymentPackage.featureKeys.length}</TableCell>
-                      <TableCell>{paymentPackage.featureScopes.length}</TableCell>
+                      <TableCell>
+                        {paymentPackage.featureScopes.length}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
@@ -847,7 +873,9 @@ export function PaymentPackagesManager() {
                           {paymentPackage.isActive ? "Đang mở" : "Đang tắt"}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatDateTime(paymentPackage.updatedAt)}</TableCell>
+                      <TableCell>
+                        {formatDateTime(paymentPackage.updatedAt)}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           type="button"
@@ -906,7 +934,9 @@ export function PaymentPackagesManager() {
                       <TableRow key={feature.key}>
                         <TableCell>
                           <div>
-                            <p className="font-medium text-slate-900">{feature.label}</p>
+                            <p className="font-medium text-slate-900">
+                              {feature.label}
+                            </p>
                             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">
                               {feature.category}
                             </p>
@@ -922,19 +952,27 @@ export function PaymentPackagesManager() {
 
                           if (!scope) {
                             return (
-                              <TableCell key={`${feature.key}-${paymentPackage.id}`}>
-                                <span className="text-sm text-slate-400">Không mở</span>
+                              <TableCell
+                                key={`${feature.key}-${paymentPackage.id}`}
+                              >
+                                <span className="text-sm text-slate-400">
+                                  Không mở
+                                </span>
                               </TableCell>
                             );
                           }
 
                           return (
-                            <TableCell key={`${feature.key}-${paymentPackage.id}`}>
+                            <TableCell
+                              key={`${feature.key}-${paymentPackage.id}`}
+                            >
                               <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
                                 <p className="font-semibold text-slate-900">
                                   {ACCESS_LEVEL_LABELS[scope.accessLevel]}
                                 </p>
-                                <p className="mt-1 text-slate-600">{summarizeQuota(scope)}</p>
+                                <p className="mt-1 text-slate-600">
+                                  {summarizeQuota(scope)}
+                                </p>
                               </div>
                             </TableCell>
                           );
@@ -953,11 +991,14 @@ export function PaymentPackagesManager() {
         <DialogContent className="!w-[calc(100vw-2rem)] sm:!w-[calc(100vw-5rem)] sm:!max-w-[1480px] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingPackage ? "Chỉnh sửa gói thanh toán" : "Tạo gói thanh toán"}
+              {editingPackage
+                ? "Chỉnh sửa gói thanh toán"
+                : "Tạo gói thanh toán"}
             </DialogTitle>
             <DialogDescription>
               Cấu hình thông tin gói, danh sách chức năng, mức độ truy cập và
-              quota theo module. Backend sẽ chặn nếu số gói active vượt giới hạn.
+              quota theo module. Backend sẽ chặn nếu số gói active vượt giới
+              hạn.
             </DialogDescription>
           </DialogHeader>
 
@@ -994,7 +1035,9 @@ export function PaymentPackagesManager() {
                   <Input
                     id="package-price"
                     value={formState.price}
-                    onChange={(event) => updateForm("price", event.target.value)}
+                    onChange={(event) =>
+                      updateForm("price", event.target.value)
+                    }
                     placeholder="300000"
                     inputMode="numeric"
                     disabled={isEditingDefaultPackage}
@@ -1023,7 +1066,10 @@ export function PaymentPackagesManager() {
                     value={formState.billingCycle}
                     disabled={isEditingDefaultPackage}
                     onValueChange={(value) =>
-                      updateForm("billingCycle", value as PaymentPackageBillingCycle)
+                      updateForm(
+                        "billingCycle",
+                        value as PaymentPackageBillingCycle,
+                      )
                     }
                   >
                     <SelectTrigger className="w-full">
@@ -1044,7 +1090,9 @@ export function PaymentPackagesManager() {
                   <Input
                     id="package-currency"
                     value={formState.currency}
-                    onChange={(event) => updateForm("currency", event.target.value)}
+                    onChange={(event) =>
+                      updateForm("currency", event.target.value)
+                    }
                     placeholder="VND"
                     disabled={isEditingDefaultPackage}
                   />
@@ -1056,7 +1104,9 @@ export function PaymentPackagesManager() {
                 <Textarea
                   id="package-description"
                   value={formState.description}
-                  onChange={(event) => updateForm("description", event.target.value)}
+                  onChange={(event) =>
+                    updateForm("description", event.target.value)
+                  }
                   placeholder="Mô tả hiển thị trên card thanh toán."
                   rows={5}
                   disabled={isEditingDefaultPackage}
@@ -1066,7 +1116,9 @@ export function PaymentPackagesManager() {
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">Kích hoạt gói</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      Kích hoạt gói
+                    </p>
                     <p className="mt-1 text-sm text-slate-500">
                       {isEditingDefaultPackage
                         ? "Gói Free mặc định luôn bật và không chiếm slot gói trả phí."
@@ -1074,8 +1126,12 @@ export function PaymentPackagesManager() {
                     </p>
                   </div>
                   <Switch
-                    checked={isEditingDefaultPackage ? true : formState.isActive}
-                    onCheckedChange={(checked) => updateForm("isActive", checked)}
+                    checked={
+                      isEditingDefaultPackage ? true : formState.isActive
+                    }
+                    onCheckedChange={(checked) =>
+                      updateForm("isActive", checked)
+                    }
                     disabled={isEditingDefaultPackage}
                   />
                 </div>
@@ -1090,10 +1146,13 @@ export function PaymentPackagesManager() {
                   {formState.description || "Mô tả gói sẽ hiển thị tại đây."}
                 </p>
                 <p className="mt-4 text-2xl font-semibold text-slate-950">
-                  {formState.price ? formatCurrency(Number(formState.price)) : "0 ₫"}
+                  {formState.price
+                    ? formatCurrency(Number(formState.price))
+                    : "0 ₫"}
                 </p>
                 <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                  {buildSlug(formState.slug || formState.name) || "slug-preview"}
+                  {buildSlug(formState.slug || formState.name) ||
+                    "slug-preview"}
                 </p>
               </div>
             </div>
@@ -1134,7 +1193,9 @@ export function PaymentPackagesManager() {
                   </TableHeader>
                   <TableBody>
                     {featureCatalog.map((feature: PaymentPackageFeature) => {
-                      const checked = formState.featureKeys.includes(feature.key);
+                      const checked = formState.featureKeys.includes(
+                        feature.key,
+                      );
 
                       return (
                         <TableRow key={feature.key}>
@@ -1146,7 +1207,9 @@ export function PaymentPackagesManager() {
                             <div className="flex justify-end">
                               <Checkbox
                                 checked={checked}
-                                onCheckedChange={() => handleFeatureToggle(feature.key)}
+                                onCheckedChange={() =>
+                                  handleFeatureToggle(feature.key)
+                                }
                               />
                             </div>
                           </TableCell>
@@ -1169,7 +1232,8 @@ export function PaymentPackagesManager() {
                       className="rounded-xl border border-slate-200 bg-white px-3 py-3"
                     >
                       <p className="text-sm font-semibold text-slate-900">
-                        {featureLabelLookup.get(scope.featureKey) ?? scope.featureKey}
+                        {featureLabelLookup.get(scope.featureKey) ??
+                          scope.featureKey}
                       </p>
 
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">

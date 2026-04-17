@@ -97,7 +97,9 @@ const BANK_NAMES: Record<string, string> = {
 };
 
 const getBankDisplayName = (bankCode: string | null | undefined) => {
-  const normalized = String(bankCode ?? "").trim().toLowerCase();
+  const normalized = String(bankCode ?? "")
+    .trim()
+    .toLowerCase();
   if (!normalized) {
     return "N/A";
   }
@@ -105,7 +107,9 @@ const getBankDisplayName = (bankCode: string | null | undefined) => {
   return BANK_NAMES[normalized] ?? normalized.toUpperCase();
 };
 
-const getBillingCycleLabel = (value: PaymentPackage["billingCycle"] | "free") => {
+const getBillingCycleLabel = (
+  value: PaymentPackage["billingCycle"] | "free",
+) => {
   if (value === "free") {
     return "/tháng";
   }
@@ -155,7 +159,8 @@ const describeScope = (scope: PaymentFeatureScope | undefined) => {
 
 const extractErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error === "object" && error && "data" in error) {
-    const data = (error as { data?: { message?: string; error?: string } }).data;
+    const data = (error as { data?: { message?: string; error?: string } })
+      .data;
     if (data?.message) {
       return data.message;
     }
@@ -184,7 +189,10 @@ const isExpiredState = (payment: PaymentRecord | null) => {
   return payment.status === "failed" && payment.failureReason === "expired";
 };
 
-const canCancelPendingPayment = (payment: PaymentRecord | null, now = Date.now()) => {
+const canCancelPendingPayment = (
+  payment: PaymentRecord | null,
+  now = Date.now(),
+) => {
   if (!payment || payment.status !== "pending") {
     return false;
   }
@@ -206,7 +214,10 @@ const buildPackageFeatureLines = (
   featureLabelLookup: Map<string, string>,
 ) => {
   const scopeByKey = new Map(
-    (paymentPackage.featureScopes ?? []).map((scope) => [scope.featureKey, scope]),
+    (paymentPackage.featureScopes ?? []).map((scope) => [
+      scope.featureKey,
+      scope,
+    ]),
   );
 
   return paymentPackage.featureKeys.map((featureKey) => {
@@ -224,13 +235,19 @@ export default function PaymentPackagesPage() {
   const [reconcilePayment, { isLoading: isReconcilingPayment }] =
     useReconcilePaymentMutation();
   const [cancelPayment] = useCancelPaymentMutation();
-  const [creatingPackageId, setCreatingPackageId] = useState<string | null>(null);
+  const [creatingPackageId, setCreatingPackageId] = useState<string | null>(
+    null,
+  );
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [checkoutPlanName, setCheckoutPlanName] = useState<string>("");
-  const [checkoutPayment, setCheckoutPayment] = useState<PaymentRecord | null>(null);
+  const [checkoutPayment, setCheckoutPayment] = useState<PaymentRecord | null>(
+    null,
+  );
   const [checkoutSyncSummary, setCheckoutSyncSummary] =
     useState<PaymentSyncSummary | null>(null);
-  const [checkoutSyncError, setCheckoutSyncError] = useState<string | null>(null);
+  const [checkoutSyncError, setCheckoutSyncError] = useState<string | null>(
+    null,
+  );
   const [checkCooldownSeconds, setCheckCooldownSeconds] = useState(0);
   const [clockNow, setClockNow] = useState<number>(Date.now());
   const autoCheckedInvoiceRef = useRef<string | null>(null);
@@ -244,7 +261,12 @@ export default function PaymentPackagesPage() {
 
   const featureLabelLookup = useMemo(
     () =>
-      new Map((data?.featureCatalog ?? []).map((feature) => [feature.key, feature.label])),
+      new Map(
+        (data?.featureCatalog ?? []).map((feature) => [
+          feature.key,
+          feature.label,
+        ]),
+      ),
     [data?.featureCatalog],
   );
 
@@ -264,7 +286,10 @@ export default function PaymentPackagesPage() {
           currency: defaultFreePackage.currency,
           billingCycleLabel: getBillingCycleLabel("free"),
           ctaLabel: "Dùng bản Free",
-          featureLines: buildPackageFeatureLines(defaultFreePackage, featureLabelLookup),
+          featureLines: buildPackageFeatureLines(
+            defaultFreePackage,
+            featureLabelLookup,
+          ),
           packageId: defaultFreePackage.id,
           isFree: true,
         }
@@ -287,7 +312,9 @@ export default function PaymentPackagesPage() {
 
     const paidPlans = packages
       .filter((paymentPackage) => paymentPackage.id !== defaultFreePackage?.id)
-      .filter((paymentPackage) => paymentPackage.price >= MIN_PAID_PACKAGE_AMOUNT)
+      .filter(
+        (paymentPackage) => paymentPackage.price >= MIN_PAID_PACKAGE_AMOUNT,
+      )
       .map<PricingPlan>((paymentPackage) => ({
         id: paymentPackage.id,
         name: paymentPackage.name,
@@ -298,7 +325,10 @@ export default function PaymentPackagesPage() {
         currency: paymentPackage.currency,
         billingCycleLabel: getBillingCycleLabel(paymentPackage.billingCycle),
         ctaLabel: `Dùng bản ${paymentPackage.name}`,
-        featureLines: buildPackageFeatureLines(paymentPackage, featureLabelLookup),
+        featureLines: buildPackageFeatureLines(
+          paymentPackage,
+          featureLabelLookup,
+        ),
         packageId: paymentPackage.id,
         isFree: false,
       }));
@@ -347,7 +377,9 @@ export default function PaymentPackagesPage() {
     checkoutPayment?.status === "failed" &&
     checkoutPayment.failureReason === "cancelled_by_user";
   const canManualCheckPayment =
-    checkoutPayment?.status === "pending" && !isExpiredPayment && !isCancelledPayment;
+    checkoutPayment?.status === "pending" &&
+    !isExpiredPayment &&
+    !isCancelledPayment;
 
   const resolveCheckoutStatusText = () => {
     if (isPaidPayment) {
@@ -369,7 +401,10 @@ export default function PaymentPackagesPage() {
     return "Hệ thống đang tự động kiểm tra giao dịch...";
   };
 
-  const handleCopy = async (value: string | null | undefined, label: string) => {
+  const handleCopy = async (
+    value: string | null | undefined,
+    label: string,
+  ) => {
     if (!value) {
       return;
     }
@@ -392,7 +427,10 @@ export default function PaymentPackagesPage() {
   const fireAndForgetCancelPendingPayment = useCallback(
     (invoiceNumber: string | null | undefined) => {
       const normalizedInvoice = String(invoiceNumber ?? "").trim();
-      if (!normalizedInvoice || cancelledInvoiceRef.current === normalizedInvoice) {
+      if (
+        !normalizedInvoice ||
+        cancelledInvoiceRef.current === normalizedInvoice
+      ) {
         return;
       }
 
@@ -424,7 +462,10 @@ export default function PaymentPackagesPage() {
   const cancelCurrentPendingPayment = useCallback(
     async (mode: "request" | "fire-and-forget") => {
       const currentPayment = checkoutPaymentRef.current;
-      if (!canCancelPendingPayment(currentPayment) || !currentPayment?.invoiceNumber) {
+      if (
+        !canCancelPendingPayment(currentPayment) ||
+        !currentPayment?.invoiceNumber
+      ) {
         return;
       }
 
@@ -471,7 +512,9 @@ export default function PaymentPackagesPage() {
 
         if (!silent) {
           notify({
-            title: result.allowProceed ? "Đã thanh toán" : "Đã kiểm tra giao dịch",
+            title: result.allowProceed
+              ? "Đã thanh toán"
+              : "Đã kiểm tra giao dịch",
             message: result.allowProceed
               ? "Giao dịch đã được hệ thống xác nhận."
               : "Chưa ghi nhận thanh toán, bạn vui lòng thử lại sau ít giây.",
@@ -499,7 +542,11 @@ export default function PaymentPackagesPage() {
   );
 
   const handleManualCheckPayment = async () => {
-    if (checkCooldownSeconds > 0 || isReconcilingPayment || !canManualCheckPayment) {
+    if (
+      checkCooldownSeconds > 0 ||
+      isReconcilingPayment ||
+      !canManualCheckPayment
+    ) {
       return;
     }
 
@@ -579,7 +626,11 @@ export default function PaymentPackagesPage() {
   }, [cancelCurrentPendingPayment, isQrDialogOpen]);
 
   useEffect(() => {
-    if (!isQrDialogOpen || checkoutPayment?.status !== "pending" || !expiresAtMs) {
+    if (
+      !isQrDialogOpen ||
+      checkoutPayment?.status !== "pending" ||
+      !expiresAtMs
+    ) {
       return;
     }
 
@@ -626,7 +677,11 @@ export default function PaymentPackagesPage() {
   }, [checkCooldownSeconds]);
 
   useEffect(() => {
-    if (!isQrDialogOpen || !canManualCheckPayment || !checkoutPayment?.invoiceNumber) {
+    if (
+      !isQrDialogOpen ||
+      !canManualCheckPayment ||
+      !checkoutPayment?.invoiceNumber
+    ) {
       return;
     }
 
@@ -643,7 +698,12 @@ export default function PaymentPackagesPage() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [canManualCheckPayment, checkoutPayment?.invoiceNumber, isQrDialogOpen, runReconcile]);
+  }, [
+    canManualCheckPayment,
+    checkoutPayment?.invoiceNumber,
+    isQrDialogOpen,
+    runReconcile,
+  ]);
 
   const handleCheckout = async (plan: PricingPlan) => {
     if (plan.isFree) {
@@ -732,14 +792,20 @@ export default function PaymentPackagesPage() {
           <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-sm">
             <div className="grid gap-4 px-4 py-5 md:px-6 md:py-6 xl:grid-cols-4">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="rounded-[24px] border border-slate-200 p-4">
+                <div
+                  key={index}
+                  className="rounded-[24px] border border-slate-200 p-4"
+                >
                   <Skeleton className="h-8 w-28 rounded-xl" />
                   <Skeleton className="mt-4 h-5 w-4/5 rounded-xl" />
                   <Skeleton className="mt-10 h-10 w-40 rounded-xl" />
                   <Skeleton className="mt-4 h-11 w-full rounded-full" />
                   <div className="mt-6 space-y-3">
                     {Array.from({ length: 7 }).map((__, itemIndex) => (
-                      <Skeleton key={itemIndex} className="h-5 w-full rounded-xl" />
+                      <Skeleton
+                        key={itemIndex}
+                        className="h-5 w-full rounded-xl"
+                      />
                     ))}
                   </div>
                 </div>
@@ -762,7 +828,9 @@ export default function PaymentPackagesPage() {
             <div className="grid gap-4 px-4 py-5 md:px-6 md:py-6 xl:grid-cols-4">
               {pricingPlans.map((plan) => {
                 const isCurrentLoading =
-                  !plan.isFree && isCreatingPayment && creatingPackageId === plan.packageId;
+                  !plan.isFree &&
+                  isCreatingPayment &&
+                  creatingPackageId === plan.packageId;
                 const isHighlighted =
                   !plan.isFree && highlightedPaidPlanId === plan.id;
 
@@ -852,7 +920,9 @@ export default function PaymentPackagesPage() {
                           <li
                             key={`${plan.id}-${line}`}
                             className={`flex items-start gap-3 text-sm leading-7 ${
-                              isHighlighted ? "text-slate-200" : "text-slate-700"
+                              isHighlighted
+                                ? "text-slate-200"
+                                : "text-slate-700"
                             }`}
                           >
                             <span
@@ -880,7 +950,8 @@ export default function PaymentPackagesPage() {
           <DialogContent className="w-[min(920px,96vw)] gap-0 overflow-hidden border border-slate-200 p-0 shadow-2xl sm:max-w-[920px]">
             <DialogHeader className="border-b border-slate-200 px-6 py-5 text-left sm:text-left">
               <DialogTitle className="text-xl font-semibold text-slate-900">
-                Thanh toán gói {checkoutPlanName || checkoutPayment?.packageName || "học"}
+                Thanh toán gói{" "}
+                {checkoutPlanName || checkoutPayment?.packageName || "học"}
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-500">
                 Hóa đơn: {checkoutPayment?.invoiceNumber || "N/A"}
@@ -966,7 +1037,8 @@ export default function PaymentPackagesPage() {
                   </Button>
                 ) : null}
 
-                {(isExpiredPayment || isCancelledPayment) && checkoutPayment?.packageId ? (
+                {(isExpiredPayment || isCancelledPayment) &&
+                checkoutPayment?.packageId ? (
                   <Button
                     type="button"
                     onClick={() => void handleCreateNewInvoice()}
@@ -1002,7 +1074,9 @@ export default function PaymentPackagesPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => handleCopy(qrData?.accountNumber, "số tài khoản")}
+                      onClick={() =>
+                        handleCopy(qrData?.accountNumber, "số tài khoản")
+                      }
                       className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-slate-900"
                     >
                       {qrData?.accountNumber || "N/A"}
@@ -1016,7 +1090,12 @@ export default function PaymentPackagesPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => handleCopy(qrData?.transferContent, "nội dung chuyển khoản")}
+                      onClick={() =>
+                        handleCopy(
+                          qrData?.transferContent,
+                          "nội dung chuyển khoản",
+                        )
+                      }
                       className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-emerald-800"
                     >
                       {qrData?.transferContent || "N/A"}
@@ -1038,14 +1117,18 @@ export default function PaymentPackagesPage() {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-900">Hướng dẫn thanh toán</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Hướng dẫn thanh toán
+                  </p>
                   <ol className="mt-2 space-y-2 text-sm text-slate-600">
                     <li>1. Mở ứng dụng ngân hàng của bạn.</li>
                     <li>2. Quét QR trên màn hình.</li>
-                    <li>3. Vui lòng chờ đợi, hệ thống sẽ xác nhận sau ít giây.</li>
                     <li>
-                      4. Nếu chưa cập nhật, hãy bấm nút Đã thanh toán để hệ thống kiểm tra giao
-                      dịch.
+                      3. Vui lòng chờ đợi, hệ thống sẽ xác nhận sau ít giây.
+                    </li>
+                    <li>
+                      4. Nếu chưa cập nhật, hãy bấm nút Đã thanh toán để hệ
+                      thống kiểm tra giao dịch.
                     </li>
                   </ol>
                 </div>

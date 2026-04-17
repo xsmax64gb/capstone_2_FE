@@ -205,7 +205,9 @@ export default function AdminRevenuePage() {
                   <Button
                     key={option.value}
                     type="button"
-                    variant={activeRange === option.value ? "default" : "outline"}
+                    variant={
+                      activeRange === option.value ? "default" : "outline"
+                    }
                     className="rounded-full"
                     onClick={() => setActiveRange(option.value)}
                   >
@@ -298,7 +300,11 @@ export default function AdminRevenuePage() {
                         margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
-                        <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                        <XAxis
+                          dataKey="label"
+                          tickLine={false}
+                          axisLine={false}
+                        />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
@@ -425,7 +431,8 @@ export default function AdminRevenuePage() {
                           <TableCell>
                             {formatCurrency(
                               item.amount,
-                              item.currency || revenueStatistics.totals.currency,
+                              item.currency ||
+                                revenueStatistics.totals.currency,
                             )}
                           </TableCell>
                           <TableCell>{item.paymentMethod}</TableCell>

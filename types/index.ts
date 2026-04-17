@@ -640,6 +640,32 @@ export interface PaymentPackageUpsertRequest {
   displayOrder: number;
 }
 
+export interface FeatureQuotaItem {
+  featureKey: string;
+  featureLabel: string;
+  enabled: boolean;
+  accessLevel: PaymentFeatureAccessLevel | null;
+  quota: number | null;
+  used: number | null;
+  remaining: number | null;
+  isUnlimited: boolean;
+  isBlocked: boolean;
+  quotaPeriod: PaymentFeatureScopePeriod | null;
+  quotaPeriodLabel: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  note: string;
+}
+
+export interface FeatureQuotaOverviewResponse {
+  generatedAt: string;
+  packageName: string;
+  packageSlug: string | null;
+  billingCycle: PaymentPackageBillingCycle;
+  source: "paid_payment" | "default_package";
+  features: FeatureQuotaItem[];
+}
+
 export interface PaymentSyncSummary {
   source: string;
   startedAt: string;

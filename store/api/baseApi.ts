@@ -76,6 +76,7 @@ export const baseApi = createApi({
     "PlacementAttempt",
     "Payments",
     "PaymentPackages",
+    "FeatureQuotas",
     "AdminRevenue",
   ],
   endpoints: () => ({}),

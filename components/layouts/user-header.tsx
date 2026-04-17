@@ -19,8 +19,8 @@ const navItems = [
   { labelKey: "Trang chủ", href: "/" },
   { labelKey: "Bài tập", href: "/exercises" },
   { labelKey: "Từ vựng", href: "/vocabularies" },
-  { labelKey: "Thanh toán", href: "/payments" },
   { labelKey: "Nói với AI", href: "/learn" },
+  { labelKey: "Đăng ký", href: "/payments" },
 ];
 
 const DEFAULT_AVATAR_URL =

@@ -27,10 +27,12 @@ import { tokenManager } from "@/lib/token-manager";
 import {
   useCancelPaymentMutation,
   useCreatePaymentMutation,
+  useGetMyFeatureQuotasQuery,
   useGetPaymentPackagesQuery,
   useReconcilePaymentMutation,
 } from "@/store/services/paymentApi";
 import type {
+  FeatureQuotaItem,
   PaymentFeatureScope,
   PaymentPackage,
   PaymentRecord,
@@ -39,6 +41,7 @@ import type {
 
 type PricingPlan = {
   id: string;
+  slug: string | null;
   name: string;
   description: string;
   price: number;
@@ -48,6 +51,11 @@ type PricingPlan = {
   featureLines: string[];
   packageId: string | null;
   isFree: boolean;
+};
+
+type UpgradeConfirmationToastState = {
+  currentPlanName: string;
+  nextPlan: PricingPlan;
 };
 
 const MANUAL_CHECK_COOLDOWN_SECONDS = 10;
@@ -157,6 +165,22 @@ const describeScope = (scope: PaymentFeatureScope | undefined) => {
   return `${level}, ${scope.quota} lượt/${QUOTA_PERIOD_LABELS[scope.quotaPeriod]}`;
 };
 
+const formatRemainingQuotaLabel = (feature: FeatureQuotaItem) => {
+  if (!feature.enabled) {
+    return "Chưa mở trong gói hiện tại";
+  }
+
+  if (feature.isUnlimited || feature.quota === null) {
+    return "Không giới hạn";
+  }
+
+  if (feature.remaining === null || feature.used === null) {
+    return "Đang cập nhật";
+  }
+
+  return `Còn ${Math.max(0, feature.remaining)}/${feature.quota} lượt`;
+};
+
 const extractErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error === "object" && error && "data" in error) {
     const data = (error as { data?: { message?: string; error?: string } })
@@ -230,6 +254,10 @@ const buildPackageFeatureLines = (
 export default function PaymentPackagesPage() {
   const router = useRouter();
   const { data, isLoading, isError, error } = useGetPaymentPackagesQuery();
+  const {
+    data: featureQuotaOverview,
+    isFetching: isFeatureQuotaFetching,
+  } = useGetMyFeatureQuotasQuery();
   const [createPayment, { isLoading: isCreatingPayment }] =
     useCreatePaymentMutation();
   const [reconcilePayment, { isLoading: isReconcilingPayment }] =
@@ -248,6 +276,8 @@ export default function PaymentPackagesPage() {
   const [checkoutSyncError, setCheckoutSyncError] = useState<string | null>(
     null,
   );
+  const [upgradeConfirmation, setUpgradeConfirmation] =
+    useState<UpgradeConfirmationToastState | null>(null);
   const [checkCooldownSeconds, setCheckCooldownSeconds] = useState(0);
   const [clockNow, setClockNow] = useState<number>(Date.now());
   const autoCheckedInvoiceRef = useRef<string | null>(null);
@@ -278,6 +308,7 @@ export default function PaymentPackagesPage() {
     const freePlan: PricingPlan = defaultFreePackage
       ? {
           id: defaultFreePackage.id,
+          slug: defaultFreePackage.slug,
           name: defaultFreePackage.name,
           description:
             defaultFreePackage.description ||
@@ -295,6 +326,7 @@ export default function PaymentPackagesPage() {
         }
       : {
           id: "free-fallback",
+          slug: "free",
           name: "Free",
           description: "Dành cho các nhu cầu học cơ bản mỗi ngày.",
           price: 0,
@@ -317,6 +349,7 @@ export default function PaymentPackagesPage() {
       )
       .map<PricingPlan>((paymentPackage) => ({
         id: paymentPackage.id,
+        slug: paymentPackage.slug,
         name: paymentPackage.name,
         description:
           paymentPackage.description ||
@@ -340,6 +373,51 @@ export default function PaymentPackagesPage() {
     () => pricingPlans.find((plan) => !plan.isFree)?.id ?? null,
     [pricingPlans],
   );
+
+  const planRankLookup = useMemo(
+    () => new Map(pricingPlans.map((plan, index) => [plan.id, index])),
+    [pricingPlans],
+  );
+
+  const currentPricingPlan = useMemo(() => {
+    const quotaPackageSlug = String(featureQuotaOverview?.packageSlug ?? "")
+      .trim()
+      .toLowerCase();
+    const quotaPackageName = String(featureQuotaOverview?.packageName ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (quotaPackageSlug) {
+      const matchedBySlug = pricingPlans.find(
+        (plan) =>
+          String(plan.slug ?? "")
+            .trim()
+            .toLowerCase() === quotaPackageSlug,
+      );
+
+      if (matchedBySlug) {
+        return matchedBySlug;
+      }
+    }
+
+    if (!quotaPackageName) {
+      return null;
+    }
+
+    return (
+      pricingPlans.find(
+        (plan) => plan.name.trim().toLowerCase() === quotaPackageName,
+      ) ?? null
+    );
+  }, [featureQuotaOverview?.packageName, featureQuotaOverview?.packageSlug, pricingPlans]);
+
+  const currentPlanRank = useMemo(() => {
+    if (!currentPricingPlan) {
+      return null;
+    }
+
+    return planRankLookup.get(currentPricingPlan.id) ?? null;
+  }, [currentPricingPlan, planRankLookup]);
 
   useEffect(() => {
     checkoutPaymentRef.current = checkoutPayment;
@@ -705,65 +783,121 @@ export default function PaymentPackagesPage() {
     runReconcile,
   ]);
 
-  const handleCheckout = async (plan: PricingPlan) => {
-    if (plan.isFree) {
-      router.push("/learn");
+  const createInvoiceForPlan = useCallback(
+    async (plan: PricingPlan) => {
+      if (!plan.packageId) {
+        notify({
+          title: "Không tạo được hóa đơn",
+          message: "Thiếu thông tin gói thanh toán.",
+          type: "error",
+        });
+        return;
+      }
+
+      if (plan.price < MIN_PAID_PACKAGE_AMOUNT) {
+        notify({
+          title: "Giá gói chưa hợp lệ",
+          message: `Gói trả phí cần có giá tối thiểu ${MIN_PAID_PACKAGE_AMOUNT.toLocaleString("vi-VN")}đ.`,
+          type: "warning",
+        });
+        return;
+      }
+
+      setUpgradeConfirmation(null);
+      setCreatingPackageId(plan.packageId);
+
+      try {
+        const payment = await createPayment({
+          packageId: plan.packageId,
+          paymentMethod: "bank_transfer",
+        }).unwrap();
+
+        autoCheckedInvoiceRef.current = null;
+        cancelledInvoiceRef.current = null;
+        setCheckoutPlanName(plan.name);
+        setCheckoutPayment(payment);
+        setCheckoutSyncSummary(null);
+        setCheckoutSyncError(null);
+        setCheckCooldownSeconds(0);
+        setClockNow(Date.now());
+        setIsQrDialogOpen(true);
+
+        notify({
+          title: "Đã tạo hóa đơn",
+          message: `${plan.name} - ${payment.invoiceNumber}`,
+          type: "success",
+        });
+      } catch (createError) {
+        notify({
+          title: "Không tạo được hóa đơn",
+          message: extractErrorMessage(
+            createError,
+            "Hệ thống chưa tạo được QR cho gói này. Vui lòng thử lại sau.",
+          ),
+          type: "error",
+        });
+      } finally {
+        setCreatingPackageId(null);
+      }
+    },
+    [createPayment],
+  );
+
+  const handleConfirmUpgrade = useCallback(() => {
+    if (!upgradeConfirmation) {
       return;
     }
 
-    if (!plan.packageId) {
+    const nextPlan = upgradeConfirmation.nextPlan;
+    setUpgradeConfirmation(null);
+    void createInvoiceForPlan(nextPlan);
+  }, [createInvoiceForPlan, upgradeConfirmation]);
+
+  const handleCheckout = async (plan: PricingPlan) => {
+    const selectedPlanRank =
+      planRankLookup.get(plan.id) ?? Number.MAX_SAFE_INTEGER;
+    const isCurrentPlan = currentPricingPlan?.id === plan.id;
+    const isBlockedByUpgradePolicy =
+      currentPlanRank !== null &&
+      selectedPlanRank <= currentPlanRank &&
+      !isCurrentPlan;
+
+    if (isCurrentPlan) {
       notify({
-        title: "Không tạo được hóa đơn",
-        message: "Thiếu thông tin gói thanh toán.",
-        type: "error",
+        title: "Bạn đang ở gói này",
+        message: `Gói ${plan.name} đang được áp dụng cho tài khoản của bạn.`,
+        type: "info",
       });
       return;
     }
 
-    if (plan.price < MIN_PAID_PACKAGE_AMOUNT) {
+    if (isBlockedByUpgradePolicy) {
       notify({
-        title: "Giá gói chưa hợp lệ",
-        message: `Gói trả phí cần có giá tối thiểu ${MIN_PAID_PACKAGE_AMOUNT.toLocaleString("vi-VN")}đ.`,
+        title: "Chỉ có thể nâng cấp gói",
+        message:
+          "Để tránh mất quyền lợi đã thanh toán, hệ thống chỉ cho phép đổi sang gói cao hơn gói hiện tại.",
         type: "warning",
       });
       return;
     }
 
-    setCreatingPackageId(plan.packageId);
-
-    try {
-      const payment = await createPayment({
-        packageId: plan.packageId,
-        paymentMethod: "bank_transfer",
-      }).unwrap();
-
-      autoCheckedInvoiceRef.current = null;
-      cancelledInvoiceRef.current = null;
-      setCheckoutPlanName(plan.name);
-      setCheckoutPayment(payment);
-      setCheckoutSyncSummary(null);
-      setCheckoutSyncError(null);
-      setCheckCooldownSeconds(0);
-      setClockNow(Date.now());
-      setIsQrDialogOpen(true);
-
-      notify({
-        title: "Đã tạo hóa đơn",
-        message: `${plan.name} - ${payment.invoiceNumber}`,
-        type: "success",
-      });
-    } catch (createError) {
-      notify({
-        title: "Không tạo được hóa đơn",
-        message: extractErrorMessage(
-          createError,
-          "Hệ thống chưa tạo được QR cho gói này. Vui lòng thử lại sau.",
-        ),
-        type: "error",
-      });
-    } finally {
-      setCreatingPackageId(null);
+    if (plan.isFree) {
+      router.push("/learn");
+      return;
     }
+
+    const isUpgradeFromPaidPlan =
+      !!currentPricingPlan && !currentPricingPlan.isFree;
+
+    if (isUpgradeFromPaidPlan) {
+      setUpgradeConfirmation({
+        currentPlanName: currentPricingPlan.name,
+        nextPlan: plan,
+      });
+      return;
+    }
+
+    await createInvoiceForPlan(plan);
   };
 
   const qrData = checkoutPayment?.paymentQr;
@@ -787,6 +921,100 @@ export default function PaymentPackagesPage() {
             </p>
           </div>
         </section>
+
+        {featureQuotaOverview ? (
+          <section className="rounded-[28px] border border-slate-200 bg-white px-5 py-5 shadow-sm md:px-6 md:py-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Gói hiện tại
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+                  {featureQuotaOverview.packageName}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Nguồn áp dụng: {" "}
+                  {featureQuotaOverview.source === "paid_payment"
+                    ? "Thanh toán gần nhất"
+                    : "Gói mặc định"}
+                </p>
+              </div>
+
+              <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                {isFeatureQuotaFetching
+                  ? "Đang đồng bộ quota realtime..."
+                  : `Cập nhật: ${new Date(featureQuotaOverview.generatedAt).toLocaleTimeString("vi-VN")}`}
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {featureQuotaOverview.features.map((feature) => {
+                const usagePercent =
+                  feature.enabled &&
+                  !feature.isUnlimited &&
+                  typeof feature.quota === "number" &&
+                  feature.quota > 0 &&
+                  typeof feature.used === "number"
+                    ? Math.min(
+                        100,
+                        Math.round((feature.used / feature.quota) * 100),
+                      )
+                    : null;
+
+                return (
+                  <article
+                    key={feature.featureKey}
+                    className={`rounded-2xl border px-4 py-4 ${
+                      feature.isBlocked
+                        ? "border-rose-200 bg-rose-50"
+                        : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-slate-900">
+                      {feature.featureLabel}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {feature.enabled
+                        ? `${ACCESS_LEVEL_LABELS[feature.accessLevel ?? "basic"]} - ${feature.quotaPeriodLabel ?? "Không kỳ hạn"}`
+                        : "Chưa được mở trong gói hiện tại"}
+                    </p>
+
+                    <p
+                      className={`mt-3 text-sm font-semibold ${
+                        feature.isBlocked ? "text-rose-700" : "text-slate-900"
+                      }`}
+                    >
+                      {formatRemainingQuotaLabel(feature)}
+                    </p>
+
+                    {feature.enabled &&
+                    !feature.isUnlimited &&
+                    feature.quota !== null &&
+                    feature.used !== null ? (
+                      <>
+                        <div className="mt-2 h-2 rounded-full bg-slate-200">
+                          <div
+                            className={`h-full rounded-full ${
+                              feature.isBlocked
+                                ? "bg-rose-500"
+                                : usagePercent !== null && usagePercent >= 85
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500"
+                            }`}
+                            style={{ width: `${usagePercent ?? 0}%` }}
+                          />
+                        </div>
+                        <p className="mt-2 text-xs text-slate-500">
+                          Đã dùng {feature.used}/{feature.quota} lượt
+                        </p>
+                      </>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         {isLoading ? (
           <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-sm">
@@ -833,6 +1061,26 @@ export default function PaymentPackagesPage() {
                   creatingPackageId === plan.packageId;
                 const isHighlighted =
                   !plan.isFree && highlightedPaidPlanId === plan.id;
+                const planRank =
+                  planRankLookup.get(plan.id) ?? Number.MAX_SAFE_INTEGER;
+                const isCurrentPlan = currentPricingPlan?.id === plan.id;
+                const isUpgradePlan =
+                  currentPlanRank !== null && planRank > currentPlanRank;
+                const isBlockedByUpgradePolicy =
+                  currentPlanRank !== null &&
+                  planRank <= currentPlanRank &&
+                  !isCurrentPlan;
+                const ctaLabel = isCurrentPlan
+                  ? "Đang sử dụng"
+                  : isBlockedByUpgradePolicy
+                    ? "Chỉ đổi lên gói cao hơn"
+                    : isUpgradePlan && !plan.isFree
+                      ? `Nâng cấp lên ${plan.name}`
+                      : plan.ctaLabel;
+                const isCheckoutDisabled =
+                  (isCreatingPayment && !plan.isFree) ||
+                  isCurrentPlan ||
+                  isBlockedByUpgradePolicy;
 
                 return (
                   <article
@@ -844,6 +1092,32 @@ export default function PaymentPackagesPage() {
                     }`}
                   >
                     <div>
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        {isCurrentPlan ? (
+                          <span
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${
+                              isHighlighted
+                                ? "border-emerald-300/60 bg-emerald-500/20 text-emerald-100"
+                                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            }`}
+                          >
+                            Gói hiện tại
+                          </span>
+                        ) : null}
+
+                        {isUpgradePlan && !plan.isFree ? (
+                          <span
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${
+                              isHighlighted
+                                ? "border-cyan-300/60 bg-cyan-500/20 text-cyan-100"
+                                : "border-cyan-200 bg-cyan-50 text-cyan-700"
+                            }`}
+                          >
+                            Có thể nâng cấp
+                          </span>
+                        ) : null}
+                      </div>
+
                       <h3
                         className={`text-[2rem] font-medium tracking-tight ${
                           isHighlighted ? "text-white" : "text-slate-950"
@@ -880,12 +1154,12 @@ export default function PaymentPackagesPage() {
                     <Button
                       type="button"
                       onClick={() => void handleCheckout(plan)}
-                      disabled={isCreatingPayment && !plan.isFree}
+                      disabled={isCheckoutDisabled}
                       className={`mt-5 h-10 rounded-full text-sm font-semibold ${
                         isHighlighted
                           ? "bg-white text-slate-950 hover:bg-slate-100"
                           : "bg-slate-950 text-white hover:bg-slate-800"
-                      }`}
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
                     >
                       {isCurrentLoading ? (
                         <>
@@ -894,11 +1168,23 @@ export default function PaymentPackagesPage() {
                         </>
                       ) : (
                         <>
-                          {plan.ctaLabel}
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          {ctaLabel}
+                          {!isCurrentPlan && !isBlockedByUpgradePolicy ? (
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          ) : null}
                         </>
                       )}
                     </Button>
+
+                    {isBlockedByUpgradePolicy ? (
+                      <p
+                        className={`mt-2 text-xs ${
+                          isHighlighted ? "text-slate-300" : "text-slate-500"
+                        }`}
+                      >
+                        Bạn đang dùng gói cao hơn, nên không thể đổi xuống gói này.
+                      </p>
+                    ) : null}
 
                     <div
                       className={`mt-5 flex-1 border-t pt-5 ${
@@ -945,6 +1231,58 @@ export default function PaymentPackagesPage() {
             </div>
           </section>
         ) : null}
+
+        <Dialog
+          open={Boolean(upgradeConfirmation)}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setUpgradeConfirmation(null);
+            }
+          }}
+        >
+          <DialogContent className="w-[min(520px,94vw)] border border-slate-200 p-6 shadow-2xl sm:max-w-[520px]">
+            <DialogHeader className="space-y-2 text-left sm:text-left">
+              <DialogTitle className="text-xl font-semibold text-slate-900">
+                Xác nhận nâng cấp gói
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-6 text-slate-600">
+                {upgradeConfirmation ? (
+                  <>
+                    Bạn đang dùng gói{" "}
+                    <span className="font-semibold text-slate-900">
+                      {upgradeConfirmation.currentPlanName}
+                    </span>
+                    .
+                    <br />
+                    Khi nâng cấp lên gói{" "}
+                    <span className="font-semibold text-slate-900">
+                      {upgradeConfirmation.nextPlan.name}
+                    </span>
+                    , gói hiện tại sẽ bị hủy và bạn sẽ đăng ký gói mới.
+                  </>
+                ) : null}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-lg"
+                onClick={() => setUpgradeConfirmation(null)}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="button"
+                className="h-9 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                onClick={handleConfirmUpgrade}
+              >
+                Xác nhận
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={isQrDialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogContent className="w-[min(920px,96vw)] gap-0 overflow-hidden border border-slate-200 p-0 shadow-2xl sm:max-w-[920px]">

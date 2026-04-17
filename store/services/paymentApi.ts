@@ -5,6 +5,7 @@ import type {
   AdminRevenueOverviewResponse,
   AdminRevenueStatisticsResponse,
   ApiResponse,
+  FeatureQuotaOverviewResponse,
   PaymentCreateRequest,
   PaymentPackage,
   PaymentPackageCatalogResponse,
@@ -114,6 +115,17 @@ export const paymentApi = baseApi.injectEndpoints({
         response.data ?? [],
     }),
 
+    getMyFeatureQuotas: builder.query<FeatureQuotaOverviewResponse, void>({
+      query: () => ({
+        url: "/feature-quotas",
+        method: "GET",
+      }),
+      providesTags: ["FeatureQuotas"],
+      transformResponse: (
+        response: ApiResponse<FeatureQuotaOverviewResponse>,
+      ) => response.data as FeatureQuotaOverviewResponse,
+    }),
+
     createPayment: builder.mutation<PaymentRecord, PaymentCreateRequest>({
       query: (body) => ({
         url: "/payments",
@@ -136,6 +148,7 @@ export const paymentApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, arg) => [
         "AdminRevenue",
+        "FeatureQuotas",
         { type: "Payments", id: arg.invoiceNumber },
       ],
       transformResponse: (response: ApiResponse<PaymentReconcileResponse>) =>
@@ -178,7 +191,7 @@ export const paymentApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Payments"],
+      invalidatesTags: ["Payments", "FeatureQuotas"],
       transformResponse: (response: ApiResponse<PaymentVerifyResponse>) =>
         response.data as PaymentVerifyResponse,
     }),
@@ -236,6 +249,7 @@ export const {
   useGetAdminRevenueChartQuery,
   useGetAdminRevenueOverviewQuery,
   useGetAdminRevenueStatisticsQuery,
+  useGetMyFeatureQuotasQuery,
   useGetPaymentPackagesQuery,
   useGetPaymentsQuery,
   useReconcilePaymentMutation,

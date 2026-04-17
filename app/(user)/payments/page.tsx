@@ -254,10 +254,8 @@ const buildPackageFeatureLines = (
 export default function PaymentPackagesPage() {
   const router = useRouter();
   const { data, isLoading, isError, error } = useGetPaymentPackagesQuery();
-  const {
-    data: featureQuotaOverview,
-    isFetching: isFeatureQuotaFetching,
-  } = useGetMyFeatureQuotasQuery();
+  const { data: featureQuotaOverview, isFetching: isFeatureQuotaFetching } =
+    useGetMyFeatureQuotasQuery();
   const [createPayment, { isLoading: isCreatingPayment }] =
     useCreatePaymentMutation();
   const [reconcilePayment, { isLoading: isReconcilingPayment }] =
@@ -409,7 +407,11 @@ export default function PaymentPackagesPage() {
         (plan) => plan.name.trim().toLowerCase() === quotaPackageName,
       ) ?? null
     );
-  }, [featureQuotaOverview?.packageName, featureQuotaOverview?.packageSlug, pricingPlans]);
+  }, [
+    featureQuotaOverview?.packageName,
+    featureQuotaOverview?.packageSlug,
+    pricingPlans,
+  ]);
 
   const currentPlanRank = useMemo(() => {
     if (!currentPricingPlan) {
@@ -933,7 +935,7 @@ export default function PaymentPackagesPage() {
                   {featureQuotaOverview.packageName}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Nguồn áp dụng: {" "}
+                  Nguồn áp dụng:{" "}
                   {featureQuotaOverview.source === "paid_payment"
                     ? "Thanh toán gần nhất"
                     : "Gói mặc định"}
@@ -1182,7 +1184,8 @@ export default function PaymentPackagesPage() {
                           isHighlighted ? "text-slate-300" : "text-slate-500"
                         }`}
                       >
-                        Bạn đang dùng gói cao hơn, nên không thể đổi xuống gói này.
+                        Bạn đang dùng gói cao hơn, nên không thể đổi xuống gói
+                        này.
                       </p>
                     ) : null}
 

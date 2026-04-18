@@ -4,13 +4,13 @@ Một ứng dụng Frontend hoàn chỉnh với authentication, RTK Query, và g
 
 ## Features
 
-✅ **JWT Authentication** - Login/Register với token-based auth  
-✅ **RTK Query** - Quản lý API calls với caching tự động  
-✅ **Global Notifications** - Toast system đẹp theo shadcn style  
-✅ **Protected Routes** - Tự động redirect user chưa đăng nhập  
-✅ **TypeScript** - Full type safety  
-✅ **shadcn/ui** - Beautiful UI components  
-✅ **React Hook Form** - Form validation với Zod  
+✅ **JWT Authentication** - Login/Register với token-based auth
+✅ **RTK Query** - Quản lý API calls với caching tự động
+✅ **Global Notifications** - Toast system đẹp theo shadcn style
+✅ **Protected Routes** - Tự động redirect user chưa đăng nhập
+✅ **TypeScript** - Full type safety
+✅ **shadcn/ui** - Beautiful UI components
+✅ **React Hook Form** - Form validation với Zod
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ pnpm install
 ### 2. Cấu hình
 Tạo file `.env.local`:
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
 ```
 
 ### 3. Chạy development
@@ -87,7 +87,7 @@ import { useNotification } from '@/hooks/use-notification'
 
 export function MyComponent() {
   const { success, error } = useNotification()
-  
+
   return (
     <button onClick={() => success('Thành công!')}>
       Show Notification
@@ -98,7 +98,7 @@ export function MyComponent() {
 
 ## Backend API Requirements
 
-Ứng dụng này kỳ vọng các endpoints sau từ backend (http://localhost:3001):
+Ứng dụng này kỳ vọng các endpoints sau từ backend (http://localhost:5000/api):
 
 ### Auth Endpoints
 - `POST /auth/login` - Đăng nhập

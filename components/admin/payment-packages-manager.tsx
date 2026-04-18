@@ -25,13 +25,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -78,6 +71,12 @@ type PaymentPackageFormState = {
   displayOrder: string;
 };
 
+type SuggestedNotePayload = {
+  featureLabel: string;
+  quota: string;
+  quotaPeriod: PaymentFeatureScopePeriod;
+};
+
 const DEFAULT_FREE_PACKAGE_SLUG = "free";
 const MIN_PAID_PACKAGE_PRICE = 2000;
 
@@ -121,91 +120,37 @@ const QUOTA_PERIOD_LABELS: Record<PaymentFeatureScopePeriod, string> = {
   lifetime: "Trọn đời",
 };
 
+const getAccessLevelLabel = (value: string) =>
+  ACCESS_LEVEL_LABELS[value as PaymentFeatureAccessLevel] ?? value;
+
+const getQuotaPeriodLabel = (value: string) =>
+  QUOTA_PERIOD_LABELS[value as PaymentFeatureScopePeriod] ?? value;
+
+const NATIVE_SELECT_CLASSNAME =
+  "h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
+
 const DEFAULT_FEATURE_CATALOG: PaymentPackageFeature[] = [
   {
     key: "ai_speaking",
     label: "Luyện nói AI",
     description: "Luyện hội thoại AI với chấm điểm và phản hồi theo lượt.",
+    category: "Speaking",
   },
   {
     key: "exercise_library",
     label: "Thư viện bài tập",
     description: "Bài tập theo cấp độ và mục tiêu học tập.",
+    category: "Practice",
   },
   {
     key: "vocabulary_library",
     label: "Thư viện từ vựng",
     description: "Học từ mới theo chủ đề và bộ từ luyện tập.",
+    category: "Từ vựng",
   },
 ];
 
-const TIER_SCOPE_PRESET: Record<
-  "go" | "plus" | "pro",
-  Record<string, Omit<PaymentFeatureScopeFormState, "featureKey">>
-> = {
-  go: {
-    ai_speaking: {
-      accessLevel: "basic",
-      quota: "50",
-      quotaPeriod: "month",
-      note: "Tối đa 50 lượt luyện nói AI mỗi tháng.",
-    },
-    exercise_library: {
-      accessLevel: "standard",
-      quota: "120",
-      quotaPeriod: "week",
-      note: "Kho bài tập với 120 lượt mỗi tuần.",
-    },
-    vocabulary_library: {
-      accessLevel: "standard",
-      quota: "300",
-      quotaPeriod: "week",
-      note: "Ôn tập và học mới tối đa 300 mục mỗi tuần.",
-    },
-  },
-  plus: {
-    ai_speaking: {
-      accessLevel: "advanced",
-      quota: "240",
-      quotaPeriod: "month",
-      note: "Tối đa 240 lượt luyện nói AI mỗi tháng.",
-    },
-    exercise_library: {
-      accessLevel: "advanced",
-      quota: "500",
-      quotaPeriod: "week",
-      note: "Mở rộng kho bài tập với 500 lượt/tuần.",
-    },
-    vocabulary_library: {
-      accessLevel: "advanced",
-      quota: "1200",
-      quotaPeriod: "week",
-      note: "Mở rộng ôn tập từ vựng 1.200 mục/tuần.",
-    },
-  },
-  pro: {
-    ai_speaking: {
-      accessLevel: "full",
-      quota: "1200",
-      quotaPeriod: "month",
-      note: "Tối đa 1.200 lượt luyện nói AI mỗi tháng.",
-    },
-    exercise_library: {
-      accessLevel: "full",
-      quota: "",
-      quotaPeriod: "billing_cycle",
-      note: "Mở đầy đủ thư viện bài tập không giới hạn.",
-    },
-    vocabulary_library: {
-      accessLevel: "full",
-      quota: "",
-      quotaPeriod: "billing_cycle",
-      note: "Mở đầy đủ thư viện từ vựng không giới hạn.",
-    },
-  },
-};
-
-const INITIAL_FORM_STATE: PaymentPackageFormState = {
+const createInitialFormState = (): PaymentPackageFormState => ({
   name: "",
   slug: "",
   description: "",
@@ -216,7 +161,7 @@ const INITIAL_FORM_STATE: PaymentPackageFormState = {
   featureKeys: [],
   isActive: false,
   displayOrder: "0",
-};
+});
 
 const formatCurrency = (value: number, currency = "VND") =>
   new Intl.NumberFormat("vi-VN", {
@@ -267,54 +212,22 @@ const isDefaultPackage = (paymentPackage?: PaymentPackage | null) => {
   return buildSlug(paymentPackage.slug) === DEFAULT_FREE_PACKAGE_SLUG;
 };
 
-const resolvePresetTier = (value: string) => {
-  const normalized = value.toLowerCase();
-
-  if (normalized.includes("pro")) {
-    return "pro" as const;
-  }
-
-  if (normalized.includes("plus")) {
-    return "plus" as const;
-  }
-
-  if (normalized.includes("go")) {
-    return "go" as const;
-  }
-
-  return "go" as const;
-};
-
-const buildDefaultScopeState = (
+const buildManualScopeState = (
   featureKey: string,
-  tier: "go" | "plus" | "pro",
-): PaymentFeatureScopeFormState => {
-  const preset = TIER_SCOPE_PRESET[tier][featureKey];
-
-  if (preset) {
-    return {
-      featureKey,
-      ...preset,
-    };
-  }
-
-  return {
-    featureKey,
-    accessLevel: "basic",
-    quota: "",
-    quotaPeriod: "billing_cycle",
-    note: "Mở theo chính sách mặc định của gói.",
-  };
-};
+): PaymentFeatureScopeFormState => ({
+  featureKey,
+  accessLevel: "basic",
+  quota: "",
+  quotaPeriod: "billing_cycle",
+  note: "",
+});
 
 const synchronizeFeatureScopes = ({
   featureKeys,
   scopes,
-  tier,
 }: {
   featureKeys: string[];
   scopes: PaymentFeatureScopeFormState[];
-  tier: "go" | "plus" | "pro";
 }) => {
   const uniqueFeatureKeys = Array.from(new Set(featureKeys));
   const scopeMap = new Map(scopes.map((scope) => [scope.featureKey, scope]));
@@ -324,7 +237,7 @@ const synchronizeFeatureScopes = ({
       return scopeMap.get(featureKey) as PaymentFeatureScopeFormState;
     }
 
-    return buildDefaultScopeState(featureKey, tier);
+    return buildManualScopeState(featureKey);
   });
 };
 
@@ -332,12 +245,9 @@ const toFormState = (
   paymentPackage?: PaymentPackage | null,
 ): PaymentPackageFormState => {
   if (!paymentPackage) {
-    return INITIAL_FORM_STATE;
+    return createInitialFormState();
   }
 
-  const tier = resolvePresetTier(
-    `${paymentPackage.slug} ${paymentPackage.name}`,
-  );
   const scopeMap = new Map(
     (paymentPackage.featureScopes ?? []).map((scope) => [
       scope.featureKey,
@@ -357,7 +267,7 @@ const toFormState = (
       };
     }
 
-    return buildDefaultScopeState(featureKey, tier);
+    return buildManualScopeState(featureKey);
   });
 
   return {
@@ -379,7 +289,28 @@ const summarizeQuota = (scope: PaymentFeatureScope) => {
     return "Không giới hạn";
   }
 
-  return `${formatNumber(scope.quota)} lượt / ${QUOTA_PERIOD_LABELS[scope.quotaPeriod]}`;
+  return `${formatNumber(scope.quota)} lượt / ${getQuotaPeriodLabel(scope.quotaPeriod)}`;
+};
+
+const buildSuggestedNote = ({
+  featureLabel,
+  quota,
+  quotaPeriod,
+}: SuggestedNotePayload) => {
+  const periodLabel = (QUOTA_PERIOD_LABELS[quotaPeriod] ?? quotaPeriod).toLowerCase();
+  const normalizedQuota = quota.trim();
+
+  if (!normalizedQuota) {
+    return `${featureLabel}: Không giới hạn lượt (${periodLabel}).`;
+  }
+
+  const numericQuota = Number(normalizedQuota);
+  const prettyQuota =
+    Number.isFinite(numericQuota) && numericQuota >= 0
+      ? formatNumber(Math.floor(numericQuota))
+      : normalizedQuota;
+
+  return `${featureLabel}: Tối đa ${prettyQuota} lượt (${periodLabel}).`;
 };
 
 export function PaymentPackagesManager() {
@@ -397,7 +328,7 @@ export function PaymentPackagesManager() {
     null,
   );
   const [formState, setFormState] =
-    useState<PaymentPackageFormState>(INITIAL_FORM_STATE);
+    useState<PaymentPackageFormState>(createInitialFormState());
   const [slugTouched, setSlugTouched] = useState(false);
 
   const packages = data?.packages ?? [];
@@ -423,7 +354,7 @@ export function PaymentPackagesManager() {
   const openCreateDialog = () => {
     setEditingPackage(null);
     setFormState({
-      ...INITIAL_FORM_STATE,
+      ...createInitialFormState(),
       displayOrder: String(packages.length),
     });
     setSlugTouched(false);
@@ -462,14 +393,12 @@ export function PaymentPackagesManager() {
         ? current.featureKeys.filter((item) => item !== featureKey)
         : [...current.featureKeys, featureKey];
 
-      const tier = resolvePresetTier(`${current.slug} ${current.name}`);
       return {
         ...current,
         featureKeys: nextFeatureKeys,
         featureScopes: synchronizeFeatureScopes({
           featureKeys: nextFeatureKeys,
           scopes: current.featureScopes,
-          tier,
         }),
       };
     });
@@ -480,36 +409,101 @@ export function PaymentPackagesManager() {
     field: K,
     value: PaymentFeatureScopeFormState[K],
   ) => {
-    setFormState((current) => ({
-      ...current,
-      featureScopes: current.featureScopes.map((scope) =>
-        scope.featureKey === featureKey
-          ? {
-              ...scope,
-              [field]: value,
-            }
-          : scope,
-      ),
-    }));
+    setFormState((current) => {
+      const shouldRefreshNote = field === "quota" || field === "quotaPeriod";
+      const resolveFeatureLabel = (nextFeatureKey: string) =>
+        featureLabelLookup.get(nextFeatureKey) ?? nextFeatureKey;
+
+      const getSuggestedNoteFromScope = (
+        scope: PaymentFeatureScopeFormState,
+      ) =>
+        buildSuggestedNote({
+          featureLabel: resolveFeatureLabel(scope.featureKey),
+          quota: scope.quota,
+          quotaPeriod: scope.quotaPeriod,
+        });
+
+      let isUpdated = false;
+      const nextFeatureScopes = current.featureScopes.map((scope) => {
+        if (scope.featureKey !== featureKey) {
+          return scope;
+        }
+
+        isUpdated = true;
+        const nextScope: PaymentFeatureScopeFormState = {
+          ...scope,
+          [field]: value,
+        };
+
+        if (shouldRefreshNote) {
+          const previousSuggestedNote = getSuggestedNoteFromScope(scope);
+          const nextSuggestedNote = getSuggestedNoteFromScope(nextScope);
+          const shouldApplyAutoNote =
+            scope.note.trim() === "" || scope.note === previousSuggestedNote;
+
+          if (shouldApplyAutoNote) {
+            nextScope.note = nextSuggestedNote;
+          }
+        }
+
+        return nextScope;
+      });
+
+      if (!isUpdated && current.featureKeys.includes(featureKey)) {
+        const nextScope: PaymentFeatureScopeFormState = {
+          ...buildManualScopeState(featureKey),
+          [field]: value,
+        } as PaymentFeatureScopeFormState;
+
+        if (shouldRefreshNote) {
+          nextScope.note = getSuggestedNoteFromScope(nextScope);
+        }
+
+        nextFeatureScopes.push(nextScope);
+      }
+
+      return {
+        ...current,
+        featureScopes: nextFeatureScopes,
+      };
+    });
   };
 
-  const applySuggestedPreset = () => {
-    const tier = resolvePresetTier(`${formState.slug} ${formState.name}`);
-
+  const applySuggestedNotes = () => {
     setFormState((current) => ({
       ...current,
-      featureScopes: current.featureKeys.map((featureKey) =>
-        buildDefaultScopeState(featureKey, tier),
-      ),
+      featureScopes: current.featureScopes.map((scope) => ({
+        ...scope,
+        note: buildSuggestedNote({
+          featureLabel:
+            featureLabelLookup.get(scope.featureKey) ?? scope.featureKey,
+          quota: scope.quota,
+          quotaPeriod: scope.quotaPeriod,
+        }),
+      })),
     }));
 
     notify({
-      title: "Đã áp dụng preset",
-      message:
-        "Hệ thống đã điền mức độ và quota gợi ý theo tên/slug gói hiện tại.",
+      title: "Đã áp dụng ghi chú gợi ý",
+      message: "Hệ thống đã cập nhật ghi chú theo quota và chu kỳ quota hiện tại.",
       type: "success",
     });
   };
+
+  const previewName = formState.name.trim()
+    ? formState.name
+    : "Tên gói";
+  const previewDescription = formState.description.trim()
+    ? formState.description
+    : "Mô tả gói sẽ hiển thị tại đây.";
+  const normalizedPreviewPrice = formState.price.trim();
+  const previewPriceValue = Number(normalizedPreviewPrice);
+  const previewPrice =
+    normalizedPreviewPrice && Number.isFinite(previewPriceValue)
+      ? formatCurrency(previewPriceValue)
+      : "0 ₫";
+  const previewSlug =
+    buildSlug(formState.slug || formState.name) || "slug-preview";
 
   const handleSubmit = async () => {
     const price = Number(formState.price);
@@ -670,7 +664,7 @@ export function PaymentPackagesManager() {
 
       setIsDialogOpen(false);
       setEditingPackage(null);
-      setFormState(INITIAL_FORM_STATE);
+      setFormState(createInitialFormState());
       setSlugTouched(false);
     } catch (submitError) {
       notify({
@@ -1062,27 +1056,23 @@ export function PaymentPackagesManager() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Chu kỳ thanh toán</Label>
-                  <Select
+                  <select
                     value={formState.billingCycle}
                     disabled={isEditingDefaultPackage}
-                    onValueChange={(value) =>
+                    onChange={(event) =>
                       updateForm(
                         "billingCycle",
-                        value as PaymentPackageBillingCycle,
+                        event.target.value as PaymentPackageBillingCycle,
                       )
                     }
+                    className={NATIVE_SELECT_CLASSNAME}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Chọn chu kỳ" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BILLING_CYCLE_OPTIONS.map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {BILLING_CYCLE_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="space-y-2">
@@ -1140,19 +1130,16 @@ export function PaymentPackagesManager() {
               <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-600">
                 <p className="font-semibold text-slate-900">Preview nhanh</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950">
-                  {formState.name || "Tên gói"}
+                  {previewName}
                 </p>
                 <p className="mt-1 text-slate-600">
-                  {formState.description || "Mô tả gói sẽ hiển thị tại đây."}
+                  {previewDescription}
                 </p>
                 <p className="mt-4 text-2xl font-semibold text-slate-950">
-                  {formState.price
-                    ? formatCurrency(Number(formState.price))
-                    : "0 ₫"}
+                  {previewPrice}
                 </p>
                 <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                  {buildSlug(formState.slug || formState.name) ||
-                    "slug-preview"}
+                  {previewSlug}
                 </p>
               </div>
             </div>
@@ -1173,11 +1160,11 @@ export function PaymentPackagesManager() {
                     type="button"
                     variant="outline"
                     className="rounded-full"
-                    onClick={applySuggestedPreset}
+                    onClick={applySuggestedNotes}
                     disabled={formState.featureKeys.length === 0}
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Áp dụng preset gợi ý
+                    Áp dụng ghi chú gợi ý
                   </Button>
                 </div>
               </div>
@@ -1239,27 +1226,23 @@ export function PaymentPackagesManager() {
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <Label>Mức độ</Label>
-                          <Select
+                          <select
                             value={scope.accessLevel}
-                            onValueChange={(value) =>
+                            onChange={(event) =>
                               handleScopeChange(
                                 scope.featureKey,
                                 "accessLevel",
-                                value as PaymentFeatureAccessLevel,
+                                event.target.value as PaymentFeatureAccessLevel,
                               )
                             }
+                            className={NATIVE_SELECT_CLASSNAME}
                           >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Chọn mức độ" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {accessLevelOptions.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {ACCESS_LEVEL_LABELS[option] ?? option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            {accessLevelOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {getAccessLevelLabel(option)}
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
                         <div className="space-y-1.5">
@@ -1282,27 +1265,23 @@ export function PaymentPackagesManager() {
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <Label>Chu kỳ quota</Label>
-                          <Select
+                          <select
                             value={scope.quotaPeriod}
-                            onValueChange={(value) =>
+                            onChange={(event) =>
                               handleScopeChange(
                                 scope.featureKey,
                                 "quotaPeriod",
-                                value as PaymentFeatureScopePeriod,
+                                event.target.value as PaymentFeatureScopePeriod,
                               )
                             }
+                            className={NATIVE_SELECT_CLASSNAME}
                           >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Chọn chu kỳ" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {quotaPeriodOptions.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {QUOTA_PERIOD_LABELS[option] ?? option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            {quotaPeriodOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {getQuotaPeriodLabel(option)}
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
                         <div className="space-y-1.5">

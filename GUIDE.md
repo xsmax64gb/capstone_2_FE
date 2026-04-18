@@ -62,7 +62,7 @@ yarn install
 2. **Setup environment variables:**
 Tạo file `.env.local` (nếu chưa có):
 ```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
 ```
 
 3. **Chạy development server:**
@@ -91,9 +91,9 @@ import { useAuth } from '@/lib/auth-context'
 
 export function MyComponent() {
   const { user, isAuthenticated, logout } = useAuth()
-  
+
   if (!isAuthenticated) return <p>Chưa đăng nhập</p>
-  
+
   return <div>Chào {user?.name}</div>
 }
 ```
@@ -125,7 +125,7 @@ export const productsApi = baseApi.injectEndpoints({
     getProducts: builder.query<Product[], void>({
       query: () => '/products',
     }),
-    
+
     createProduct: builder.mutation<Product, Omit<Product, 'id'>>({
       query: (data) => ({
         url: '/products',
@@ -213,7 +213,7 @@ export function LoginForm() {
 
 ### .env.local:
 ```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
 ```
 
 **NEXT_PUBLIC_** prefix: Biến này sẽ có sẵn ở client-side

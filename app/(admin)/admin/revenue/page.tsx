@@ -154,7 +154,7 @@ function RevenueChartTooltip({
 
 function StatusBadge({ method }: { method: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700 ring-1 ring-violet-200">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
       <CreditCard className="h-3 w-3" />
       {methodLabel[method] ?? method}
     </span>
@@ -168,39 +168,33 @@ function MetricCard({
   value,
   hint,
   icon: Icon,
-  accent,
   trend,
 }: {
   label: string;
   value: string;
   hint: string;
   icon: React.ElementType;
-  accent: string;
   trend?: "up" | "down" | "neutral";
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-      {/* accent bar */}
-      <div className={`absolute inset-x-0 top-0 h-[3px] rounded-t-2xl ${accent}`} />
-      <div className="flex items-start justify-between">
+    <Card className="border-slate-200 py-5 shadow-sm">
+      <CardContent className="flex items-start justify-between gap-4 pt-1">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            {label}
-          </p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+          <p className="text-sm text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
             {value}
           </p>
-          <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-500">
-            {trend === "up" && <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />}
-            {trend === "down" && <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />}
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+            {trend === "up" && <ArrowUpRight className="h-4 w-4 text-slate-600" />}
+            {trend === "down" && <ArrowDownRight className="h-4 w-4 text-slate-500" />}
             {hint}
           </p>
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent} bg-opacity-15`}>
-          <Icon className="h-5 w-5 text-slate-700" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+          <Icon className="h-5 w-5" />
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -357,16 +351,16 @@ export default function AdminRevenuePage() {
   const totalBreakdownCount = revenueStatistics?.totals?.transactions ?? 0;
 
   const breakdownColors: Record<string, string> = {
-    paid: "bg-emerald-500",
-    failed: "bg-red-400",
-    pending: "bg-amber-400",
-    bank_transfer: "bg-violet-500",
-    cash: "bg-sky-500",
-    card: "bg-pink-500",
-    plus: "bg-indigo-500",
-    ultra: "bg-orange-500",
-    go: "bg-teal-500",
-    free: "bg-slate-400",
+    paid: "bg-slate-900",
+    failed: "bg-slate-400",
+    pending: "bg-slate-300",
+    bank_transfer: "bg-slate-800",
+    cash: "bg-slate-600",
+    card: "bg-slate-500",
+    plus: "bg-slate-900",
+    ultra: "bg-slate-700",
+    go: "bg-slate-500",
+    free: "bg-slate-300",
   };
   const defaultColor = "bg-slate-400";
 
@@ -379,27 +373,27 @@ export default function AdminRevenuePage() {
       ) : (
         <>
           {/* ── Hero Header ───────────────────────────────────────────────── */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8 shadow-xl">
-            {/* decorative circles */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-600/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-12 left-1/3 h-40 w-40 rounded-full bg-teal-500/20 blur-3xl" />
-
-            <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
-                <Badge className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-300 backdrop-blur-sm">
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500"
+                >
                   <TrendingUp className="mr-1.5 h-3 w-3" />
-                  Revenue Analytics
+                  Revenue
                 </Badge>
-                <h1 className="mt-3 text-2xl font-bold tracking-tight text-white md:text-3xl">
+                <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
                   Quản lý doanh thu hệ thống
                 </h1>
-                <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
-                  Tổng hợp từ payments · Cập nhật theo bộ lọc thời gian ·{" "}
-                  <span className="text-slate-300">
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+                  Tổng hợp từ `payments`, cập nhật theo bộ lọc thời gian và hiển thị
+                  trực tiếp các giao dịch đã được ghi nhận trong hệ thống.
+                  <span className="ml-1 font-medium text-slate-900">
                     Phạm vi: {revenueOverview.range.label}
                   </span>
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-slate-500">
                   {formatDateTime(revenueOverview.range.from)} →{" "}
                   {formatDateTime(revenueOverview.range.to)} · Lần TT gần nhất:{" "}
                   {formatDateTime(revenueOverview.summary.latestPaidAt)}
@@ -407,8 +401,7 @@ export default function AdminRevenuePage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Range toggles */}
-                <div className="flex overflow-hidden rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm">
+                <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-1">
                   {rangeOptions.map((opt) => (
                     <button
                       key={opt.value}
@@ -419,8 +412,8 @@ export default function AdminRevenuePage() {
                       }}
                       className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                         activeRange === opt.value
-                          ? "bg-white text-slate-900"
-                          : "text-slate-300 hover:text-white"
+                          ? "rounded-lg bg-white text-slate-900 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900"
                       }`}
                     >
                       {opt.label}
@@ -433,7 +426,7 @@ export default function AdminRevenuePage() {
                   variant="outline"
                   size="sm"
                   onClick={refreshAll}
-                  className="rounded-xl border-white/20 bg-white/10 text-slate-300 backdrop-blur-sm hover:bg-white/20 hover:text-white"
+                  className="rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 >
                   <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
                   Làm mới
@@ -444,7 +437,7 @@ export default function AdminRevenuePage() {
                   size="sm"
                   onClick={() => void handleSyncPayments()}
                   disabled={isSyncing}
-                  className="rounded-xl bg-violet-600 font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
+                  className="rounded-xl bg-slate-900 font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
                   <RefreshCcw
                     className={`mr-1.5 h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`}
@@ -455,12 +448,12 @@ export default function AdminRevenuePage() {
             </div>
 
             {lastSyncMessage && (
-              <div className="relative mt-4 flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+              <div className="mt-5 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 <BadgeCheck className="h-4 w-4 shrink-0" />
                 {lastSyncMessage}
               </div>
             )}
-          </div>
+          </section>
 
           {/* ── KPI Metric Cards ──────────────────────────────────────────── */}
           <div className="grid gap-4 sm:grid-cols-3">
@@ -472,7 +465,6 @@ export default function AdminRevenuePage() {
               )}
               hint={`${formatNumber(revenueOverview.summary.systemPaidTransactions)} giao dịch đã thanh toán`}
               icon={Wallet}
-              accent="bg-gradient-to-r from-violet-500 to-purple-600"
               trend="up"
             />
             <MetricCard
@@ -483,7 +475,6 @@ export default function AdminRevenuePage() {
               )}
               hint={`${formatNumber(revenueOverview.summary.paidTransactions)} giao dịch thành công`}
               icon={CircleDollarSign}
-              accent="bg-gradient-to-r from-teal-500 to-emerald-600"
               trend="up"
             />
             <MetricCard
@@ -491,7 +482,6 @@ export default function AdminRevenuePage() {
               value={formatPercent(revenueOverview.summary.successRate)}
               hint={`${formatNumber(revenueOverview.summary.pendingTransactions)} chờ xử lý · ${formatNumber(revenueOverview.summary.failedTransactions)} thất bại`}
               icon={Activity}
-              accent="bg-gradient-to-r from-sky-500 to-blue-600"
               trend={revenueOverview.summary.successRate > 50 ? "up" : "down"}
             />
           </div>
@@ -511,7 +501,7 @@ export default function AdminRevenuePage() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-teal-500" />
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-900" />
                     Doanh thu (VND)
                   </div>
                 </div>
@@ -530,8 +520,8 @@ export default function AdminRevenuePage() {
                       >
                         <defs>
                           <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.35} />
-                            <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#0f172a" stopOpacity={0.16} />
+                            <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid
@@ -556,7 +546,7 @@ export default function AdminRevenuePage() {
                           tickFormatter={(v) => formatCompactNumber(Number(v))}
                         />
                         <Tooltip
-                          cursor={{ stroke: "#14b8a6", strokeDasharray: "4 4", strokeOpacity: 0.3 }}
+                          cursor={{ stroke: "#64748b", strokeDasharray: "4 4", strokeOpacity: 0.35 }}
                           content={({ active, payload }) => (
                             <RevenueChartTooltip
                               active={active}
@@ -568,11 +558,11 @@ export default function AdminRevenuePage() {
                         <Area
                           type="monotone"
                           dataKey="revenue"
-                          stroke="#14b8a6"
+                          stroke="#0f172a"
                           fill="url(#revenueGrad)"
                           strokeWidth={2.5}
                           dot={false}
-                          activeDot={{ r: 5, fill: "#14b8a6", stroke: "#fff", strokeWidth: 2 }}
+                          activeDot={{ r: 5, fill: "#0f172a", stroke: "#fff", strokeWidth: 2 }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -593,11 +583,11 @@ export default function AdminRevenuePage() {
               </CardHeader>
               <CardContent className="space-y-5 p-4">
                 {/* total chip */}
-                <div className="flex items-center justify-between rounded-2xl bg-slate-900 px-4 py-3">
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     Tổng giao dịch
                   </span>
-                  <span className="text-xl font-bold text-white">
+                  <span className="text-xl font-bold text-slate-900">
                     {formatNumber(revenueStatistics.totals.transactions)}
                   </span>
                 </div>
@@ -653,7 +643,7 @@ export default function AdminRevenuePage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
-                    <BadgeCheck className="h-4.5 w-4.5 text-emerald-500" />
+                    <BadgeCheck className="h-4.5 w-4.5 text-slate-700" />
                     Giao dịch đã thanh toán gần đây
                   </CardTitle>
                   <CardDescription className="mt-0.5 text-xs">
@@ -809,7 +799,7 @@ export default function AdminRevenuePage() {
                         </TableCell>
                         <TableCell className="py-3.5">
                           {item.pricingKey ? (
-                            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold capitalize text-indigo-700 ring-1 ring-indigo-200">
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold capitalize text-slate-700 ring-1 ring-slate-200">
                               {item.pricingKey}
                             </span>
                           ) : (
@@ -820,7 +810,7 @@ export default function AdminRevenuePage() {
                           <StatusBadge method={item.paymentMethod} />
                         </TableCell>
                         <TableCell className="py-3.5 text-right">
-                          <span className="text-sm font-bold text-emerald-600">
+                          <span className="text-sm font-bold text-slate-900">
                             {formatCurrency(
                               item.amount,
                               item.currency || revenueStatistics.totals.currency,

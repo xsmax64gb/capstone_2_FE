@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   History,
   Layers3,
+  PenLine,
   Search,
   Sparkles,
 } from "lucide-react";
@@ -34,6 +35,9 @@ export default function VocabulariesContent() {
   const searchParams = useSearchParams();
   const { t } = useI18n();
   const [query, setQuery] = useState(searchParams.get("query") || "");
+  const [personalOnly, setPersonalOnly] = useState(
+    searchParams.get("personal") === "true",
+  );
   const [selectedLevel, setSelectedLevel] = useState<string>(
     searchParams.get("level") || "all",
   );
@@ -45,6 +49,7 @@ export default function VocabulariesContent() {
 
   const updateFilters = (newFilters: {
     query?: string;
+    personal?: boolean;
     level?: string;
     topic?: string;
     page?: number;
@@ -56,6 +61,14 @@ export default function VocabulariesContent() {
         params.set("query", newFilters.query);
       } else {
         params.delete("query");
+      }
+    }
+
+    if (newFilters.personal !== undefined) {
+      if (newFilters.personal) {
+        params.set("personal", "true");
+      } else {
+        params.delete("personal");
       }
     }
 
@@ -94,6 +107,7 @@ export default function VocabulariesContent() {
     query: query || undefined,
     level: selectedLevel !== "all" ? selectedLevel : undefined,
     topic: selectedTopic !== "all" ? selectedTopic : undefined,
+    personal: personalOnly,
     page: currentPage,
     limit: 8,
   });
@@ -122,6 +136,28 @@ export default function VocabulariesContent() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Link
+                href="/vocabularies/create-personal"
+                className="inline-flex items-center rounded-lg bg-black px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                <PenLine className="mr-1.5 h-4 w-4" />
+                {t("Thêm từ vựng")}
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !personalOnly;
+                  setPersonalOnly(next);
+                  updateFilters({ personal: next, page: 1 });
+                }}
+                className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                  personalOnly
+                    ? "border-violet-200 bg-violet-50 text-violet-800"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {t("Bộ từ của tôi")}
+              </button>
               <Link
                 href="/vocabularies/overview"
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -289,6 +325,11 @@ export default function VocabulariesContent() {
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                       {item.wordCount} {t("từ")}
                     </span>
+                    {item.isPersonal ? (
+                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800">
+                        {t("Bộ từ cá nhân")}
+                      </span>
+                    ) : null}
                     {item.quizMastered ? (
                       <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
                         <CheckCircle2 className="mr-1 h-3.5 w-3.5" />

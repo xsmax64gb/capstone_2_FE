@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BookOpen,
@@ -14,6 +14,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "../data";
 import { VocabularyDetailSkeleton } from "@/components/vocabularies/skeletons";
 import {
+  useDeletePersonalVocabularySetMutation,
   useGetVocabularyByIdQuery,
   useGetVocabularyLeaderboardQuery,
 } from "@/store/services/vocabulariesApi";
@@ -21,6 +22,7 @@ import { useI18n } from "@/lib/i18n/context";
 
 export default function VocabularyDetailPage() {
   const { t } = useI18n();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
@@ -31,6 +33,8 @@ export default function VocabularyDetailPage() {
   const { data: leaderboardData } = useGetVocabularyLeaderboardQuery(id, {
     skip: !id,
   });
+  const [deletePersonal, { isLoading: deleting }] =
+    useDeletePersonalVocabularySetMutation();
 
   const vocabulary = data?.vocabulary;
   const related = data?.related ?? [];
@@ -181,6 +185,26 @@ export default function VocabularyDetailPage() {
                 >
                   {t("Làm Quiz")}
                 </Link>
+                {vocabulary.isPersonal ? (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() => {
+                    if (
+                      typeof window !== "undefined" &&
+                      !window.confirm(t("Bạn có chắc muốn xóa bộ từ này?"))
+                    ) {
+                        return;
+                      }
+                      void deletePersonal(vocabulary.id).then(() => {
+                        router.push("/vocabularies");
+                      });
+                    }}
+                    className="inline-flex items-center rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                  >
+                    {t("Xóa bộ từ")}
+                  </button>
+                ) : null}
               </div>
             </section>
 

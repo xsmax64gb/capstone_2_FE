@@ -80,6 +80,8 @@ export const baseApi = createApi({
     "InboxNotifications",
     "Exercises",
     "ExerciseSummary",
+    "Vocabularies",
+    "VocabularySummary",
   ],
   endpoints: () => ({}),
 });

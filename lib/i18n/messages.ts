@@ -859,6 +859,22 @@ const PHRASES: PhraseValue[] = [
   },
   { vi: "Đã tải lên", en: "Uploaded" },
   { vi: "Bài tập tôi đã tạo", en: "My created exercises" },
+  { vi: "Thêm từ vựng", en: "Add vocabulary" },
+  { vi: "Bộ từ của tôi", en: "My personal sets" },
+  { vi: "Thêm thủ công", en: "Add manually" },
+  { vi: "Tạo bằng AI", en: "Generate with AI" },
+  { vi: "Dán danh sách từ", en: "Paste vocabulary list" },
+  { vi: "Phân tích", en: "Parse" },
+  { vi: "Lỗi parser", en: "Parser errors" },
+  { vi: "Lưu bộ từ", en: "Save set" },
+  { vi: "Số từ", en: "Number of words" },
+  { vi: "Bao gồm phiên âm", en: "Include pronunciation" },
+  { vi: "Bao gồm nghĩa", en: "Include meaning" },
+  { vi: "Bao gồm ví dụ", en: "Include examples" },
+  { vi: "Chỉ tạo bằng AI hoặc nhập thủ công", en: "AI generation or manual input" },
+  { vi: "Bộ từ cá nhân", en: "Personal set" },
+  { vi: "Xóa bộ từ", en: "Delete set" },
+  { vi: "Bạn có chắc muốn xóa bộ từ này?", en: "Are you sure you want to delete this set?" },
 ];
 
 const toLookup = (lang: AppLang) => {

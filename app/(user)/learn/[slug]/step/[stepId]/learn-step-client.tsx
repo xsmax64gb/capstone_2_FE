@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type {
   LearnBossBattleState,
   LearnMessage,
@@ -281,7 +280,7 @@ export function LearnStepClient({ slug, step }: Props) {
   const { lang } = useI18n();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<StepChatMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [finalTranscript, setFinalTranscript] = useState("");
   const [boss, setBoss] = useState<LearnBossBattleState | null>(null);
   const [sending, setSending] = useState(false);
   const [starting, setStarting] = useState(true);
@@ -422,7 +421,7 @@ export function LearnStepClient({ slug, step }: Props) {
         else interimText += `${transcript} `;
       }
       if (finalText.trim()) {
-        setInput((current) =>
+        setFinalTranscript((current) =>
           [current.trim(), finalText.trim()].filter(Boolean).join(" "),
         );
       }
@@ -495,7 +494,7 @@ export function LearnStepClient({ slug, step }: Props) {
   };
 
   const handleSend = async () => {
-    const text = [input.trim(), interimTranscript.trim()]
+    const text = [finalTranscript.trim(), interimTranscript.trim()]
       .filter(Boolean)
       .join(" ")
       .trim();
@@ -514,7 +513,7 @@ export function LearnStepClient({ slug, step }: Props) {
     setSending(true);
     setSendError(null);
     stopListening("abort");
-    setInput("");
+    setFinalTranscript("");
     setInterimTranscript("");
     setMessages((current) => [...current, optimisticUserMessage]);
 
@@ -553,7 +552,7 @@ export function LearnStepClient({ slug, step }: Props) {
           (message) => message.pendingRequestId !== pendingRequestId,
         ),
       );
-      setInput(text);
+      setFinalTranscript(text);
       setSendError(
         apiError.status === 401
           ? bi(
@@ -625,7 +624,7 @@ export function LearnStepClient({ slug, step }: Props) {
     setStarting(true);
     setConversationId(null);
     setMessages([]);
-    setInput("");
+    setFinalTranscript("");
     setBoss(null);
     setStartError(null);
     setSendError(null);
@@ -1334,22 +1333,29 @@ export function LearnStepClient({ slug, step }: Props) {
                   )}
                 </div>
 
-                <Textarea
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      void handleSend();
-                    }
-                  }}
-                  rows={4}
-                  placeholder={bi(
-                    "Nhập câu trả lời hoặc dùng micro để phiên âm hiện ở đây...",
-                    "Type your answer or use the mic and let the transcript appear here...",
-                  )}
-                  className="mt-3 min-h-[132px] rounded-[24px] border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 shadow-none focus-visible:border-slate-400"
-                />
+                <div className="mt-3 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {bi("Phiên âm trực tiếp", "Live transcript")}
+                  </p>
+                  <div className="mt-2 whitespace-pre-wrap text-slate-900">
+                    {finalTranscript || interimTranscript ? (
+                      <span>
+                        {finalTranscript}
+                        {finalTranscript && interimTranscript ? " " : ""}
+                        <span className={isListening ? "text-slate-600" : "text-slate-500"}>
+                          {interimTranscript}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">
+                        {bi(
+                          "Bấm “Bắt đầu nói” và nói bằng tiếng Anh, phiên âm sẽ hiện ở đây.",
+                          "Press “Start speaking” and speak in English — the transcript will appear here.",
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
 
                 <p className="mt-3 text-sm text-slate-500">
                   {isListening
@@ -1358,8 +1364,8 @@ export function LearnStepClient({ slug, step }: Props) {
                         "The mic is listening. Speak in English and the transcript will appear below.",
                       )
                     : bi(
-                        "Mẹo: nói 1-2 câu ngắn rồi chỉnh lại phiên âm nếu cần trước khi gửi.",
-                        "Tip: say 1-2 short sentences, then edit the transcript if needed before sending.",
+                        "Mẹo: nói 1-2 câu ngắn, dừng micro nếu cần rồi bấm gửi để nhận phản hồi.",
+                        "Tip: say 1-2 short sentences, stop the mic if needed, then send for feedback.",
                       )}
                 </p>
 
@@ -1369,7 +1375,19 @@ export function LearnStepClient({ slug, step }: Props) {
                       <button
                         key={`${criterion}-${index}`}
                         type="button"
-                        onClick={() => setInput(criterion)}
+                        onClick={() => {
+                          // Disallow manual typing; keep as quick hint only.
+                          window.dispatchEvent(
+                            new CustomEvent("elapp:notify", {
+                              detail: {
+                                title: bi("Gợi ý", "Hint"),
+                                message: criterion,
+                                type: "info",
+                                duration: 2200,
+                              },
+                            }),
+                          );
+                        }}
                         className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
                       >
                         {criterion}
@@ -1435,7 +1453,7 @@ export function LearnStepClient({ slug, step }: Props) {
                   onClick={() => void handleSend()}
                   disabled={
                     sending ||
-                    ![input.trim(), interimTranscript.trim()]
+                    ![finalTranscript.trim(), interimTranscript.trim()]
                       .filter(Boolean)
                       .join(" ")
                       .trim()

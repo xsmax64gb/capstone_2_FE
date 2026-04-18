@@ -297,7 +297,9 @@ const buildSuggestedNote = ({
   quota,
   quotaPeriod,
 }: SuggestedNotePayload) => {
-  const periodLabel = (QUOTA_PERIOD_LABELS[quotaPeriod] ?? quotaPeriod).toLowerCase();
+  const periodLabel = (
+    QUOTA_PERIOD_LABELS[quotaPeriod] ?? quotaPeriod
+  ).toLowerCase();
   const normalizedQuota = quota.trim();
 
   if (!normalizedQuota) {
@@ -327,8 +329,9 @@ export function PaymentPackagesManager() {
   const [editingPackage, setEditingPackage] = useState<PaymentPackage | null>(
     null,
   );
-  const [formState, setFormState] =
-    useState<PaymentPackageFormState>(createInitialFormState());
+  const [formState, setFormState] = useState<PaymentPackageFormState>(
+    createInitialFormState(),
+  );
   const [slugTouched, setSlugTouched] = useState(false);
 
   const packages = data?.packages ?? [];
@@ -414,9 +417,7 @@ export function PaymentPackagesManager() {
       const resolveFeatureLabel = (nextFeatureKey: string) =>
         featureLabelLookup.get(nextFeatureKey) ?? nextFeatureKey;
 
-      const getSuggestedNoteFromScope = (
-        scope: PaymentFeatureScopeFormState,
-      ) =>
+      const getSuggestedNoteFromScope = (scope: PaymentFeatureScopeFormState) =>
         buildSuggestedNote({
           featureLabel: resolveFeatureLabel(scope.featureKey),
           quota: scope.quota,
@@ -485,14 +486,13 @@ export function PaymentPackagesManager() {
 
     notify({
       title: "Đã áp dụng ghi chú gợi ý",
-      message: "Hệ thống đã cập nhật ghi chú theo quota và chu kỳ quota hiện tại.",
+      message:
+        "Hệ thống đã cập nhật ghi chú theo quota và chu kỳ quota hiện tại.",
       type: "success",
     });
   };
 
-  const previewName = formState.name.trim()
-    ? formState.name
-    : "Tên gói";
+  const previewName = formState.name.trim() ? formState.name : "Tên gói";
   const previewDescription = formState.description.trim()
     ? formState.description
     : "Mô tả gói sẽ hiển thị tại đây.";
@@ -1132,9 +1132,7 @@ export function PaymentPackagesManager() {
                 <p className="mt-2 text-lg font-semibold text-slate-950">
                   {previewName}
                 </p>
-                <p className="mt-1 text-slate-600">
-                  {previewDescription}
-                </p>
+                <p className="mt-1 text-slate-600">{previewDescription}</p>
                 <p className="mt-4 text-2xl font-semibold text-slate-950">
                   {previewPrice}
                 </p>

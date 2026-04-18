@@ -80,6 +80,54 @@ const extractErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const formatChartAxisLabel = (dateKey: string) => {
+  const [, month, day] = String(dateKey).split("-");
+  return month && day ? `${day}-${month}` : dateKey;
+};
+
+const formatChartDateLabel = (dateKey: string) => {
+  const [year, month, day] = String(dateKey).split("-");
+  return year && month && day ? `${day}/${month}/${year}` : dateKey;
+};
+
+type RevenueChartTooltipPayloadItem = {
+  payload?: {
+    date?: string;
+    revenue?: number;
+    paidTransactions?: number;
+  };
+};
+
+function RevenueChartTooltip({
+  active,
+  payload,
+  currency,
+}: {
+  active?: boolean;
+  payload?: RevenueChartTooltipPayloadItem[];
+  currency: string;
+}) {
+  const point = payload?.[0]?.payload;
+
+  if (!active || !point?.date) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xl">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+        Ngày {formatChartDateLabel(point.date)}
+      </p>
+      <p className="mt-2 text-sm font-semibold text-slate-900">
+        Doanh thu: {formatCurrency(Number(point.revenue ?? 0), currency)}
+      </p>
+      <p className="mt-1 text-sm text-slate-600">
+        Giao dịch thành công: {formatNumber(Number(point.paidTransactions ?? 0))}
+      </p>
+    </div>
+  );
+}
+
 export default function AdminRevenuePage() {
   const [activeRange, setActiveRange] =
     useState<(typeof rangeOptions)[number]["value"]>("30d");
@@ -301,35 +349,53 @@ export default function AdminRevenuePage() {
                       >
                         <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
                         <XAxis
-                          dataKey="label"
+                          dataKey="date"
                           tickLine={false}
                           axisLine={false}
+                          tickMargin={10}
+                          minTickGap={24}
+                          tickFormatter={(value) =>
+                            formatChartAxisLabel(String(value))
+                          }
                         />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
+                          allowDecimals={false}
                           tickFormatter={(value) =>
                             formatCompactNumber(Number(value))
                           }
                         />
                         <Tooltip
-                          formatter={(value: number) => [
-                            formatCurrency(
-                              Number(value),
-                              revenueChart.totals.currency,
-                            ),
-                            "Doanh thu",
-                          ]}
-                          labelFormatter={(label) => `Ngày ${label}`}
+                          cursor={{
+                            stroke: "#0f766e",
+                            strokeDasharray: "4 4",
+                            strokeOpacity: 0.28,
+                          }}
+                          content={({ active, payload }) => (
+                            <RevenueChartTooltip
+                              active={active}
+                              payload={
+                                payload as RevenueChartTooltipPayloadItem[]
+                              }
+                              currency={revenueChart.totals.currency}
+                            />
+                          )}
                         />
                         <Area
-                          type="monotone"
+                          type="linear"
                           dataKey="revenue"
                           stroke="#0f766e"
                           fill="#5eead4"
                           fillOpacity={0.35}
                           strokeWidth={2.2}
                           dot={false}
+                          activeDot={{
+                            r: 5,
+                            fill: "#0f766e",
+                            stroke: "#ffffff",
+                            strokeWidth: 2,
+                          }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>

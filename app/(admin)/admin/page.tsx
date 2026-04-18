@@ -45,11 +45,6 @@ const quickActions = [
     href: "/admin/vocabulary",
   },
   {
-    title: "Quản trị AI",
-    description: "Điều chỉnh level AI, stage flow và activation.",
-    href: "/admin/ai",
-  },
-  {
     title: "Báo cáo vận hành",
     description: "Xem attempts, speaking minutes và phân bố level.",
     href: "/admin/reports",

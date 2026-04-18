@@ -74,12 +74,6 @@ const adminNavigation = [
     icon: Languages,
   },
   {
-    title: "AI",
-    heading: "Quản trị hành trình AI speaking",
-    href: "/admin/ai",
-    icon: Sparkles,
-  },
-  {
     title: "Learn maps",
     heading: "Bản đồ hội thoại & boss",
     href: "/admin/learn/maps",

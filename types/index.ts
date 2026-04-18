@@ -239,39 +239,6 @@ export interface AdminVocabularySetItem {
 
 export type AdminVocabularyItem = AdminVocabularySetItem;
 
-export interface AdminAiStage {
-  stageId: string;
-  name: string;
-  order: number;
-  type: string;
-  context: string;
-  aiRole: string;
-  objective: string;
-  systemPrompt: string;
-  suggestedVocabulary: string[];
-  passRules: {
-    minScore: number;
-    minTurns: number;
-  };
-  rewards: {
-    exp: number;
-    unlockNextLevel: string | null;
-  };
-}
-
-export interface AdminAiLevelItem {
-  id: string;
-  level: string;
-  title: string;
-  description: string;
-  minPlacementLevel: string;
-  isActive: boolean;
-  stageCount: number;
-  stages: AdminAiStage[];
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
 export interface AdminReportsResponse {
   summary: {
     totalUsers: number;
@@ -301,10 +268,6 @@ export interface AdminExercisesResponse {
 
 export interface AdminVocabularyResponse {
   items: AdminVocabularySetItem[];
-}
-
-export interface AdminAiLevelsResponse {
-  items: AdminAiLevelItem[];
 }
 
 export interface AdminExercisePayload {
@@ -355,15 +318,6 @@ export interface AdminVocabularyWordsBulkResponse {
   insertedCount: number;
   replacedDeletedCount: number;
   items: AdminVocabularyWordItem[];
-}
-
-export interface AdminAiLevelPayload {
-  level: string;
-  title: string;
-  description: string;
-  minPlacementLevel: string;
-  isActive: boolean;
-  stages: AdminAiStage[];
 }
 
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";

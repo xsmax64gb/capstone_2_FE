@@ -37,7 +37,7 @@ export default function ExerciseHintsPage() {
 
   return (
     <ProtectedRoute>
-      <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
         {/* Back */}
         <nav className="mb-6">
           <Link

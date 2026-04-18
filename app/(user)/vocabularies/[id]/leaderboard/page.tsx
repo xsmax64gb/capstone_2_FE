@@ -19,7 +19,7 @@ export default function VocabularyLeaderboardPage() {
 
   return (
     <ProtectedRoute>
-      <main className="mx-auto w-full max-w-3xl px-6 py-10 lg:px-10">
+      <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
         {/* Back */}
         <div className="mb-8">
           <Link

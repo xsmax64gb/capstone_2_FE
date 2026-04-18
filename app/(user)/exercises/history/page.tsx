@@ -88,13 +88,13 @@ export default function ExerciseHistoryPage() {
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div className="rounded-lg bg-slate-50 p-3">
                     <p className="text-xs font-semibold uppercase text-slate-500">
-                      Result
+                      {t("Kết quả")}
                     </p>
                     <p className="mt-1 text-sm font-semibold">{percent}%</p>
                   </div>
                   <div className="rounded-lg bg-slate-50 p-3">
                     <p className="text-xs font-semibold uppercase text-slate-500">
-                      Duration
+                      {t("Thời lượng")}
                     </p>
                     <p className="mt-1 inline-flex items-center text-sm font-semibold">
                       <Clock3 className="mr-1 h-4 w-4" />

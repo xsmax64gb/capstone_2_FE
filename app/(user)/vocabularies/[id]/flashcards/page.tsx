@@ -13,6 +13,7 @@ import {
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useGetVocabularyByIdQuery } from "@/store/services/vocabulariesApi";
 import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
+import { useI18n } from "@/lib/i18n/context";
 
 type StudyMode = "all" | "unknown";
 
@@ -29,6 +30,7 @@ export default function FlashcardsPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
   const router = useRouter();
+  const { t, lang } = useI18n();
 
   const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, {
     skip: !id,
@@ -140,7 +142,7 @@ export default function FlashcardsPage() {
       <ProtectedRoute>
         <main className="mx-auto w-full max-w-3xl px-6 py-10 lg:px-10">
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load flashcards.
+            {t("Không tải được flashcards.")}
           </div>
         </main>
       </ProtectedRoute>
@@ -264,7 +266,7 @@ export default function FlashcardsPage() {
     stopSpeaking();
 
     const shouldStartQuiz = window.confirm(
-      "Bạn muốn làm bài trắc nghiệm (quiz) ngay bây giờ không?",
+      t("Bạn muốn làm bài trắc nghiệm (quiz) ngay bây giờ không?"),
     );
 
     if (shouldStartQuiz) {
@@ -284,15 +286,19 @@ export default function FlashcardsPage() {
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to {data.vocabulary.title}
+            {lang === "vi"
+              ? `Quay lại: ${data.vocabulary.title}`
+              : `Back to ${data.vocabulary.title}`}
           </button>
         </div>
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Flashcards</h1>
+            <h1 className="text-2xl font-bold">{t("Thẻ ghi nhớ")}</h1>
             <p className="mt-0.5 text-sm text-slate-500">
-              Flip, mark known, review unknown cards, and then continue to quiz.
+              {t(
+                "Lật thẻ, đánh dấu đã nhớ, ôn thẻ chưa nhớ, rồi chuyển sang quiz.",
+              )}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600">
@@ -301,7 +307,9 @@ export default function FlashcardsPage() {
             </span>
             <span className="text-slate-300">|</span>
             <span>
-              {studyMode === "unknown" ? "Unknown only" : "All cards"}
+              {studyMode === "unknown"
+                ? t("Chỉ thẻ chưa thuộc")
+                : t("Tất cả thẻ")}
             </span>
           </div>
         </div>
@@ -315,7 +323,7 @@ export default function FlashcardsPage() {
 
         {deckCount === 0 && (
           <div className="mb-8 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-slate-500">
-            This set does not have any flashcards yet.
+            {t("Bộ này chưa có thẻ flashcard nào.")}
           </div>
         )}
 
@@ -337,7 +345,7 @@ export default function FlashcardsPage() {
                     setIsFlipped((flipped) => !flipped);
                   }
                 }}
-                aria-label="Flip flashcard"
+                aria-label={t("Lật thẻ flashcard")}
               >
                 <div
                   className="relative h-full w-full rounded-3xl transition-transform duration-700"
@@ -352,7 +360,7 @@ export default function FlashcardsPage() {
                   >
                     <div className="mb-5 flex items-center justify-between">
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Front
+                        {t("Mặt trước")}
                       </span>
                       <button
                         type="button"
@@ -366,7 +374,7 @@ export default function FlashcardsPage() {
                         <Volume2
                           className={`h-3.5 w-3.5 ${isSpeaking ? "animate-pulse" : ""}`}
                         />
-                        Voice
+                        {t("Phát âm")}
                       </button>
                     </div>
                     <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -393,7 +401,7 @@ export default function FlashcardsPage() {
                   >
                     <div className="mb-5">
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Back
+                        {t("Mặt sau")}
                       </span>
                     </div>
                     <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -407,7 +415,7 @@ export default function FlashcardsPage() {
                       )}
                     </div>
                     <p className="mt-3 text-center text-xs text-slate-400">
-                      Click to flip back
+                      {t("Chạm để lật lại")}
                     </p>
                   </div>
                 </div>
@@ -418,19 +426,19 @@ export default function FlashcardsPage() {
 
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-            <p className="text-slate-500">Known</p>
+            <p className="text-slate-500">{t("Đã nhớ")}</p>
             <p className="text-lg font-bold text-emerald-600">
               {knownIds.length}
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-            <p className="text-slate-500">Unknown</p>
+            <p className="text-slate-500">{t("Chưa nhớ")}</p>
             <p className="text-lg font-bold text-amber-600">
               {unknownIds.length}
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-            <p className="text-slate-500">Current Deck</p>
+            <p className="text-slate-500">{t("Bộ thẻ hiện tại")}</p>
             <p className="text-lg font-bold text-slate-800">{deckCount}</p>
           </div>
         </div>
@@ -438,7 +446,9 @@ export default function FlashcardsPage() {
         {studyMode === "unknown" && deckCount > 0 && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
             <p className="text-sm font-semibold text-amber-900">
-              Review mode: only cards not marked known
+              {t(
+                "Chế độ ôn: chỉ các thẻ chưa đánh dấu đã nhớ",
+              )}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {deckIds.map((wordId) => {
@@ -467,7 +477,7 @@ export default function FlashcardsPage() {
             className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Previous
+            {t("Trước")}
           </button>
 
           <div className="flex flex-wrap gap-2">
@@ -482,8 +492,8 @@ export default function FlashcardsPage() {
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               {currentWord && knownSet.has(currentWord.id)
-                ? "Known"
-                : "Mark Known"}
+                ? t("Đã nhớ")
+                : t("Đánh dấu đã nhớ")}
             </button>
 
             <button
@@ -491,7 +501,7 @@ export default function FlashcardsPage() {
               disabled={deckCount === 0}
               className="inline-flex items-center rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Next
+              {t("Tiếp theo")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </button>
           </div>
@@ -504,7 +514,7 @@ export default function FlashcardsPage() {
             className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Shuffle className="mr-2 h-4 w-4" />
-            Shuffle
+            {t("Xáo trộn")}
           </button>
 
           {studyMode === "unknown" ? (
@@ -512,7 +522,7 @@ export default function FlashcardsPage() {
               onClick={backToAllCards}
               className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Back to all cards
+              {t("Về tất cả thẻ")}
             </button>
           ) : (
             <button
@@ -520,7 +530,7 @@ export default function FlashcardsPage() {
               disabled={unknownIds.length === 0}
               className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Review unknown ({unknownIds.length})
+              {t("Ôn thẻ chưa nhớ")} ({unknownIds.length})
             </button>
           )}
 
@@ -529,14 +539,14 @@ export default function FlashcardsPage() {
             className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             <RotateCcw className="mr-2 h-4 w-4" />
-            Reset progress
+            {t("Đặt lại tiến độ")}
           </button>
 
           <button
             onClick={handleComplete}
             className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           >
-            Complete
+            {t("Hoàn thành")}
           </button>
         </div>
       </main>

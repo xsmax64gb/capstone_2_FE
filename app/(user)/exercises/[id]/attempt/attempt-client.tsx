@@ -15,6 +15,7 @@ import {
 import type { ExerciseItem } from "@/store/services/exercisesApi";
 import { useSubmitExerciseAttemptMutation } from "@/store/services/exercisesApi";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n/context";
 
 // Option letter labels: A, B, C, D…
 const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
@@ -26,6 +27,7 @@ type AttemptClientProps = {
 export function AttemptClient({ exercise }: AttemptClientProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
   const [submitAttempt, { isLoading: isSubmitting }] = useSubmitExerciseAttemptMutation();
 
   const questionList = exercise.questions ?? [];
@@ -70,7 +72,9 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
         `/exercises/${exercise.id}/result?score=${result.score}&total=${result.total}&time=${result.time}&answers=${encodeURIComponent(answersParam)}&earnedXp=${result.earnedXp}&xpAwarded=${result.xpAwarded ? "1" : "0"}&xpReason=${encodeURIComponent(result.xpReason)}&completed=${result.exerciseCompleted ? "1" : "0"}&firstCompletion=${result.firstCompletion ? "1" : "0"}`,
       );
     } catch {
-      setSubmitError("Nộp bài thất bại. Vui lòng thử lại.");
+      setSubmitError(
+        t("Nộp bài thất bại. Vui lòng thử lại."),
+      );
     }
   };
 
@@ -80,8 +84,12 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
       <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-10">
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <AlertCircle className="mx-auto h-10 w-10 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-700">Bài tập chưa có câu hỏi</p>
-          <p className="mt-1 text-sm text-slate-500">Vui lòng liên hệ quản trị viên.</p>
+          <p className="mt-3 font-semibold text-slate-700">
+            {t("Bài tập chưa có câu hỏi")}
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            {t("Vui lòng liên hệ quản trị viên.")}
+          </p>
         </div>
       </main>
     );
@@ -100,7 +108,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
           className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Quay lại
+          {t("Quay lại chi tiết bài tập")}
         </Link>
 
         <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 shadow-sm">
@@ -117,12 +125,12 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
               {exercise.title}
             </p>
             <h1 className="mt-0.5 text-lg font-bold text-slate-900">
-              Câu {currentIndex + 1}{" "}
+              {t("Câu")} {currentIndex + 1}{" "}
               <span className="font-normal text-slate-400">/ {total}</span>
             </h1>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-400">Đã trả lời</p>
+            <p className="text-xs text-slate-400">{t("Đã trả lời")}</p>
             <p className="text-lg font-bold text-slate-900">
               {answeredCount}
               <span className="text-sm font-normal text-slate-400">/{total}</span>
@@ -168,7 +176,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
         {/* Question text */}
         <div className="mb-6">
           <span className="inline-block rounded-lg bg-slate-900 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-            Câu {currentIndex + 1}
+            {t("Câu")} {currentIndex + 1}
           </span>
           <h2 className="mt-3 text-xl font-bold leading-relaxed text-slate-900">
             {currentQuestion.prompt}
@@ -216,7 +224,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4" />
-            Câu trước
+            {t("Câu trước")}
           </button>
 
           <div className="flex items-center gap-2">
@@ -226,7 +234,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
                 onClick={() => setCurrentIndex((p) => Math.min(p + 1, total - 1))}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
               >
-                Câu sau
+                {t("Câu sau")}
                 <ChevronRight className="h-4 w-4" />
               </button>
             )}
@@ -239,7 +247,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Send className="h-4 w-4" />
-                {isSubmitting ? "Đang nộp bài…" : "Nộp bài"}
+                {isSubmitting ? t("Đang nộp bài…") : t("Nộp bài")}
               </button>
             )}
           </div>
@@ -249,9 +257,11 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
       {/* ── Submit from any position ──────────────────────── */}
       {!isLastQuestion && allAnswered && (
         <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
-          <p className="font-semibold text-slate-900">Bạn đã trả lời tất cả {total} câu.</p>
+          <p className="font-semibold text-slate-900">
+            {t("Bạn đã trả lời tất cả")} {total} {t("câu hỏi")}.
+          </p>
           <p className="mt-0.5 text-slate-600">
-            Tiếp tục xem lại hoặc nộp bài ngay.
+            {t("Tiếp tục xem lại hoặc nộp bài ngay.")}
           </p>
           <button
             type="button"
@@ -260,7 +270,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
             className="mt-3 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
           >
             <Send className="h-4 w-4" />
-            {isSubmitting ? "Đang nộp bài…" : "Nộp bài ngay"}
+            {isSubmitting ? t("Đang nộp bài…") : t("Nộp bài ngay")}
           </button>
         </div>
       )}
@@ -274,7 +284,9 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
 
       {/* Tip */}
       <p className="mt-4 text-center text-xs text-slate-400">
-        Bạn có thể bấm vào số câu ở trên để chuyển nhanh giữa các câu hỏi.
+        {t(
+          "Bạn có thể bấm vào số câu ở trên để chuyển nhanh giữa các câu hỏi.",
+        )}
       </p>
     </main>
   );

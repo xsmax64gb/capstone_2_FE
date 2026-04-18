@@ -141,7 +141,7 @@ export function UserHeader() {
               {mounted && user?.role === "admin" && (
                 <DropdownMenuItem onClick={() => router.push("/admin")}>
                   <ShieldCheck className="h-4 w-4" />
-                  Quản trị
+                  {t("Quản trị")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />

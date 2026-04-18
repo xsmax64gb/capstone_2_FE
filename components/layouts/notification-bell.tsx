@@ -14,9 +14,14 @@ import {
 } from "@/store/services/inboxNotificationsApi";
 import type { InboxNotificationItem } from "@/store/services/inboxNotificationsApi";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/context";
 
 function formatViTime(iso: string | null) {
   if (!iso) return "";
@@ -41,6 +46,7 @@ function categoryIcon(category: InboxNotificationItem["category"]) {
 export function NotificationBell() {
   const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   const { data: unreadPack } = useGetInboxUnreadCountQuery(undefined, {
     skip: !isAuthenticated,
@@ -53,7 +59,8 @@ export function NotificationBell() {
   );
 
   const [markRead] = useMarkInboxNotificationReadMutation();
-  const [markAll, { isLoading: markingAll }] = useMarkAllInboxNotificationsReadMutation();
+  const [markAll, { isLoading: markingAll }] =
+    useMarkAllInboxNotificationsReadMutation();
 
   const unread = unreadPack?.unreadCount ?? 0;
   const items = listPack?.items ?? [];
@@ -86,7 +93,7 @@ export function NotificationBell() {
         <button
           type="button"
           className="relative rounded-full p-2 text-slate-600 transition-colors hover:bg-slate-100"
-          aria-label="Thông báo"
+          aria-label={t("Thông báo")}
         >
           <Bell className="h-5 w-5" />
           {unread > 0 ? (
@@ -109,7 +116,7 @@ export function NotificationBell() {
         )}
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2.5">
-          <p className="text-sm font-semibold text-slate-900">Thông báo</p>
+          <p className="text-sm font-semibold text-slate-900">{t("Thông báo")}</p>
           <Button
             type="button"
             variant="ghost"
@@ -123,7 +130,7 @@ export function NotificationBell() {
             ) : (
               <CheckCheck className="h-3.5 w-3.5" />
             )}
-            Đọc hết
+            {t("Đọc hết")}
           </Button>
         </div>
 
@@ -134,7 +141,7 @@ export function NotificationBell() {
             </div>
           ) : items.length === 0 ? (
             <p className="px-4 py-10 text-center text-sm text-slate-500">
-              Chưa có thông báo nào.
+              {t("Chưa có thông báo nào.")}
             </p>
           ) : (
             <ul className="divide-y divide-slate-100">

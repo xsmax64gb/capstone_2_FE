@@ -9,11 +9,13 @@ import {
   useSubmitVocabularyAttemptMutation,
 } from "@/store/services/vocabulariesApi";
 import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function QuizPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
   const router = useRouter();
+  const { t, lang } = useI18n();
 
   const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, {
     skip: !id,
@@ -29,26 +31,31 @@ export default function QuizPage() {
 
   // Memoize so options don't re-shuffle on every timer tick
   const questions = useMemo(() => {
+    const filler = t("Không có trong danh sách");
     return words.slice(0, 10).map((word) => {
       const otherMeanings = words
         .filter((w) => w.id !== word.id)
         .map((w) => w.meaning)
         .slice(0, 3);
       while (otherMeanings.length < 3) {
-        otherMeanings.push("Không có trong danh sách");
+        otherMeanings.push(filler);
       }
       const options = [word.meaning, ...otherMeanings].sort(
         () => Math.random() - 0.5,
       );
       const correctIndex = options.indexOf(word.meaning);
+      const prompt =
+        lang === "vi"
+          ? `Nghĩa của "${word.word}" là gì?`
+          : `What does "${word.word}" mean?`;
       return {
         wordId: word.id,
-        prompt: `What does "${word.word}" mean?`,
+        prompt,
         options,
         correctIndex: correctIndex >= 0 ? correctIndex : 0,
       };
     });
-  }, [words]);
+  }, [words, lang, t]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -118,7 +125,7 @@ export default function QuizPage() {
       <ProtectedRoute>
         <main className="mx-auto w-full max-w-3xl px-6 py-10 lg:px-10">
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load quiz.
+            {t("Không tải được quiz.")}
           </div>
         </main>
       </ProtectedRoute>
@@ -135,7 +142,7 @@ export default function QuizPage() {
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t("Quay lại")}
           </button>
           <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">
             <Clock3 className="h-4 w-4" />
@@ -145,7 +152,7 @@ export default function QuizPage() {
 
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Quiz</h1>
+          <h1 className="text-2xl font-bold">{t("Trắc nghiệm")}</h1>
           <span className="text-sm text-slate-500">
             {currentIndex + 1} / {questions.length}
           </span>
@@ -198,7 +205,7 @@ export default function QuizPage() {
             className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Previous
+            {t("Trước")}
           </button>
 
           {isLast ? (
@@ -207,14 +214,14 @@ export default function QuizPage() {
               disabled={!allAnswered}
               className="inline-flex items-center rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Submit Quiz
+              {t("Nộp quiz")}
             </button>
           ) : (
             <button
               onClick={goNext}
               className="inline-flex items-center rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
             >
-              Next
+              {t("Tiếp theo")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </button>
           )}
@@ -222,7 +229,7 @@ export default function QuizPage() {
 
         {!allAnswered && (
           <p className="mt-3 text-center text-xs text-slate-500">
-            Answer all questions to submit.
+            {t("Hãy trả lời hết các câu để nộp bài.")}
           </p>
         )}
       </main>

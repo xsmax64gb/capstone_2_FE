@@ -21,10 +21,10 @@ export const MODE_LABELS: Record<string, string> = {
 };
 
 export const RESULT_LABELS: Record<string, { label: string; color: string }> = {
-  "Excellent!": { label: "Excellent!", color: "text-emerald-600" },
-  "Good job!": { label: "Good job!", color: "text-blue-600" },
-  "Keep going!": { label: "Keep going!", color: "text-amber-600" },
-  "Needs more practice": { label: "Needs more practice", color: "text-rose-600" },
+  "Xuất sắc!": { label: "Xuất sắc!", color: "text-emerald-600" },
+  "Làm tốt!": { label: "Làm tốt!", color: "text-blue-600" },
+  "Cố gắng lên!": { label: "Cố gắng lên!", color: "text-amber-600" },
+  "Cần luyện thêm": { label: "Cần luyện thêm", color: "text-rose-600" },
 };
 
 export function formatDuration(seconds: number): string {

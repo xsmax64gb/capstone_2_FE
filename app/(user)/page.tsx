@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Waves,
 } from "lucide-react";
+import { Bilingual } from "@/components/i18n/bilingual";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { useI18n } from "@/lib/i18n/context";
 
@@ -247,18 +248,20 @@ export default function UserHomePage() {
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                 {t("Học tiếng Anh với AI")}
               </span>
-              <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-6xl">
-                {t(
-                  "Trung tâm luyện tập tiếng Anh hoàn chỉnh của bạn được xây dựng cho đà học tập hàng ngày",
-                )}{" "}
-                <br className="hidden md:block" />
-                {t("Built For Daily Momentum")}
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 md:text-lg">
-                {t(
-                  "SmartLingo cung cấp cho bạn một routine đầy đủ từ nói chuyện đến từ vựng và bài tập có cấu trúc. Thay vì bài học ngẫu nhiên, bạn nhận được hành trình học tập dài hạn mà bạn có thể theo dõi mỗi ngày với hướng dẫn rõ ràng và tiến độ đo lường được.",
-                )}
-              </p>
+              <Bilingual
+                as="h1"
+                viKey="Luyện tiếng Anh mỗi ngày với lộ trình rõ ràng"
+                className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-6xl"
+                primaryClassName="block"
+                secondaryClassName="mt-3 block text-xl font-semibold leading-snug text-slate-600 md:text-2xl"
+              />
+              <Bilingual
+                as="p"
+                viKey="Nói, từ vựng và bài tập trong một vòng lặp — theo dõi tiến độ mỗi ngày."
+                className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 md:text-lg"
+                primaryClassName="block"
+                secondaryClassName="mt-2 block text-sm leading-relaxed text-slate-500 md:text-base"
+              />
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/learn"

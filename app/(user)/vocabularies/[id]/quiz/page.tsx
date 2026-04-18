@@ -28,6 +28,14 @@ export default function QuizPage() {
   const [elapsed, setElapsed] = useState(0);
 
   const words = data?.vocabulary?.words ?? [];
+  const questionWordSig = useMemo(
+    () =>
+      words
+        .slice(0, 10)
+        .map((w) => w.id)
+        .join("|"),
+    [words],
+  );
 
   // Memoize so options don't re-shuffle on every timer tick
   const questions = useMemo(() => {
@@ -57,6 +65,14 @@ export default function QuizPage() {
     });
   }, [words, lang, t]);
 
+  const questionsShuffleKey = useMemo(
+    () =>
+      questions
+        .map((q) => `${q.wordId}|${q.options.join("\u001f")}`)
+        .join("\u001e"),
+    [questions],
+  );
+
   useEffect(() => {
     const interval = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startedAt) / 1000));
@@ -65,16 +81,23 @@ export default function QuizPage() {
   }, [startedAt]);
 
   useEffect(() => {
-    if (questions.length > 0 && answers.length === 0) {
-      setAnswers(new Array(questions.length).fill(null));
+    if (!questionWordSig || questions.length === 0) {
+      return;
     }
-  }, [questions, answers.length]);
+    setAnswers(new Array(questions.length).fill(null));
+    setCurrentIndex(0);
+  }, [questionWordSig, questionsShuffleKey, questions.length]);
 
   const current = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
   const progress =
     questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
-  const allAnswered = answers.every((a) => a !== null);
+  const allAnswered =
+    questions.length > 0 &&
+    answers.length === questions.length &&
+    answers.every(
+      (a) => typeof a === "number" && !Number.isNaN(a) && a >= 0,
+    );
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);

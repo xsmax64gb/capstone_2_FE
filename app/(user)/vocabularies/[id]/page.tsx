@@ -103,9 +103,16 @@ export default function VocabularyDetailPage() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
-                  <h1 className="text-3xl font-bold text-white">
-                    {vocabulary.title}
-                  </h1>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-3xl font-bold text-white">
+                      {vocabulary.title}
+                    </h1>
+                    {vocabulary.quizMastered ? (
+                      <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white shadow">
+                        {t("Đã thuộc")}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-1 text-sm text-white/80">
                     {vocabulary.description || t("Không có mô tả.")}
                   </p>

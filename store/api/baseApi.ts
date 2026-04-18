@@ -78,6 +78,8 @@ export const baseApi = createApi({
     "FeatureQuotas",
     "AdminRevenue",
     "InboxNotifications",
+    "Exercises",
+    "ExerciseSummary",
   ],
   endpoints: () => ({}),
 });

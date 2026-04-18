@@ -289,6 +289,12 @@ export default function VocabulariesContent() {
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                       {item.wordCount} {t("từ")}
                     </span>
+                    {item.quizMastered ? (
+                      <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                        <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                        {t("Đã thuộc")}
+                      </span>
+                    ) : null}
                   </div>
 
                   {/* Action buttons */}

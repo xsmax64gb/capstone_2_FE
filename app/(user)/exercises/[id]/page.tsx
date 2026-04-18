@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BookOpen,
@@ -17,6 +17,7 @@ import {
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ExerciseDetailSkeleton } from "@/components/exercises/skeletons";
 import {
+  useDeleteUserAiExerciseMutation,
   useGetExerciseByIdQuery,
   useGetExerciseLeaderboardQuery,
 } from "@/store/services/exercisesApi";
@@ -38,11 +39,14 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function ExerciseDetailPage() {
   const { t } = useI18n();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
   const { data, isLoading, isError } = useGetExerciseByIdQuery(id, { skip: !id });
   const { data: leaderboardData } = useGetExerciseLeaderboardQuery(id, { skip: !id });
+  const [deleteAiExercise, { isLoading: deleting }] =
+    useDeleteUserAiExerciseMutation();
 
   const exercise = data?.exercise;
   const relatedExercises = data?.related ?? [];
@@ -65,7 +69,27 @@ export default function ExerciseDetailPage() {
             {t("Sân thi đấu bài tập")}
           </Link>
           {exercise && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              {exercise.isPersonal ? (
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => {
+                    if (
+                      typeof window !== "undefined" &&
+                      !window.confirm(t("Bạn có chắc muốn xóa bài tập này?"))
+                    ) {
+                      return;
+                    }
+                    void deleteAiExercise(exercise.id).then(() => {
+                      router.push("/exercises");
+                    });
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 disabled:opacity-60"
+                >
+                  {t("Xóa bài tập")}
+                </button>
+              ) : null}
               <Link
                 href={`/exercises/${exercise.id}/hints`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"

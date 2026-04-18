@@ -115,7 +115,12 @@ export function UserHeader() {
 
         <div className="flex items-center gap-4">
           <LanguageSwitch />
-          <NotificationBell />
+          {/* Chỉ mount sau khi client mounted — tránh hydration mismatch (Redux auth vs SSR). */}
+          {mounted ? (
+            <NotificationBell />
+          ) : (
+            <div className="h-9 w-9 shrink-0" aria-hidden />
+          )}
           <div className="h-8 w-px bg-slate-200" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

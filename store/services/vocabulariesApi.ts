@@ -28,6 +28,10 @@ export interface VocabularySet {
   durationMinutes: number;
   rewardsXp: number;
   words: VocabularyWord[];
+  /** Quiz 100% — đã thuộc cả bộ (theo lần làm quiz tốt nhất) */
+  quizMastered?: boolean;
+  bestQuizPercent?: number;
+  xpEligibleForSet?: boolean;
 }
 
 export interface VocabularyFlashcard {
@@ -132,6 +136,9 @@ export interface SubmitVocabularyResponse {
   percent: number;
   time: number;
   earnedXp: number;
+  xpAwarded?: boolean;
+  xpReason?: string;
+  userExp?: number;
   resultLabel: string;
   answers: (number | null)[];
 }

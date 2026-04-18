@@ -8,6 +8,7 @@ import {
   BookCheck,
   Clock3,
   History,
+  PenLine,
   Search,
   Sparkles,
   Trophy,
@@ -140,6 +141,13 @@ export default function ExercisesContent() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Link
+                href="/exercises/create-ai"
+                className="inline-flex items-center rounded-lg bg-black px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                <PenLine className="mr-1.5 h-4 w-4" />
+                {t("Tạo bài tập")}
+              </Link>
               <Link
                 href="/exercises/recommended"
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -274,6 +282,11 @@ export default function ExercisesContent() {
                         {t("Đã hoàn thành")}
                       </span>
                     ) : null}
+                    {item.isPersonal ? (
+                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800">
+                        {t("Bài cá nhân (AI)")}
+                      </span>
+                    ) : null}
                     <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold">
                       {item.level}
                     </span>
@@ -295,8 +308,17 @@ export default function ExercisesContent() {
                     <Clock3 className="mr-1 h-3.5 w-3.5" />
                     {item.durationMinutes} {t("phút")}
                   </span>
-                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
-                    <Trophy className="mr-1 h-3.5 w-3.5" />+{item.rewardsXp} XP
+                  <span
+                    className={`inline-flex items-center rounded-md px-2 py-1 font-medium ${
+                      item.isPersonal
+                        ? "bg-slate-200 text-slate-600"
+                        : "bg-slate-100 text-slate-700"
+                    }`}
+                  >
+                    <Trophy className="mr-1 h-3.5 w-3.5" />
+                    {item.isPersonal
+                      ? t("Không cộng XP")
+                      : `+${item.rewardsXp} XP`}
                   </span>
                 </div>
 

@@ -23,6 +23,10 @@ function toInt(value: string | null, fallback: number) {
   return Number.isFinite(num) ? num : fallback;
 }
 
+function toBool(value: string | null) {
+  return value === "1" || value === "true";
+}
+
 function parseAnswers(raw: string) {
   if (!raw.trim()) return null;
   const parsed = raw.split(",").map((item) => Number.parseInt(item, 10));
@@ -88,10 +92,16 @@ export default function ExerciseResultPage() {
   const totalParam = searchParams.get("total");
   const timeParam = searchParams.get("time");
   const answersParam = searchParams.get("answers") ?? "";
+  const earnedXpParam = searchParams.get("earnedXp");
+  const xpAwardedParam = searchParams.get("xpAwarded");
+  const xpReasonParam = searchParams.get("xpReason");
+  const completedParam = searchParams.get("completed");
+  const firstCompletionParam = searchParams.get("firstCompletion");
 
   const score = toInt(scoreParam, -1);
   const total = toInt(totalParam, -1);
   const time = toInt(timeParam, -1);
+  const earnedXpFromQuery = toInt(earnedXpParam, -1);
   const parsedAnswers = parseAnswers(answersParam);
 
   const hasValidPayload =
@@ -106,7 +116,18 @@ export default function ExerciseResultPage() {
     parsedAnswers.length === total;
 
   const percent = Math.max(0, Math.min(100, Math.round((score / Math.max(total, 1)) * 100)));
-  const earnedXp = Math.round((percent / 100) * (exercise?.rewardsXp ?? 0));
+  const earnedXp =
+    earnedXpFromQuery >= 0
+      ? earnedXpFromQuery
+      : score === total
+        ? exercise?.rewardsXp ?? 0
+        : 0;
+  const xpAwarded = xpAwardedParam !== null ? toBool(xpAwardedParam) : earnedXp > 0;
+  const exerciseCompleted =
+    completedParam !== null ? toBool(completedParam) : score === total;
+  const firstCompletion =
+    firstCompletionParam !== null ? toBool(firstCompletionParam) : xpAwarded;
+  const xpReason = xpReasonParam ?? (xpAwarded ? "awarded" : "not_perfect");
   const unansweredCount = parsedAnswers?.filter((item) => item === -1).length ?? 0;
   const answeredCount = Math.max(0, total - unansweredCount);
   const wrongCount = Math.max(0, total - score - unansweredCount);
@@ -121,6 +142,21 @@ export default function ExerciseResultPage() {
           : "Needs Retry";
 
   const resultCfg = RESULT_CONFIG[resultKey] ?? RESULT_CONFIG["Keep Going"]!;
+  const xpHint =
+    xpReason === "awarded"
+      ? "Đã cộng vào XP của bạn."
+      : xpReason === "already_completed"
+        ? "Bài này đã được hoàn thành trước đó nên không cộng lại XP."
+        : xpReason === "level_not_eligible"
+          ? "Chỉ cộng XP khi level bài tập cao hơn hoặc bằng level hiện tại của bạn."
+          : xpReason === "no_reward_configured"
+            ? "Bài tập này chưa cấu hình phần thưởng XP."
+            : "Chỉ nhận XP khi làm đúng toàn bộ câu hỏi.";
+  const completionHint = exerciseCompleted
+    ? firstCompletion
+      ? "Bài tập này vừa được ghi nhận hoàn thành."
+      : "Bài tập này đã được đánh dấu hoàn thành."
+    : "Cần trả lời đúng toàn bộ câu hỏi để được tính hoàn thành.";
 
   const reviewHref = `/exercises/${id}/result/review?score=${score}&total=${total}&answers=${encodeURIComponent(answersParam)}&time=${time}`;
   const retryHref = `/exercises/${id}/attempt`;
@@ -162,10 +198,18 @@ export default function ExerciseResultPage() {
     {
       label: "XP nhận được",
       value: `+${earnedXp}`,
-      hint: `${exercise?.rewardsXp ?? 0} XP tối đa`,
+      hint: xpHint,
       icon: Zap,
       color: "text-amber-600",
       bg: "bg-amber-50",
+    },
+    {
+      label: "Trạng thái",
+      value: exerciseCompleted ? "Hoàn thành" : "Chưa hoàn thành",
+      hint: completionHint,
+      icon: Trophy,
+      color: "text-slate-700",
+      bg: "bg-slate-100",
     },
   ];
 
@@ -274,12 +318,18 @@ export default function ExerciseResultPage() {
                       <span className="text-slate-500">XP nhận được</span>
                       <span className="font-semibold text-slate-900">+{earnedXp}</span>
                     </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Trạng thái bài</span>
+                      <span className="font-semibold text-slate-900">
+                        {exerciseCompleted ? "Đã hoàn thành" : "Chưa hoàn thành"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <section className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <section className="grid grid-cols-2 gap-4 lg:grid-cols-6">
               {stats.map(({ icon: Icon, label, value, hint, color, bg }) => (
                 <div
                   key={label}
@@ -324,6 +374,14 @@ export default function ExerciseResultPage() {
                         {wrongCount > 0
                           ? `${wrongCount} câu trả lời sai cần đọc lại phần giải thích.`
                           : "Bạn không có câu sai trong lượt làm này."}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:col-span-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                        Ghi nhận XP và hoàn thành
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {xpHint} {completionHint}
                       </p>
                     </div>
                   </div>

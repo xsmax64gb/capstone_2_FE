@@ -28,22 +28,22 @@ const RANK_STYLES: Record<
   { bg: string; border: string; iconColor: string; label: string }
 > = {
   1: {
-    bg: "bg-gradient-to-r from-amber-50 to-yellow-50",
-    border: "border-amber-300",
-    iconColor: "text-amber-500",
-    label: "bg-amber-400 text-white",
+    bg: "bg-slate-100",
+    border: "border-slate-300",
+    iconColor: "text-slate-700",
+    label: "bg-slate-900 text-white",
   },
   2: {
-    bg: "bg-gradient-to-r from-slate-50 to-gray-50",
+    bg: "bg-slate-50",
     border: "border-slate-300",
-    iconColor: "text-slate-400",
-    label: "bg-slate-400 text-white",
+    iconColor: "text-slate-600",
+    label: "bg-slate-700 text-white",
   },
   3: {
-    bg: "bg-gradient-to-r from-orange-50 to-amber-50",
-    border: "border-orange-200",
-    iconColor: "text-orange-400",
-    label: "bg-orange-400 text-white",
+    bg: "bg-slate-50",
+    border: "border-slate-200",
+    iconColor: "text-slate-500",
+    label: "bg-slate-500 text-white",
   },
 };
 
@@ -91,13 +91,13 @@ export default function ExerciseLeaderboardPage() {
         </nav>
 
         {/* Header */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 shadow-sm">
+        <div className="mb-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100">
-              <Trophy className="h-6 w-6 text-amber-600" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-100">
+              <Trophy className="h-6 w-6 text-slate-700" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
                 Bảng xếp hạng
               </p>
               <h1 className="mt-0.5 text-xl font-bold text-slate-900">
@@ -176,9 +176,9 @@ export default function ExerciseLeaderboardPage() {
                           </span>
                         </div>
                         {/* Progress bar */}
-                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                           <div
-                            className="h-full rounded-full bg-amber-400 transition-all duration-700"
+                            className="h-full rounded-full bg-slate-900 transition-all duration-700"
                             style={{ width: `${pct}%` }}
                           />
                         </div>

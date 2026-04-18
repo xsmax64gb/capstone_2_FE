@@ -77,6 +77,7 @@ export const baseApi = createApi({
     "PaymentPackages",
     "FeatureQuotas",
     "AdminRevenue",
+    "InboxNotifications",
   ],
   endpoints: () => ({}),
 });

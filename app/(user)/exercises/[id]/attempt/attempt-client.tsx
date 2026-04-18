@@ -67,7 +67,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
 
       const answersParam = result.answers.map((item) => String(item)).join(",");
       router.push(
-        `/exercises/${exercise.id}/result?score=${result.score}&total=${result.total}&time=${result.time}&answers=${encodeURIComponent(answersParam)}`,
+        `/exercises/${exercise.id}/result?score=${result.score}&total=${result.total}&time=${result.time}&answers=${encodeURIComponent(answersParam)}&earnedXp=${result.earnedXp}&xpAwarded=${result.xpAwarded ? "1" : "0"}&xpReason=${encodeURIComponent(result.xpReason)}&completed=${result.exerciseCompleted ? "1" : "0"}&firstCompletion=${result.firstCompletion ? "1" : "0"}`,
       );
     } catch {
       setSubmitError("Nộp bài thất bại. Vui lòng thử lại.");
@@ -77,7 +77,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
   // Empty state
   if (total === 0 || !currentQuestion) {
     return (
-      <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-10">
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <AlertCircle className="mx-auto h-10 w-10 text-slate-300" />
           <p className="mt-3 font-semibold text-slate-700">Bài tập chưa có câu hỏi</p>
@@ -92,7 +92,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
   const allAnswered = answeredCount === total;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
       {/* ── Top Bar ─────────────────────────────────────── */}
       <div className="mb-6 flex items-center justify-between">
         <Link
@@ -104,7 +104,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
         </Link>
 
         <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 shadow-sm">
-          <Clock3 className="h-4 w-4 text-violet-500" />
+          <Clock3 className="h-4 w-4 text-slate-600" />
           {Math.floor(elapsedSec / 60)}:{String(elapsedSec % 60).padStart(2, "0")}
         </div>
       </div>
@@ -144,7 +144,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
                   isCurrent
                     ? "bg-slate-900 text-white scale-110 shadow"
                     : isDone
-                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                      ? "border border-slate-300 bg-slate-200 text-slate-700"
                       : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                 }`}
               >
@@ -157,7 +157,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
         {/* Progress bar */}
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            className="h-full rounded-full bg-slate-900 transition-all duration-500"
             style={{ width: `${answeredPct}%` }}
           />
         </div>
@@ -236,7 +236,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
                 type="button"
                 onClick={() => void submit()}
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Send className="h-4 w-4" />
                 {isSubmitting ? "Đang nộp bài…" : "Nộp bài"}
@@ -248,16 +248,16 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
 
       {/* ── Submit from any position ──────────────────────── */}
       {!isLastQuestion && allAnswered && (
-        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
-          <p className="font-semibold text-emerald-800">Bạn đã trả lời tất cả {total} câu! 🎉</p>
-          <p className="mt-0.5 text-emerald-700">
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
+          <p className="font-semibold text-slate-900">Bạn đã trả lời tất cả {total} câu.</p>
+          <p className="mt-0.5 text-slate-600">
             Tiếp tục xem lại hoặc nộp bài ngay.
           </p>
           <button
             type="button"
             onClick={() => void submit()}
             disabled={isSubmitting}
-            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
           >
             <Send className="h-4 w-4" />
             {isSubmitting ? "Đang nộp bài…" : "Nộp bài ngay"}
@@ -274,7 +274,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
 
       {/* Tip */}
       <p className="mt-4 text-center text-xs text-slate-400">
-        💡 Bạn có thể bấm vào số câu ở trên để chuyển nhanh giữa các câu hỏi.
+        Bạn có thể bấm vào số câu ở trên để chuyển nhanh giữa các câu hỏi.
       </p>
     </main>
   );

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Languages, LogOut, ShieldCheck, User } from "lucide-react";
+import { Languages, LogOut, ShieldCheck, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
 import {
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LanguageSwitch } from "./language-switch";
+import { NotificationBell } from "./notification-bell";
 
 const navItems = [
   { labelKey: "Trang chủ", href: "/" },
@@ -38,7 +39,10 @@ export function UserHeader() {
   }, []);
 
   const profileName = mounted
-    ? user?.fullName || user?.name || t("Profile")
+    ? user?.fullName ||
+      user?.name ||
+      (user?.email ? user.email.split("@")[0] : null) ||
+      t("Profile")
     : t("Profile");
   const avatarUrl =
     mounted && user?.avatarUrl ? user.avatarUrl : DEFAULT_AVATAR_URL;
@@ -111,10 +115,7 @@ export function UserHeader() {
 
         <div className="flex items-center gap-4">
           <LanguageSwitch />
-          <button className="relative rounded-full p-2 text-slate-600 transition-colors hover:bg-slate-100">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
-          </button>
+          <NotificationBell />
           <div className="h-8 w-px bg-slate-200" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

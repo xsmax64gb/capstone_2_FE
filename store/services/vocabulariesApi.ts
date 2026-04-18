@@ -120,6 +120,8 @@ export interface SubmitVocabularyBody {
   mode: "flashcards" | "quiz";
   answers: (number | null)[];
   wordIds?: string[];
+  /** Nội dung đáp án đã chọn (quiz) — backend so khớp với nghĩa đúng trong DB */
+  selectedLabels?: string[];
   durationSec?: number;
 }
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  CheckCircle2,
   BookCheck,
   Clock3,
   History,
@@ -266,9 +267,17 @@ export default function ExercisesContent() {
                       {item.description}
                     </p>
                   </div>
-                  <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold">
-                    {item.level}
-                  </span>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {item.isCompleted ? (
+                      <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                        {t("Đã hoàn thành")}
+                      </span>
+                    ) : null}
+                    <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold">
+                      {item.level}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">

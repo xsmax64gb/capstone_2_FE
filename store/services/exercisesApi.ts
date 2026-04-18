@@ -24,6 +24,7 @@ export interface ExerciseItem {
   rewardsXp: number;
   coverImage: string;
   skills: string[];
+  isCompleted?: boolean;
   questions?: ExerciseQuestion[];
 }
 
@@ -34,6 +35,12 @@ export interface ExerciseHistoryItem {
   score: number;
   total: number;
   durationSec: number;
+  earnedXp: number;
+  perfectScore: boolean;
+  xpAwarded: boolean;
+  xpReason: string;
+  exerciseCompleted: boolean;
+  firstCompletion: boolean;
   userName?: string;
   answers?: number[];
   exercise?: ExerciseItem;
@@ -110,6 +117,12 @@ export interface SubmitExerciseResponse {
   percent: number;
   time: number;
   earnedXp: number;
+  perfectScore: boolean;
+  xpAwarded: boolean;
+  xpReason: string;
+  exerciseCompleted: boolean;
+  firstCompletion: boolean;
+  userExp: number;
   resultLabel: string;
   answers: number[];
 }

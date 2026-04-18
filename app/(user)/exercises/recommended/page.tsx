@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Sparkles, Trophy } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TOPIC_LABELS, TYPE_LABELS } from "../data";
 import { RecommendedSkeleton } from "@/components/exercises/skeletons";
@@ -84,6 +84,12 @@ export default function RecommendedExercisesPage() {
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                   Recommended #{index + 1}
                 </span>
+                {item.isCompleted ? (
+                  <span className="mt-3 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                    <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                    {t("Đã hoàn thành")}
+                  </span>
+                ) : null}
                 <h3 className="mt-3 text-xl font-bold">{item.title}</h3>
                 <p className="mt-2 text-sm text-slate-600">
                   {item.description}

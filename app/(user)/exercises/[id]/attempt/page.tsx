@@ -18,7 +18,7 @@ export default function ExerciseAttemptPage() {
       {isLoading && <AttemptSkeleton />}
 
       {isError && (
-        <main className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10">
+        <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
             Failed to load exercise.
           </div>

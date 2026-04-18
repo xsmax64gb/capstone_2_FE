@@ -30,6 +30,11 @@ const quickActions = [
     href: "/admin/users",
   },
   {
+    title: "Thông báo",
+    description: "Gửi thông báo toàn hệ thống hoặc cho một học viên cụ thể.",
+    href: "/admin/notifications",
+  },
+  {
     title: "Quản trị exercises",
     description: "Duyệt ngân hàng bài tập với preview lớn và CRUD đầy đủ.",
     href: "/admin/exercises",

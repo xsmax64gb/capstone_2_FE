@@ -557,6 +557,36 @@ const PHRASES: PhraseValue[] = [
     vi: "Mở Bảng tổng quan từ vựng để xem tất cả từ, sau đó học với Flashcards, và hoàn thành với Quiz.",
     en: "Open Vocabulary Overview Table to scan all words, then study with Flashcards, and finish with Quiz.",
   },
+  { vi: "Quay lại bài tập", en: "Back to exercise" },
+  {
+    vi: "Gợi ý được tạo theo nội dung bài và lịch sử học của bạn. Đọc nhanh trước khi làm bài để tập trung đúng hướng.",
+    en: "Hints are based on this exercise and your learning history. Skim them before you start to stay focused.",
+  },
+  {
+    vi: "Không tải được gợi ý. Vui lòng thử lại.",
+    en: "Could not load hints. Please try again.",
+  },
+  { vi: "Gợi ý cá nhân hóa", en: "Personalized hints" },
+  {
+    vi: "Dựa trên tiến độ và lịch sử làm bài",
+    en: "Based on your progress and attempt history",
+  },
+  {
+    vi: "Chưa có gợi ý cá nhân. Hãy làm thêm bài để hệ thống hiểu rõ hơn.",
+    en: "No personalized hints yet. Complete more exercises so the system can learn your level.",
+  },
+  { vi: "Chiến thuật làm bài", en: "Test-taking strategies" },
+  {
+    vi: "Mẹo áp dụng cho dạng bài này",
+    en: "Tips that fit this exercise type",
+  },
+  {
+    vi: "Chưa có chiến thuật. Thử tải lại trang sau.",
+    en: "No strategies yet. Try refreshing the page.",
+  },
+  { vi: "Sẵn sàng làm bài?", en: "Ready to start?" },
+  { vi: "Bắt đầu làm bài", en: "Start exercise" },
+  { vi: "Xem chi tiết bài tập", en: "View exercise details" },
 ];
 
 const toLookup = (lang: AppLang) => {

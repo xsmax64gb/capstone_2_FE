@@ -7,7 +7,6 @@ import {
   BookOpen,
   CheckCircle2,
   Clock3,
-  Flame,
   List,
   Sparkles,
   Star,
@@ -37,15 +36,6 @@ const TYPE_LABELS: Record<string, string> = {
   matching: "Nối cặp",
 };
 
-const LEVEL_COLORS: Record<string, string> = {
-  A1: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  A2: "bg-teal-100 text-teal-700 border-teal-200",
-  B1: "bg-sky-100 text-sky-700 border-sky-200",
-  B2: "bg-violet-100 text-violet-700 border-violet-200",
-  C1: "bg-orange-100 text-orange-700 border-orange-200",
-  C2: "bg-rose-100 text-rose-700 border-rose-200",
-};
-
 export default function ExerciseDetailPage() {
   const { t } = useI18n();
   const params = useParams<{ id: string }>();
@@ -60,8 +50,7 @@ export default function ExerciseDetailPage() {
 
   const topicLabel = (topic: string) => TOPIC_LABELS[topic] ?? topic;
   const typeLabel = (type: string) => TYPE_LABELS[type] ?? type;
-  const levelColor = (level: string) =>
-    LEVEL_COLORS[level] ?? "bg-slate-100 text-slate-700 border-slate-200";
+  const levelColor = (_level?: string) => "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
     <ProtectedRoute>
@@ -79,16 +68,16 @@ export default function ExerciseDetailPage() {
             <div className="flex gap-2">
               <Link
                 href={`/exercises/${exercise.id}/hints`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-violet-300 hover:text-violet-700"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
               >
-                <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                <Sparkles className="h-3.5 w-3.5 text-slate-500" />
                 {t("Gợi ý AI")}
               </Link>
               <Link
                 href={`/exercises/${exercise.id}/leaderboard`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-amber-300 hover:text-amber-700"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
               >
-                <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                <Trophy className="h-3.5 w-3.5 text-slate-500" />
                 {t("Bảng xếp hạng")}
               </Link>
             </div>
@@ -114,9 +103,9 @@ export default function ExerciseDetailPage() {
         {exercise && (
           <>
             {/* ── Hero ──────────────────────────────────────────── */}
-            <section className="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <section className="mb-8 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
               {/* cover */}
-              <div className="relative h-48 w-full overflow-hidden bg-slate-200 md:h-56">
+              <div className="h-48 w-full overflow-hidden bg-slate-100 md:h-56">
                 {exercise.coverImage ? (
                   <img
                     src={exercise.coverImage}
@@ -124,33 +113,34 @@ export default function ExerciseDetailPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-600">
-                    <BookOpen className="h-16 w-16 text-white/30" />
+                  <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                    <BookOpen className="h-16 w-16 text-slate-300" />
                   </div>
                 )}
-                {/* overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-                {/* badges on image */}
-                <div className="absolute bottom-4 left-5 flex flex-wrap items-center gap-2">
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${levelColor(exercise.level)} backdrop-blur-sm`}
-                  >
-                    {exercise.level}
-                  </span>
-                  <span className="rounded-full border border-white/30 bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
-                    {topicLabel(exercise.topic)}
-                  </span>
-                  <span className="rounded-full border border-white/30 bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
-                    {typeLabel(exercise.type)}
-                  </span>
-                </div>
               </div>
 
               {/* body */}
               <div className="p-6">
                 <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                   <div className="flex-1">
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      {exercise.isCompleted ? (
+                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                          {t("Đã hoàn thành")}
+                        </span>
+                      ) : null}
+                      <span
+                        className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${levelColor()}`}
+                      >
+                        {exercise.level}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                        {topicLabel(exercise.topic)}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                        {typeLabel(exercise.type)}
+                      </span>
+                    </div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
                       {exercise.title}
                     </h1>
@@ -166,13 +156,13 @@ export default function ExerciseDetailPage() {
                       className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-700 active:scale-95"
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                      {t("Bắt đầu làm bài")}
+                      {exercise.isCompleted ? t("Làm lại bài") : t("Bắt đầu làm bài")}
                     </Link>
                     <Link
                       href={`/exercises/${exercise.id}/hints`}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-violet-600"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900"
                     >
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <Sparkles className="h-3.5 w-3.5 text-slate-500" />
                       {t("Xem gợi ý AI trước khi làm")}
                     </Link>
                   </div>
@@ -185,25 +175,25 @@ export default function ExerciseDetailPage() {
                       icon: List,
                       label: t("Câu hỏi"),
                       value: `${exercise.questionCount} câu`,
-                      color: "text-sky-600",
+                      color: "text-slate-700",
                     },
                     {
                       icon: Clock3,
                       label: t("Thời lượng"),
                       value: `${exercise.durationMinutes} phút`,
-                      color: "text-violet-600",
+                      color: "text-slate-700",
                     },
                     {
                       icon: Zap,
                       label: t("Phần thưởng"),
                       value: `+${exercise.rewardsXp} XP`,
-                      color: "text-amber-600",
+                      color: "text-slate-700",
                     },
                     {
                       icon: Target,
                       label: t("Điểm mục tiêu"),
                       value: "80%+",
-                      color: "text-emerald-600",
+                      color: "text-slate-700",
                     },
                   ].map(({ icon: Icon, label, value, color }) => (
                     <div key={label} className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
@@ -234,17 +224,17 @@ export default function ExerciseDetailPage() {
                       {
                         step: "01",
                         text: t("Đọc kỹ từng câu hỏi trước khi chọn đáp án."),
-                        color: "bg-sky-100 text-sky-700",
+                        color: "bg-slate-100 text-slate-700",
                       },
                       {
                         step: "02",
                         text: t("Bạn có thể quay lại sửa đáp án bất kỳ lúc nào trước khi nộp."),
-                        color: "bg-violet-100 text-violet-700",
+                        color: "bg-slate-100 text-slate-700",
                       },
                       {
                         step: "03",
                         text: t("Nộp bài để nhận điểm, XP và xem giải thích từng câu."),
-                        color: "bg-emerald-100 text-emerald-700",
+                        color: "bg-slate-100 text-slate-700",
                       },
                     ].map(({ step, text, color }) => (
                       <li key={step} className="flex items-start gap-3">
@@ -264,11 +254,11 @@ export default function ExerciseDetailPage() {
                       className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700"
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                      {t("Bắt đầu ngay")}
+                      {exercise.isCompleted ? t("Làm lại bài") : t("Bắt đầu ngay")}
                     </Link>
                     <Link
                       href={`/exercises/${exercise.id}/hints`}
-                      className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                     >
                       <Sparkles className="h-4 w-4" />
                       {t("Tạo gợi ý AI")}
@@ -286,7 +276,7 @@ export default function ExerciseDetailPage() {
                           key={skill}
                           className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
                         >
-                          <Star className="h-3 w-3 text-amber-400" />
+                          <Star className="h-3 w-3 text-slate-500" />
                           {skill}
                         </span>
                       ))}
@@ -305,6 +295,10 @@ export default function ExerciseDetailPage() {
                       { label: t("Số câu hỏi"), value: `${exercise.questionCount} câu` },
                       { label: t("Thời lượng ước tính"), value: `${exercise.durationMinutes} phút` },
                       { label: t("Phần thưởng XP"), value: `+${exercise.rewardsXp} XP` },
+                      {
+                        label: t("Trạng thái"),
+                        value: exercise.isCompleted ? t("Đã hoàn thành") : t("Chưa hoàn thành"),
+                      },
                       { label: t("Điểm mục tiêu"), value: "≥ 80%" },
                     ].map(({ label, value }) => (
                       <div key={label} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5">
@@ -319,14 +313,14 @@ export default function ExerciseDetailPage() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <h3 className="mb-3 text-sm font-bold text-slate-900">
                     <span className="inline-flex items-center gap-1.5">
-                      <Trophy className="h-4 w-4 text-amber-500" />
+                      <Trophy className="h-4 w-4 text-slate-700" />
                       {t("Xếp hạng cao nhất")}
                     </span>
                   </h3>
                   {topRank ? (
-                    <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-white">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">
                           #{topRank.rank}
                         </span>
                         <div>
@@ -346,10 +340,10 @@ export default function ExerciseDetailPage() {
                 {/* Start CTA */}
                 <Link
                   href={`/exercises/${exercise.id}/attempt`}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 py-3.5 text-sm font-bold text-white shadow-md transition hover:from-slate-700 hover:to-slate-800 active:scale-[0.98]"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]"
                 >
-                  <Flame className="h-4 w-4 text-orange-400" />
-                  {t("Bắt đầu làm bài ngay")}
+                  <CheckCircle2 className="h-4 w-4" />
+                  {exercise.isCompleted ? t("Làm lại bài") : t("Bắt đầu làm bài ngay")}
                 </Link>
               </aside>
             </div>
@@ -383,10 +377,15 @@ export default function ExerciseDetailPage() {
                             {topicLabel(item.topic)} · {typeLabel(item.type)}
                           </p>
                           <span
-                            className={`mt-1.5 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${levelColor(item.level)}`}
+                            className={`mt-1.5 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${levelColor()}`}
                           >
                             {item.level}
                           </span>
+                          {item.isCompleted ? (
+                            <span className="mt-1.5 ml-2 inline-block rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                              {t("Đã hoàn thành")}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </Link>

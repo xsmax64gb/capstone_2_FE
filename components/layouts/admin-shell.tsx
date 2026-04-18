@@ -14,6 +14,7 @@ import {
   Languages,
   LogOut,
   Map as MapIcon,
+  Megaphone,
   ShieldCheck,
   Sparkles,
   Users2,
@@ -54,6 +55,12 @@ const adminNavigation = [
     heading: "Vận hành học viên và tài khoản",
     href: "/admin/users",
     icon: Users2,
+  },
+  {
+    title: "Thông báo",
+    heading: "Gửi thông báo toàn hệ thống hoặc từng người",
+    href: "/admin/notifications",
+    icon: Megaphone,
   },
   {
     title: "Exercises",

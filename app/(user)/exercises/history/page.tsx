@@ -114,7 +114,7 @@ export default function ExerciseHistoryPage() {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
-                    href={`/exercises/${item.exerciseId}/result?score=${item.score}&total=${item.total}&time=${item.durationSec}&answers=${encodeURIComponent((item.answers ?? []).join(","))}`}
+                    href={`/exercises/${item.exerciseId}/result?score=${item.score}&total=${item.total}&time=${item.durationSec}&answers=${encodeURIComponent((item.answers ?? []).join(","))}&earnedXp=${item.earnedXp ?? 0}&xpAwarded=${item.xpAwarded ? "1" : "0"}&xpReason=${encodeURIComponent(item.xpReason ?? "not_perfect")}&completed=${item.exerciseCompleted ? "1" : "0"}&firstCompletion=${item.firstCompletion ? "1" : "0"}`}
                     className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     {t("Mở kết quả")}

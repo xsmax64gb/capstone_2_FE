@@ -78,9 +78,14 @@ export default function QuizPage() {
   const handleSubmit = async () => {
     const durationSec = Math.round((Date.now() - startedAt) / 1000);
     const wordIds = questions.map((q) => q.wordId);
+    const selectedLabels = questions.map((q, i) => {
+      const idx = answers[i];
+      if (idx == null || idx < 0) return "";
+      return q.options[idx] ?? "";
+    });
     const result = await submit({
       id,
-      body: { mode: "quiz", answers, wordIds, durationSec },
+      body: { mode: "quiz", answers, wordIds, selectedLabels, durationSec },
     }).unwrap();
 
     router.push(

@@ -1,7 +1,7 @@
 "use client";
 
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AtSign, Mail, MapPin, Plus, Save, Trash2 } from "lucide-react";
+import { AtSign, GraduationCap, Mail, MapPin, Plus, Save, Trash2 } from "lucide-react";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ChangePasswordOtpForm } from "@/components/auth/change-password-otp-form";
@@ -16,6 +16,7 @@ import {
   useUploadAvatarMutation,
 } from "@/store/services/authApi";
 import { notify } from "@/lib/admin";
+import { useAuth } from "@/lib/auth-context";
 
 const DEFAULT_AVATAR_URL = "/placeholder-user.jpg";
 
@@ -57,6 +58,7 @@ const appendVersion = (url: string, version?: string) => {
 export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const securitySectionRef = useRef<HTMLDivElement | null>(null);
+  const { user: authUser } = useAuth();
 
   const { data: profile, isLoading, isError } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
@@ -78,32 +80,48 @@ export default function ProfilePage() {
     });
   }, [profile]);
 
+  const displayEmail = profile?.email || authUser?.email || "";
+  const displayTimezone =
+    profile?.timezone || form.timezone || authUser?.timezone || "";
+  const displayNativeLanguage =
+    profile?.nativeLanguage || form.nativeLanguage || "";
+
   const profileHandle = useMemo(() => {
-    if (!profile?.email) {
+    const email = displayEmail;
+    if (!email) {
       return "learner";
     }
 
-    return profile.email.split("@")[0]?.replace(/\s+/g, "_") || "learner";
-  }, [profile?.email]);
+    return email.split("@")[0]?.replace(/\s+/g, "_") || "learner";
+  }, [displayEmail]);
 
   const remoteAvatarUrl = profile?.avatarUrl
     ? appendVersion(profile.avatarUrl, profile.updatedAt)
     : DEFAULT_AVATAR_URL;
   const avatarUrl = avatarPreviewUrl || remoteAvatarUrl;
-  const profileName = form.fullName || profile?.fullName || "Người dùng";
+  const profileName =
+    form.fullName ||
+    profile?.fullName ||
+    authUser?.fullName ||
+    authUser?.name ||
+    "Người dùng";
 
   const stats = [
     {
       label: "Email",
-      value: profile?.email || "Chưa có",
+      value: displayEmail || "Chưa có",
+    },
+    {
+      label: "Trình độ (CEFR)",
+      value: profile?.currentLevel || authUser?.currentLevel || "A1",
     },
     {
       label: "Ngôn ngữ",
-      value: form.nativeLanguage || "Chưa cập nhật",
+      value: displayNativeLanguage || "Chưa cập nhật",
     },
     {
       label: "Múi giờ",
-      value: form.timezone || "Chưa cập nhật",
+      value: displayTimezone || "Chưa cập nhật",
     },
   ];
 
@@ -208,10 +226,15 @@ export default function ProfilePage() {
               <div className="space-y-2 text-center lg:text-left">
                 <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                   <h1 className="text-3xl font-bold tracking-tight text-slate-950">
-                    {profileHandle}
+                    {profileName}
                   </h1>
                 </div>
-                <p className="text-lg text-slate-900">{profileName}</p>
+                <p className="text-sm text-slate-600">
+                  @{profileHandle}
+                  {displayEmail ? (
+                    <span className="text-slate-400"> · {displayEmail}</span>
+                  ) : null}
+                </p>
               </div>
 
               <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-700 lg:justify-start">
@@ -230,11 +253,20 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center justify-center gap-2 lg:justify-start">
                   <Mail className="h-4 w-4" />
-                  <span>{profile?.email || "Chưa có email"}</span>
+                  <span>{displayEmail || "Chưa có email"}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 lg:justify-start">
                   <MapPin className="h-4 w-4" />
-                  <span>{form.timezone || "Chưa cập nhật múi giờ"}</span>
+                  <span>{displayTimezone || "Chưa cập nhật múi giờ"}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 lg:justify-start">
+                  <GraduationCap className="h-4 w-4" />
+                  <span>
+                    Trình độ hiện tại:{" "}
+                    <span className="font-semibold text-slate-950">
+                      {profile?.currentLevel || authUser?.currentLevel || "A1"}
+                    </span>
+                  </span>
                 </div>
               </div>
 
@@ -351,7 +383,7 @@ export default function ProfilePage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  {profile?.email || "Chưa có email"}
+                  {displayEmail || "Chưa có email"}
                 </div>
               </div>
 

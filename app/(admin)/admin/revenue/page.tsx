@@ -1,7 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, CircleDollarSign, RefreshCcw, Wallet } from "lucide-react";
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  BadgeCheck,
+  CircleDollarSign,
+  CreditCard,
+  Filter,
+  RefreshCcw,
+  Search,
+  TrendingUp,
+  Wallet,
+  X,
+} from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -24,6 +37,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -44,12 +65,19 @@ import {
   useGetAdminRevenueStatisticsQuery,
   useSyncPaymentsMutation,
 } from "@/store/services/paymentApi";
+import type { AdminRevenueRecentPaidItem } from "@/types";
+
+// ─── Constants ──────────────────────────────────────────────────────────────
 
 const rangeOptions = [
   { value: "7d", label: "7 ngày" },
   { value: "30d", label: "30 ngày" },
   { value: "90d", label: "90 ngày" },
 ] as const;
+
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const formatCurrency = (value: number, currency = "VND") =>
   new Intl.NumberFormat("vi-VN", {
@@ -62,21 +90,13 @@ const formatPercent = (value: number) => `${Math.round(value * 100) / 100}%`;
 
 const extractErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error === "object" && error && "data" in error) {
-    const data = (error as { data?: { message?: string; error?: string } })
-      .data;
-    if (data?.message) {
-      return data.message;
-    }
-
-    if (data?.error) {
-      return data.error;
-    }
+    const data = (error as { data?: { message?: string; error?: string } }).data;
+    if (data?.message) return data.message;
+    if (data?.error) return data.error;
   }
-
   if (typeof error === "object" && error && "status" in error) {
     return `Yêu cầu thất bại (${String((error as { status: unknown }).status)}).`;
   }
-
   return fallback;
 };
 
@@ -90,12 +110,17 @@ const formatChartDateLabel = (dateKey: string) => {
   return year && month && day ? `${day}/${month}/${year}` : dateKey;
 };
 
+// ─── Method Display Map ───────────────────────────────────────────────────────
+const methodLabel: Record<string, string> = {
+  bank_transfer: "Chuyển khoản",
+  cash: "Tiền mặt",
+  card: "Thẻ ngân hàng",
+};
+
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
+
 type RevenueChartTooltipPayloadItem = {
-  payload?: {
-    date?: string;
-    revenue?: number;
-    paidTransactions?: number;
-  };
+  payload?: { date?: string; revenue?: number; paidTransactions?: number };
 };
 
 function RevenueChartTooltip({
@@ -108,37 +133,131 @@ function RevenueChartTooltip({
   currency: string;
 }) {
   const point = payload?.[0]?.payload;
-
-  if (!active || !point?.date) {
-    return null;
-  }
+  if (!active || !point?.date) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-2xl">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
         Ngày {formatChartDateLabel(point.date)}
       </p>
-      <p className="mt-2 text-sm font-semibold text-slate-900">
-        Doanh thu: {formatCurrency(Number(point.revenue ?? 0), currency)}
+      <p className="mt-2 text-sm font-bold text-slate-900">
+        {formatCurrency(Number(point.revenue ?? 0), currency)}
       </p>
-      <p className="mt-1 text-sm text-slate-600">
-        Giao dịch thành công: {formatNumber(Number(point.paidTransactions ?? 0))}
+      <p className="mt-0.5 text-xs text-slate-500">
+        {formatNumber(Number(point.paidTransactions ?? 0))} giao dịch thành công
       </p>
     </div>
   );
 }
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ method }: { method: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700 ring-1 ring-violet-200">
+      <CreditCard className="h-3 w-3" />
+      {methodLabel[method] ?? method}
+    </span>
+  );
+}
+
+// ─── Stat Metric Card ─────────────────────────────────────────────────────────
+
+function MetricCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  accent,
+  trend,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  icon: React.ElementType;
+  accent: string;
+  trend?: "up" | "down" | "neutral";
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+      {/* accent bar */}
+      <div className={`absolute inset-x-0 top-0 h-[3px] rounded-t-2xl ${accent}`} />
+      <div className="flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            {label}
+          </p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+            {value}
+          </p>
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-500">
+            {trend === "up" && <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />}
+            {trend === "down" && <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />}
+            {hint}
+          </p>
+        </div>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent} bg-opacity-15`}>
+          <Icon className="h-5 w-5 text-slate-700" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Breakdown Row ────────────────────────────────────────────────────────────
+
+function BreakdownRow({
+  label,
+  count,
+  amount,
+  currency,
+  total,
+  color,
+}: {
+  label: string;
+  count: number;
+  amount: number;
+  currency: string;
+  total: number;
+  color: string;
+}) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-slate-700">{label}</span>
+        <div className="flex items-center gap-3 text-right">
+          <span className="text-slate-500">{formatNumber(count)} GD</span>
+          <span className="font-semibold text-slate-900 min-w-[80px] text-right">
+            {formatCurrency(amount, currency)}
+          </span>
+        </div>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${color}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminRevenuePage() {
   const [activeRange, setActiveRange] =
     useState<(typeof rangeOptions)[number]["value"]>("30d");
   const [lastSyncMessage, setLastSyncMessage] = useState<string | null>(null);
 
-  const queryParams = useMemo(
-    () => ({
-      range: activeRange,
-    }),
-    [activeRange],
-  );
+  // Transaction filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterMethod, setFilterMethod] = useState<string>("all");
+  const [filterPricing, setFilterPricing] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const queryParams = useMemo(() => ({ range: activeRange }), [activeRange]);
 
   const overviewQuery = useGetAdminRevenueOverviewQuery(queryParams);
   const chartQuery = useGetAdminRevenueChartQuery(queryParams);
@@ -150,11 +269,10 @@ export default function AdminRevenuePage() {
   const statistics = statisticsQuery.data;
 
   const isInitialLoading =
-    (overviewQuery.isLoading ||
-      chartQuery.isLoading ||
-      statisticsQuery.isLoading) &&
+    (overviewQuery.isLoading || chartQuery.isLoading || statisticsQuery.isLoading) &&
     (!overview || !chart || !statistics);
   const hasRevenueData = Boolean(overview && chart && statistics);
+
   const revenueOverview = overview as NonNullable<typeof overview>;
   const revenueChart = chart as NonNullable<typeof chart>;
   const revenueStatistics = statistics as NonNullable<typeof statistics>;
@@ -173,54 +291,84 @@ export default function AdminRevenuePage() {
     try {
       const summary = await syncPayments().unwrap();
       setLastSyncMessage(summary.message);
-      notify({
-        title: "Đồng bộ thanh toán thành công",
-        message: summary.message,
-        type: "success",
-      });
+      notify({ title: "Đồng bộ thành công", message: summary.message, type: "success" });
       refreshAll();
     } catch (syncError) {
       notify({
         title: "Không đồng bộ được",
-        message: extractErrorMessage(
-          syncError,
-          "Không thể đồng bộ thanh toán lúc này.",
-        ),
+        message: extractErrorMessage(syncError, "Không thể đồng bộ thanh toán lúc này."),
         type: "error",
       });
     }
   };
 
-  const metrics = hasRevenueData
-    ? [
-        {
-          label: "Doanh thu hệ thống",
-          value: formatCurrency(
-            revenueOverview.summary.systemRevenue,
-            revenueOverview.summary.currency,
-          ),
-          hint: `${formatNumber(revenueOverview.summary.systemPaidTransactions)} giao dịch đã thanh toán`,
-          icon: Wallet,
-        },
-        {
-          label: `Doanh thu ${revenueOverview.range.label}`,
-          value: formatCurrency(
-            revenueOverview.summary.revenueInRange,
-            revenueOverview.summary.currency,
-          ),
-          hint: `${formatNumber(revenueOverview.summary.paidTransactions)} giao dịch thành công`,
-          icon: CircleDollarSign,
-        },
-        {
-          label: "Tỷ lệ thành công",
-          value: formatPercent(revenueOverview.summary.successRate),
-          hint: `${formatNumber(revenueOverview.summary.pendingTransactions)} chờ xử lý, ${formatNumber(revenueOverview.summary.failedTransactions)} thất bại`,
-          icon: Activity,
-        },
-      ]
-    : [];
-
   const chartPoints = revenueChart?.points ?? [];
+
+  // ── Derive unique filter options from data ─────────────────────────────────
+  const allTransactions: AdminRevenueRecentPaidItem[] =
+    revenueStatistics?.recentPaid ?? [];
+
+  const uniqueMethods = useMemo(
+    () => [...new Set(allTransactions.map((t) => t.paymentMethod))],
+    [allTransactions],
+  );
+  const uniquePricings = useMemo(
+    () => [
+      ...new Set(
+        allTransactions.map((t) => t.pricingKey ?? "unknown").filter(Boolean),
+      ),
+    ],
+    [allTransactions],
+  );
+
+  // ── Filter + paginate ──────────────────────────────────────────────────────
+  const filteredTransactions = useMemo(() => {
+    return allTransactions.filter((t) => {
+      const q = searchQuery.trim().toLowerCase();
+      const matchSearch =
+        !q ||
+        t.invoiceNumber.toLowerCase().includes(q) ||
+        (t.externalRef ?? "").toLowerCase().includes(q) ||
+        (t.xgateReference ?? "").toLowerCase().includes(q);
+      const matchMethod = filterMethod === "all" || t.paymentMethod === filterMethod;
+      const matchPricing =
+        filterPricing === "all" || (t.pricingKey ?? "unknown") === filterPricing;
+      return matchSearch && matchMethod && matchPricing;
+    });
+  }, [allTransactions, searchQuery, filterMethod, filterPricing]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setFilterMethod("all");
+    setFilterPricing("all");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters =
+    searchQuery !== "" || filterMethod !== "all" || filterPricing !== "all";
+
+  // ── Summary total for breakdown bars ──────────────────────────────────────
+  const totalBreakdownCount = revenueStatistics?.totals?.transactions ?? 0;
+
+  const breakdownColors: Record<string, string> = {
+    paid: "bg-emerald-500",
+    failed: "bg-red-400",
+    pending: "bg-amber-400",
+    bank_transfer: "bg-violet-500",
+    cash: "bg-sky-500",
+    card: "bg-pink-500",
+    plus: "bg-indigo-500",
+    ultra: "bg-orange-500",
+    go: "bg-teal-500",
+    free: "bg-slate-400",
+  };
+  const defaultColor = "bg-slate-400";
 
   return (
     <div className="space-y-6">
@@ -230,172 +378,201 @@ export default function AdminRevenuePage() {
         <AdminPageError message={revenueErrorMessage} />
       ) : (
         <>
-          <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          {/* ── Hero Header ───────────────────────────────────────────────── */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8 shadow-xl">
+            {/* decorative circles */}
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-600/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 left-1/3 h-40 w-40 rounded-full bg-teal-500/20 blur-3xl" />
+
+            <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
-                <Badge
-                  variant="outline"
-                  className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500"
-                >
+                <Badge className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-300 backdrop-blur-sm">
+                  <TrendingUp className="mr-1.5 h-3 w-3" />
                   Revenue Analytics
                 </Badge>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-                  Quản lý doanh thu hệ thống từ thanh toán.
-                </h2>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-                  Dữ liệu được tổng hợp từ payments và cập nhật theo bộ lọc thời
-                  gian. Dùng đồng bộ thủ công khi cần trigger đối soát ngay.
+                <h1 className="mt-3 text-2xl font-bold tracking-tight text-white md:text-3xl">
+                  Quản lý doanh thu hệ thống
+                </h1>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
+                  Tổng hợp từ payments · Cập nhật theo bộ lọc thời gian ·{" "}
+                  <span className="text-slate-300">
+                    Phạm vi: {revenueOverview.range.label}
+                  </span>
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {formatDateTime(revenueOverview.range.from)} →{" "}
+                  {formatDateTime(revenueOverview.range.to)} · Lần TT gần nhất:{" "}
+                  {formatDateTime(revenueOverview.summary.latestPaidAt)}
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {rangeOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant={
-                      activeRange === option.value ? "default" : "outline"
-                    }
-                    className="rounded-full"
-                    onClick={() => setActiveRange(option.value)}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
+                {/* Range toggles */}
+                <div className="flex overflow-hidden rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm">
+                  {rangeOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setActiveRange(opt.value);
+                        setCurrentPage(1);
+                      }}
+                      className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                        activeRange === opt.value
+                          ? "bg-white text-slate-900"
+                          : "text-slate-300 hover:text-white"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-full"
+                  size="sm"
                   onClick={refreshAll}
+                  className="rounded-xl border-white/20 bg-white/10 text-slate-300 backdrop-blur-sm hover:bg-white/20 hover:text-white"
                 >
-                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
                   Làm mới
                 </Button>
+
                 <Button
                   type="button"
+                  size="sm"
                   onClick={() => void handleSyncPayments()}
                   disabled={isSyncing}
-                  className="rounded-full bg-slate-950 text-white hover:bg-slate-800"
+                  className="rounded-xl bg-violet-600 font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
                 >
                   <RefreshCcw
-                    className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+                    className={`mr-1.5 h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`}
                   />
-                  {isSyncing ? "Đang đồng bộ" : "Đồng bộ thanh toán"}
+                  {isSyncing ? "Đang đồng bộ…" : "Đồng bộ"}
                 </Button>
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-              <p>
-                Phạm vi: {revenueOverview.range.label} (
-                {formatDateTime(revenueOverview.range.from)} -{" "}
-                {formatDateTime(revenueOverview.range.to)})
-              </p>
-              <p className="md:text-right">
-                Lần thanh toán gần nhất:{" "}
-                {formatDateTime(revenueOverview.summary.latestPaidAt)}
-              </p>
-            </div>
-
-            {lastSyncMessage ? (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {lastSyncMessage && (
+              <div className="relative mt-4 flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+                <BadgeCheck className="h-4 w-4 shrink-0" />
                 {lastSyncMessage}
               </div>
-            ) : null}
-          </section>
+            )}
+          </div>
 
-          <section className="grid gap-4 md:grid-cols-3">
-            {metrics.map((item) => {
-              const Icon = item.icon;
+          {/* ── KPI Metric Cards ──────────────────────────────────────────── */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <MetricCard
+              label="Doanh thu hệ thống"
+              value={formatCurrency(
+                revenueOverview.summary.systemRevenue,
+                revenueOverview.summary.currency,
+              )}
+              hint={`${formatNumber(revenueOverview.summary.systemPaidTransactions)} giao dịch đã thanh toán`}
+              icon={Wallet}
+              accent="bg-gradient-to-r from-violet-500 to-purple-600"
+              trend="up"
+            />
+            <MetricCard
+              label={`Doanh thu ${revenueOverview.range.label}`}
+              value={formatCurrency(
+                revenueOverview.summary.revenueInRange,
+                revenueOverview.summary.currency,
+              )}
+              hint={`${formatNumber(revenueOverview.summary.paidTransactions)} giao dịch thành công`}
+              icon={CircleDollarSign}
+              accent="bg-gradient-to-r from-teal-500 to-emerald-600"
+              trend="up"
+            />
+            <MetricCard
+              label="Tỷ lệ thành công"
+              value={formatPercent(revenueOverview.summary.successRate)}
+              hint={`${formatNumber(revenueOverview.summary.pendingTransactions)} chờ xử lý · ${formatNumber(revenueOverview.summary.failedTransactions)} thất bại`}
+              icon={Activity}
+              accent="bg-gradient-to-r from-sky-500 to-blue-600"
+              trend={revenueOverview.summary.successRate > 50 ? "up" : "down"}
+            />
+          </div>
 
-              return (
-                <Card key={item.label} className="border-slate-200 py-5">
-                  <CardContent className="flex items-start justify-between gap-4 pt-1">
-                    <div>
-                      <p className="text-sm text-slate-500">{item.label}</p>
-                      <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                        {item.value}
-                      </p>
-                      <p className="mt-2 text-sm text-slate-500">{item.hint}</p>
-                    </div>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </section>
-
-          <section className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-            <Card className="border-slate-200 py-5">
-              <CardHeader>
-                <CardTitle>Biểu đồ doanh thu</CardTitle>
-                <CardDescription>
-                  Tổng doanh thu thanh toán theo ngày trong khoảng đã chọn.
-                </CardDescription>
+          {/* ── Chart + Breakdown ─────────────────────────────────────────── */}
+          <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+            {/* -- Chart -- */}
+            <Card className="overflow-hidden border-slate-200/80 shadow-sm">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-bold text-slate-900">
+                      Biểu đồ doanh thu
+                    </CardTitle>
+                    <CardDescription className="mt-0.5 text-xs">
+                      Tổng doanh thu theo ngày — {revenueOverview.range.label}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-teal-500" />
+                    Doanh thu (VND)
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4">
                 {chartPoints.length === 0 ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                    Chưa có giao dịch đã thanh toán trong khoảng này.
+                  <div className="flex h-[300px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
+                    Chưa có giao dịch nào trong khoảng này.
                   </div>
                 ) : (
-                  <div className="h-[320px] w-full">
+                  <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={chartPoints}
-                        margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                        margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
                       >
-                        <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                        <defs>
+                          <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="4 4"
+                          stroke="#f1f5f9"
+                          vertical={false}
+                        />
                         <XAxis
                           dataKey="date"
                           tickLine={false}
                           axisLine={false}
                           tickMargin={10}
-                          minTickGap={24}
-                          tickFormatter={(value) =>
-                            formatChartAxisLabel(String(value))
-                          }
+                          minTickGap={28}
+                          tick={{ fontSize: 11, fill: "#94a3b8" }}
+                          tickFormatter={(v) => formatChartAxisLabel(String(v))}
                         />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
                           allowDecimals={false}
-                          tickFormatter={(value) =>
-                            formatCompactNumber(Number(value))
-                          }
+                          tick={{ fontSize: 11, fill: "#94a3b8" }}
+                          tickFormatter={(v) => formatCompactNumber(Number(v))}
                         />
                         <Tooltip
-                          cursor={{
-                            stroke: "#0f766e",
-                            strokeDasharray: "4 4",
-                            strokeOpacity: 0.28,
-                          }}
+                          cursor={{ stroke: "#14b8a6", strokeDasharray: "4 4", strokeOpacity: 0.3 }}
                           content={({ active, payload }) => (
                             <RevenueChartTooltip
                               active={active}
-                              payload={
-                                payload as RevenueChartTooltipPayloadItem[]
-                              }
+                              payload={payload as RevenueChartTooltipPayloadItem[]}
                               currency={revenueChart.totals.currency}
                             />
                           )}
                         />
                         <Area
-                          type="linear"
+                          type="monotone"
                           dataKey="revenue"
-                          stroke="#0f766e"
-                          fill="#5eead4"
-                          fillOpacity={0.35}
-                          strokeWidth={2.2}
+                          stroke="#14b8a6"
+                          fill="url(#revenueGrad)"
+                          strokeWidth={2.5}
                           dot={false}
-                          activeDot={{
-                            r: 5,
-                            fill: "#0f766e",
-                            stroke: "#ffffff",
-                            strokeWidth: 2,
-                          }}
+                          activeDot={{ r: 5, fill: "#14b8a6", stroke: "#fff", strokeWidth: 2 }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -404,57 +581,62 @@ export default function AdminRevenuePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 py-5">
-              <CardHeader>
-                <CardTitle>Thống kê tổng hợp</CardTitle>
-                <CardDescription>
-                  Tổng hợp theo trạng thái, phương thức thanh toán và gói giá.
+            {/* -- Breakdowns -- */}
+            <Card className="overflow-hidden border-slate-200/80 shadow-sm">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
+                <CardTitle className="text-base font-bold text-slate-900">
+                  Thống kê phân nhóm
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Theo trạng thái · phương thức · gói đăng ký
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm">
-                  <p className="text-slate-500">Tổng giao dịch trong khoảng</p>
-                  <p className="mt-1 text-2xl font-semibold text-slate-950">
+              <CardContent className="space-y-5 p-4">
+                {/* total chip */}
+                <div className="flex items-center justify-between rounded-2xl bg-slate-900 px-4 py-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Tổng giao dịch
+                  </span>
+                  <span className="text-xl font-bold text-white">
                     {formatNumber(revenueStatistics.totals.transactions)}
-                  </p>
+                  </span>
                 </div>
 
-                {["status", "paymentMethod", "pricing"].map((groupKey) => {
-                  const titleMap: Record<string, string> = {
-                    status: "Theo trạng thái",
-                    paymentMethod: "Theo phương thức",
-                    pricing: "Theo gói",
-                  };
-
+                {(
+                  [
+                    { key: "status", title: "Theo trạng thái" },
+                    { key: "paymentMethod", title: "Theo phương thức" },
+                    { key: "pricing", title: "Theo gói" },
+                  ] as const
+                ).map(({ key, title }) => {
                   const items =
                     revenueStatistics.breakdowns[
-                      groupKey as keyof typeof revenueStatistics.breakdowns
+                      key as keyof typeof revenueStatistics.breakdowns
                     ] ?? [];
 
                   return (
-                    <div
-                      key={groupKey}
-                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
-                    >
-                      <p className="text-sm font-semibold text-slate-900">
-                        {titleMap[groupKey]}
+                    <div key={key}>
+                      <p className="mb-2.5 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                        {title}
                       </p>
-                      <div className="mt-3 space-y-2">
+                      <div className="space-y-3">
                         {items.length === 0 ? (
-                          <p className="text-xs text-slate-500">
-                            Không có dữ liệu.
-                          </p>
+                          <p className="text-xs text-slate-400">Không có dữ liệu.</p>
                         ) : (
                           items.map((item) => (
-                            <div
-                              key={`${groupKey}-${item.key}`}
-                              className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-sm"
-                            >
-                              <span className="text-slate-600">{item.key}</span>
-                              <span className="font-semibold text-slate-900">
-                                {formatNumber(item.count)}
-                              </span>
-                            </div>
+                            <BreakdownRow
+                              key={`${key}-${item.key}`}
+                              label={
+                                key === "paymentMethod"
+                                  ? (methodLabel[item.key] ?? item.key)
+                                  : item.key
+                              }
+                              count={item.count}
+                              amount={item.amount}
+                              currency={revenueStatistics.totals.currency}
+                              total={totalBreakdownCount}
+                              color={breakdownColors[item.key] ?? defaultColor}
+                            />
                           ))
                         )}
                       </div>
@@ -463,54 +645,259 @@ export default function AdminRevenuePage() {
                 })}
               </CardContent>
             </Card>
-          </section>
+          </div>
 
-          <section>
-            <Card className="border-slate-200 py-5">
-              <CardHeader>
-                <CardTitle>Giao dịch đã thanh toán gần đây</CardTitle>
-                <CardDescription>
-                  Danh sách 10 giao dịch mới nhất đã được đối soát thành công.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {revenueStatistics.recentPaid.length === 0 ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                    Chưa có giao dịch thành công trong khoảng này.
+          {/* ── Transactions Table ────────────────────────────────────────── */}
+          <Card className="overflow-hidden border-slate-200/80 shadow-sm">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+                    <BadgeCheck className="h-4.5 w-4.5 text-emerald-500" />
+                    Giao dịch đã thanh toán gần đây
+                  </CardTitle>
+                  <CardDescription className="mt-0.5 text-xs">
+                    {filteredTransactions.length} / {allTransactions.length} giao dịch
+                    {hasActiveFilters ? " (đang lọc)" : ""}
+                  </CardDescription>
+                </div>
+
+                {/* Filter bar */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      id="tx-search"
+                      placeholder="Tìm hóa đơn…"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="h-8 w-44 rounded-lg pl-8 text-sm"
+                    />
                   </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Hóa đơn</TableHead>
-                        <TableHead>Số tiền</TableHead>
-                        <TableHead>Phương thức</TableHead>
-                        <TableHead>Thời gian</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {revenueStatistics.recentPaid.map((item) => (
-                        <TableRow key={item.invoiceNumber}>
-                          <TableCell className="font-medium text-slate-900">
+
+                  {/* Method filter */}
+                  <Select
+                    value={filterMethod}
+                    onValueChange={(v) => {
+                      setFilterMethod(v);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger id="tx-method-filter" className="h-8 w-40 rounded-lg text-sm">
+                      <Filter className="mr-1.5 h-3.5 w-3.5 text-slate-400" />
+                      <SelectValue placeholder="Phương thức" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả phương thức</SelectItem>
+                      {uniqueMethods.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {methodLabel[m] ?? m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Pricing filter */}
+                  {uniquePricings.length > 0 && (
+                    <Select
+                      value={filterPricing}
+                      onValueChange={(v) => {
+                        setFilterPricing(v);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger id="tx-pricing-filter" className="h-8 w-36 rounded-lg text-sm">
+                        <SelectValue placeholder="Gói" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tất cả gói</SelectItem>
+                        {uniquePricings.map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {p}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {/* Page size */}
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(v) => {
+                      setPageSize(Number(v));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger id="tx-page-size" className="h-8 w-28 rounded-lg text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZE_OPTIONS.map((s) => (
+                        <SelectItem key={s} value={String(s)}>
+                          {s} / trang
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Reset */}
+                  {hasActiveFilters && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetFilters}
+                      className="h-8 gap-1 rounded-lg px-2 text-xs text-slate-500 hover:text-slate-900"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Xóa lọc
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-0">
+              {paginatedTransactions.length === 0 ? (
+                <div className="flex h-40 items-center justify-center text-sm text-slate-400">
+                  {hasActiveFilters
+                    ? "Không tìm thấy giao dịch phù hợp."
+                    : "Chưa có giao dịch thành công trong khoảng này."}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-slate-100 bg-slate-50/40">
+                      <TableHead className="py-3 pl-6 text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
+                        Hóa đơn
+                      </TableHead>
+                      <TableHead className="py-3 text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
+                        Gói
+                      </TableHead>
+                      <TableHead className="py-3 text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
+                        Phương thức
+                      </TableHead>
+                      <TableHead className="py-3 text-right text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
+                        Số tiền
+                      </TableHead>
+                      <TableHead className="py-3 pr-6 text-right text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
+                        Thời gian
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedTransactions.map((item, idx) => (
+                      <TableRow
+                        key={item.invoiceNumber}
+                        className={`border-b border-slate-50 transition-colors hover:bg-slate-50/70 ${
+                          idx % 2 === 0 ? "" : "bg-slate-50/30"
+                        }`}
+                      >
+                        <TableCell className="py-3.5 pl-6">
+                          <span className="font-mono text-sm font-semibold text-slate-900">
                             {item.invoiceNumber}
-                          </TableCell>
-                          <TableCell>
+                          </span>
+                          {item.externalRef && (
+                            <p className="mt-0.5 text-[10px] text-slate-400">
+                              ref: {item.externalRef}
+                            </p>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3.5">
+                          {item.pricingKey ? (
+                            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold capitalize text-indigo-700 ring-1 ring-indigo-200">
+                              {item.pricingKey}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3.5">
+                          <StatusBadge method={item.paymentMethod} />
+                        </TableCell>
+                        <TableCell className="py-3.5 text-right">
+                          <span className="text-sm font-bold text-emerald-600">
                             {formatCurrency(
                               item.amount,
-                              item.currency ||
-                                revenueStatistics.totals.currency,
+                              item.currency || revenueStatistics.totals.currency,
                             )}
-                          </TableCell>
-                          <TableCell>{item.paymentMethod}</TableCell>
-                          <TableCell>{formatDateTime(item.paidAt)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-3.5 pr-6 text-right">
+                          <span className="text-xs text-slate-500">
+                            {formatDateTime(item.paidAt)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+
+            {/* Pagination footer */}
+            {filteredTransactions.length > 0 && (
+              <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-6 py-3">
+                <p className="text-xs text-slate-500">
+                  Trang {currentPage} / {totalPages} · {filteredTransactions.length} giao dịch
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="h-7 rounded-lg px-2.5 text-xs"
+                  >
+                    ‹ Trước
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => {
+                      if (totalPages <= 7) return true;
+                      return Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages;
+                    })
+                    .reduce<(number | "…")[]>((acc, p, i, arr) => {
+                      if (i > 0 && (arr[i - 1] as number) !== p - 1) acc.push("…");
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, i) =>
+                      p === "…" ? (
+                        <span key={`ellipsis-${i}`} className="px-1 text-xs text-slate-400">
+                          …
+                        </span>
+                      ) : (
+                        <Button
+                          key={p}
+                          type="button"
+                          variant={currentPage === p ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(p as number)}
+                          className="h-7 min-w-[28px] rounded-lg px-2 text-xs"
+                        >
+                          {p}
+                        </Button>
+                      ),
+                    )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="h-7 rounded-lg px-2.5 text-xs"
+                  >
+                    Sau ›
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
         </>
       )}
     </div>

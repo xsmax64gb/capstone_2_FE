@@ -2,121 +2,179 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Lightbulb, WandSparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Brain,
+  CheckCircle2,
+  Lightbulb,
+  Sparkles,
+  WandSparkles,
+} from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { TYPE_LABELS } from "../../data";
 import { HintsSkeleton } from "@/components/exercises/skeletons";
 import {
   useGetExerciseByIdQuery,
   useGetExerciseHintsQuery,
 } from "@/store/services/exercisesApi";
 
+const TYPE_LABELS: Record<string, string> = {
+  mcq: "Trắc nghiệm",
+  fill_blank: "Điền vào chỗ trống",
+  matching: "Nối cặp",
+};
+
 export default function ExerciseHintsPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
   const { data: detailData } = useGetExerciseByIdQuery(id, { skip: !id });
-  const {
-    data: hintData,
-    isLoading,
-    isError,
-  } = useGetExerciseHintsQuery(id, { skip: !id });
+  const { data: hintData, isLoading, isError } = useGetExerciseHintsQuery(id, { skip: !id });
 
   const exercise = detailData?.exercise;
   const personalized = hintData?.personalized ?? [];
   const strategies = hintData?.strategies ?? [];
-  const typeLabel = exercise
-    ? (TYPE_LABELS[exercise.type as keyof typeof TYPE_LABELS] ?? exercise.type)
-    : "";
+  const typeLabel = exercise ? (TYPE_LABELS[exercise.type] ?? exercise.type) : "";
 
   return (
     <ProtectedRoute>
-      <main className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10">
-        <section className="mb-8">
+      <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+        {/* Back */}
+        <nav className="mb-6">
           <Link
             href={exercise ? `/exercises/${exercise.id}` : "/exercises"}
-            className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to detail
+            <ArrowLeft className="h-4 w-4" />
+            Quay lại bài tập
           </Link>
-        </section>
+        </nav>
 
-        <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold tracking-tight">
-            AI Hint Generator
-          </h1>
-          <p className="mt-1 text-slate-500">
-            {hintData?.title ?? exercise?.title ?? "Exercise"}
-            {typeLabel ? ` - ${typeLabel}` : ""}
+        {/* Header */}
+        <div className="mb-6 overflow-hidden rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-purple-50 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100">
+              <Sparkles className="h-6 w-6 text-violet-600" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-violet-500">
+                AI Hint Generator
+              </p>
+              <h1 className="mt-0.5 text-xl font-bold text-slate-900">
+                Gợi ý thông minh
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                {hintData?.title ?? exercise?.title ?? "Bài tập"}
+                {typeLabel ? ` · ${typeLabel}` : ""}
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-xs leading-relaxed text-violet-700">
+            💡 AI đã phân tích bài tập này và tạo ra các gợi ý cá nhân hóa theo trình độ của bạn. Đọc kỹ trước khi bắt đầu để đạt điểm cao hơn.
           </p>
-        </section>
+        </div>
 
         {isLoading && <HintsSkeleton />}
-
         {isError && (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load hints.
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
+            Không tải được gợi ý. Vui lòng thử lại.
           </div>
         )}
 
         {!isLoading && !isError && (
-          <section className="space-y-4">
-            <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="inline-flex items-center text-sm font-semibold text-slate-700">
-                <WandSparkles className="mr-1.5 h-4 w-4" />
-                Personalized Tips
-              </p>
-              <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                {personalized.map((item) => (
-                  <li key={item} className="rounded-lg bg-slate-50 px-3 py-2">
-                    {item}
-                  </li>
-                ))}
-                {personalized.length === 0 && (
-                  <li className="rounded-lg bg-slate-50 px-3 py-2 text-slate-500">
-                    No personalized tip yet.
-                  </li>
+          <div className="space-y-4">
+            {/* Personalized tips */}
+            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100">
+                  <Brain className="h-4 w-4 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Gợi ý cá nhân hóa</p>
+                  <p className="text-xs text-slate-500">Dựa trên lịch sử học tập của bạn</p>
+                </div>
+              </div>
+              <div className="space-y-2 p-4">
+                {personalized.length === 0 ? (
+                  <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-400">
+                    Chưa có gợi ý cá nhân. Hãy làm thêm bài tập để AI hiểu rõ hơn về bạn.
+                  </p>
+                ) : (
+                  personalized.map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/50 px-4 py-3"
+                    >
+                      <WandSparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
+                      <p className="text-sm leading-relaxed text-slate-700">{item}</p>
+                    </div>
+                  ))
                 )}
-              </ul>
-            </article>
+              </div>
+            </section>
 
-            <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="inline-flex items-center text-sm font-semibold text-slate-700">
-                <Lightbulb className="mr-1.5 h-4 w-4" />
-                Strategy Hints
-              </p>
-              <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                {strategies.map((hint) => (
-                  <li key={hint} className="rounded-lg bg-slate-50 px-3 py-2">
-                    {hint}
-                  </li>
-                ))}
-                {strategies.length === 0 && (
-                  <li className="rounded-lg bg-slate-50 px-3 py-2 text-slate-500">
-                    No strategy hint yet.
-                  </li>
+            {/* Strategy hints */}
+            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100">
+                  <Lightbulb className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Chiến thuật làm bài</p>
+                  <p className="text-xs text-slate-500">Mẹo giúp bạn đạt điểm cao hơn</p>
+                </div>
+              </div>
+              <div className="space-y-2 p-4">
+                {strategies.length === 0 ? (
+                  <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-400">
+                    Chưa có chiến thuật. Thử lại sau.
+                  </p>
+                ) : (
+                  strategies.map((hint, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/50 px-4 py-3"
+                    >
+                      <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                      <p className="text-sm leading-relaxed text-slate-700">{hint}</p>
+                    </div>
+                  ))
                 )}
-              </ul>
-            </article>
-          </section>
+              </div>
+            </section>
+
+            {/* Checklist reminder */}
+            {(personalized.length > 0 || strategies.length > 0) && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                <p className="flex items-center gap-1.5 font-semibold">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Đã sẵn sàng?
+                </p>
+                <p className="mt-1 text-xs">
+                  Bạn đã đọc xong {personalized.length + strategies.length} gợi ý. Hãy bắt đầu làm bài ngay!
+                </p>
+              </div>
+            )}
+          </div>
         )}
 
+        {/* Actions */}
         {exercise && (
-          <section className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href={`/exercises/${exercise.id}/attempt`}
-              className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700"
             >
-              Start attempt
+              <CheckCircle2 className="h-4 w-4" />
+              Bắt đầu làm bài
             </Link>
             <Link
-              href={`/exercises/${exercise.id}/result/review`}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              href={`/exercises/${exercise.id}`}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Open review template
+              <ArrowLeft className="h-4 w-4" />
+              Xem chi tiết bài tập
             </Link>
-          </section>
+          </div>
         )}
       </main>
     </ProtectedRoute>

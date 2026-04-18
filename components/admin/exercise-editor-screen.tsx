@@ -2,7 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Plus, Sparkles, Trash2, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  FileJson,
+  Info,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
@@ -35,9 +49,9 @@ import {
 } from "@/lib/admin";
 import type { AdminExerciseItem, AdminExercisePayload } from "@/types";
 
-type Props = {
-  exerciseId?: string;
-};
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type Props = { exerciseId?: string };
 
 type ExerciseQuestionEditor = {
   id: string;
@@ -61,18 +75,43 @@ type ExerciseFormState = {
   skillsText: string;
 };
 
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
+
 const BULK_IMPORT_TEMPLATE = `[
   {
     "prompt": "Choose the correct answer: She ___ to school every day.",
     "options": ["go", "goes", "going", "gone"],
     "correctIndex": 1,
-    "explanation": "He/She/It o thi dong tu them -es.",
+    "explanation": "He/She/It + động từ thêm -s/-es ở thì hiện tại đơn.",
+    "score": 1
+  },
+  {
+    "prompt": "Which word means 'happy'?",
+    "options": ["sad", "angry", "joyful", "tired"],
+    "correctIndex": 2,
+    "explanation": "'Joyful' có nghĩa là vui vẻ, hạnh phúc.",
     "score": 1
   }
 ]`;
 
+const FIELD_HINTS: Record<string, string> = {
+  title: "Tên hiển thị cho học viên. Nên ngắn gọn, rõ ràng chủ đề.",
+  description: "Mô tả ngắn về nội dung bài tập. Học viên sẽ thấy trước khi bắt đầu.",
+  type: "Dạng câu hỏi: Trắc nghiệm (MCQ), Điền chỗ trống, hay Nối cặp.",
+  level: "Cấp độ CEFR của bài tập, từ A1 (sơ cấp) đến C2 (thành thạo).",
+  topic: "Chủ đề nội dung. Ví dụ: daily-life, work, travel, technology.",
+  durationMinutes: "Thời gian ước tính hoàn thành bài (phút). Dùng để hiển thị cho học viên.",
+  rewardsXp: "Số XP tối đa học viên nhận được khi đạt 100% điểm.",
+  skillsText: "Các kỹ năng luyện tập, cách nhau bởi dấu phẩy. VD: grammar, vocabulary, reading.",
+  coverImage: "Ảnh bìa hiển thị trong danh sách bài tập. Khuyến nghị tỉ lệ 4:3.",
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 const createEmptyQuestion = (index = 0): ExerciseQuestionEditor => ({
-  id: `question-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+  id: `q-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
   prompt: "",
   options: ["", ""],
   correctIndex: "0",
@@ -118,52 +157,36 @@ const buildBasePayload = (form: ExerciseFormState) => ({
   rewardsXp: Number(form.rewardsXp) || 0,
   skills: form.skillsText
     .split(",")
-    .map((item) => item.trim())
+    .map((s) => s.trim())
     .filter(Boolean),
 });
 
 const toQuestionPayload = (
   questions: ExerciseQuestionEditor[],
 ): AdminExercisePayload["questions"] =>
-  questions.map((question, index) => {
-    const options = question.options.map((item) => item.trim()).filter(Boolean);
-
-    if (!question.prompt.trim()) {
-      throw new Error(`Câu ${index + 1} đang thiếu nội dung câu hỏi`);
-    }
-
-    if (options.length < 2) {
-      throw new Error(`Câu ${index + 1} cần ít nhất 2 đáp án`);
-    }
-
-    const correctIndex = Number(question.correctIndex);
-
-    if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= options.length) {
-      throw new Error(`Câu ${index + 1} có correctIndex không hợp lệ`);
-    }
-
+  questions.map((q, idx) => {
+    const options = q.options.map((o) => o.trim()).filter(Boolean);
+    if (!q.prompt.trim()) throw new Error(`Câu ${idx + 1}: Thiếu nội dung câu hỏi.`);
+    if (options.length < 2) throw new Error(`Câu ${idx + 1}: Cần ít nhất 2 đáp án.`);
+    const ci = Number(q.correctIndex);
+    if (!Number.isInteger(ci) || ci < 0 || ci >= options.length)
+      throw new Error(`Câu ${idx + 1}: Đáp án đúng không hợp lệ.`);
     return {
-      prompt: question.prompt.trim(),
-      question: question.prompt.trim(),
+      prompt: q.prompt.trim(),
+      question: q.prompt.trim(),
       options,
-      correctAnswer: options[correctIndex],
-      correctIndex,
-      explanation: question.explanation.trim(),
-      score: Number(question.score) || 1,
+      correctAnswer: options[ci],
+      correctIndex: ci,
+      explanation: q.explanation.trim(),
+      score: Number(q.score) || 1,
     };
   });
 
 const mapBulkQuestionsToEditor = (input: unknown): ExerciseQuestionEditor[] => {
-  if (!Array.isArray(input)) {
-    throw new Error("Dữ liệu import phải là một mảng JSON");
-  }
-
-  return input.map((item, index) => {
-    if (!item || typeof item !== "object") {
-      throw new Error(`Phần tử ${index + 1} không hợp lệ`);
-    }
-
-    const record = item as {
+  if (!Array.isArray(input)) throw new Error("Dữ liệu import phải là một mảng JSON.");
+  return input.map((item, idx) => {
+    if (!item || typeof item !== "object") throw new Error(`Phần tử ${idx + 1} không hợp lệ.`);
+    const r = item as {
       prompt?: unknown;
       question?: unknown;
       options?: unknown;
@@ -171,38 +194,259 @@ const mapBulkQuestionsToEditor = (input: unknown): ExerciseQuestionEditor[] => {
       explanation?: unknown;
       score?: unknown;
     };
-
-    const prompt = String(record.prompt || record.question || "").trim();
-    const options = Array.isArray(record.options)
-      ? record.options.map((option) => String(option).trim()).filter(Boolean)
+    const prompt = String(r.prompt || r.question || "").trim();
+    const options = Array.isArray(r.options)
+      ? r.options.map((o) => String(o).trim()).filter(Boolean)
       : [];
-
-    if (!prompt) {
-      throw new Error(`Phần tử ${index + 1} đang thiếu prompt`);
-    }
-
-    if (options.length < 2) {
-      throw new Error(`Phần tử ${index + 1} cần ít nhất 2 options`);
-    }
-
+    if (!prompt) throw new Error(`Phần tử ${idx + 1}: Thiếu trường "prompt".`);
+    if (options.length < 2)
+      throw new Error(`Phần tử ${idx + 1}: "options" cần ít nhất 2 phần tử.`);
     return {
-      id: createEmptyQuestion(index).id,
+      id: createEmptyQuestion(idx).id,
       prompt,
       options,
-      correctIndex: String(Number(record.correctIndex ?? 0)),
-      explanation: String(record.explanation || ""),
-      score: String(Number(record.score ?? 1) || 1),
+      correctIndex: String(Number(r.correctIndex ?? 0)),
+      explanation: String(r.explanation || ""),
+      score: String(Number(r.score ?? 1) || 1),
     };
   });
 };
 
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function FieldHint({ text }: { text: string }) {
+  return (
+    <p className="mt-1 flex items-start gap-1 text-xs text-slate-400">
+      <Info className="mt-0.5 h-3 w-3 shrink-0" />
+      {text}
+    </p>
+  );
+}
+
+function FormLabel({
+  htmlFor,
+  required,
+  children,
+}: {
+  htmlFor: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="mb-1.5 block text-sm font-semibold text-slate-700"
+    >
+      {children}
+      {required && <span className="ml-1 text-rose-500">*</span>}
+    </label>
+  );
+}
+
+// ─── Question Card ────────────────────────────────────────────────────────────
+
+function QuestionCard({
+  question,
+  index,
+  onUpdate,
+  onUpdateOption,
+  onAddOption,
+  onRemoveOption,
+  onRemove,
+}: {
+  question: ExerciseQuestionEditor;
+  index: number;
+  onUpdate: (id: string, field: keyof ExerciseQuestionEditor, value: string | string[]) => void;
+  onUpdateOption: (id: string, optIdx: number, val: string) => void;
+  onAddOption: (id: string) => void;
+  onRemoveOption: (id: string, optIdx: number) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const correctLabel =
+    question.options[Number(question.correctIndex)]?.trim() || null;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* Card header */}
+      <div
+        className="flex cursor-pointer items-center gap-3 px-5 py-3.5 hover:bg-slate-50"
+        onClick={() => setCollapsed((c) => !c)}
+      >
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-xs font-black text-white">
+          {index + 1}
+        </span>
+        <p className="flex-1 truncate text-sm font-semibold text-slate-800">
+          {question.prompt.trim() || (
+            <span className="italic text-slate-400">Chưa nhập câu hỏi…</span>
+          )}
+        </p>
+        {correctLabel && (
+          <span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 sm:inline-block">
+            ✓ {correctLabel}
+          </span>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(question.id);
+            }}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+          {collapsed ? (
+            <ChevronDown className="h-4 w-4 text-slate-400" />
+          ) : (
+            <ChevronUp className="h-4 w-4 text-slate-400" />
+          )}
+        </div>
+      </div>
+
+      {/* Card body */}
+      {!collapsed && (
+        <div className="space-y-5 border-t border-slate-100 px-5 py-5">
+          {/* Prompt */}
+          <div>
+            <FormLabel htmlFor={`prompt-${question.id}`} required>
+              Nội dung câu hỏi
+            </FormLabel>
+            <Textarea
+              id={`prompt-${question.id}`}
+              rows={3}
+              placeholder="VD: Choose the correct answer: She ___ to school every day."
+              value={question.prompt}
+              onChange={(e) => onUpdate(question.id, "prompt", e.target.value)}
+            />
+          </div>
+
+          {/* Options */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-slate-800">Danh sách đáp án</p>
+                <p className="text-xs text-slate-500">
+                  Chọn radio để đánh dấu đáp án đúng. Tối thiểu 2 đáp án.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => onAddOption(question.id)}
+              >
+                <Plus className="h-4 w-4" />
+                Thêm đáp án
+              </Button>
+            </div>
+
+            <RadioGroup
+              value={question.correctIndex}
+              onValueChange={(v) => onUpdate(question.id, "correctIndex", v)}
+              className="space-y-2"
+            >
+              {question.options.map((option, optIdx) => {
+                const letter = OPTION_LETTERS[optIdx] ?? String(optIdx + 1);
+                const isCorrect = question.correctIndex === String(optIdx);
+                return (
+                  <div
+                    key={`${question.id}-opt-${optIdx}`}
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
+                      isCorrect
+                        ? "border-emerald-200 bg-emerald-50"
+                        : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <RadioGroupItem
+                      value={String(optIdx)}
+                      id={`${question.id}-ri-${optIdx}`}
+                    />
+                    <Label
+                      htmlFor={`${question.id}-ri-${optIdx}`}
+                      className={`w-6 text-xs font-black ${
+                        isCorrect ? "text-emerald-700" : "text-slate-400"
+                      }`}
+                    >
+                      {letter}
+                    </Label>
+                    <Input
+                      value={option}
+                      onChange={(e) => onUpdateOption(question.id, optIdx, e.target.value)}
+                      placeholder={`Đáp án ${letter}`}
+                      className={`flex-1 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 ${
+                        isCorrect ? "font-semibold text-emerald-800" : ""
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      disabled={question.options.length <= 2}
+                      onClick={() => onRemoveOption(question.id, optIdx)}
+                      className="rounded-lg p-1 text-slate-300 hover:text-rose-500 disabled:opacity-20 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </RadioGroup>
+
+            {/* Correct answer preview */}
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-500">
+                Đáp án đúng đang chọn
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-emerald-800">
+                {correctLabel ?? (
+                  <span className="italic text-slate-400">Chưa chọn đáp án đúng</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Bottom fields: score + explanation */}
+          <div className="grid gap-4 sm:grid-cols-[120px_1fr]">
+            <div>
+              <FormLabel htmlFor={`score-${question.id}`}>
+                Điểm câu này
+              </FormLabel>
+              <Input
+                id={`score-${question.id}`}
+                type="number"
+                min={1}
+                value={question.score}
+                onChange={(e) => onUpdate(question.id, "score", e.target.value)}
+              />
+              <FieldHint text="Mỗi câu thường = 1 điểm." />
+            </div>
+            <div>
+              <FormLabel htmlFor={`expl-${question.id}`}>
+                Giải thích đáp án
+              </FormLabel>
+              <Textarea
+                id={`expl-${question.id}`}
+                rows={3}
+                placeholder="Giải thích tại sao đáp án đúng. Học viên sẽ thấy khi xem lại bài."
+                value={question.explanation}
+                onChange={(e) => onUpdate(question.id, "explanation", e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export function ExerciseEditorScreen({ exerciseId }: Props) {
   const router = useRouter();
   const { data, isLoading, isError, error } = useGetAdminExercisesQuery();
-  const [createExercise, { isLoading: isCreating }] =
-    useCreateAdminExerciseMutation();
-  const [updateExercise, { isLoading: isUpdating }] =
-    useUpdateAdminExerciseMutation();
+  const [createExercise, { isLoading: isCreating }] = useCreateAdminExerciseMutation();
+  const [updateExercise, { isLoading: isUpdating }] = useUpdateAdminExerciseMutation();
 
   const [form, setForm] = useState<ExerciseFormState>(emptyForm);
   const [editingItem, setEditingItem] = useState<AdminExerciseItem | null>(null);
@@ -211,6 +455,7 @@ export function ExerciseEditorScreen({ exerciseId }: Props) {
   const [bulkImportText, setBulkImportText] = useState(BULK_IMPORT_TEMPLATE);
 
   const items = data ?? [];
+  const isSaving = isCreating || isUpdating;
 
   useEffect(() => {
     if (!exerciseId) {
@@ -220,130 +465,85 @@ export function ExerciseEditorScreen({ exerciseId }: Props) {
       setQuestionsDirty(false);
       return;
     }
-
-    const item = items.find((entry) => entry.id === exerciseId);
-    if (!item) {
-      return;
-    }
-
+    const item = items.find((e) => e.id === exerciseId);
+    if (!item) return;
     setEditingItem(item);
     setForm(mapExerciseToForm(item));
     setQuestions([createEmptyQuestion()]);
     setQuestionsDirty(false);
   }, [exerciseId, items]);
 
-  const markQuestionsDirty = () => setQuestionsDirty(true);
+  const dirty = () => setQuestionsDirty(true);
 
   const updateQuestion = (
-    questionId: string,
+    qId: string,
     field: keyof ExerciseQuestionEditor,
     value: string | string[],
   ) => {
-    markQuestionsDirty();
-    setQuestions((current) =>
-      current.map((question) =>
-        question.id === questionId ? { ...question, [field]: value } : question,
+    dirty();
+    setQuestions((qs) =>
+      qs.map((q) => (q.id === qId ? { ...q, [field]: value } : q)),
+    );
+  };
+
+  const updateOption = (qId: string, optIdx: number, val: string) => {
+    dirty();
+    setQuestions((qs) =>
+      qs.map((q) =>
+        q.id === qId
+          ? { ...q, options: q.options.map((o, i) => (i === optIdx ? val : o)) }
+          : q,
       ),
     );
   };
 
-  const updateOption = (questionId: string, optionIndex: number, value: string) => {
-    markQuestionsDirty();
-    setQuestions((current) =>
-      current.map((question) => {
-        if (question.id !== questionId) {
-          return question;
-        }
-
-        const nextOptions = question.options.map((option, index) =>
-          index === optionIndex ? value : option,
-        );
-
-        return {
-          ...question,
-          options: nextOptions,
-        };
-      }),
-    );
-  };
-
-  const addOption = (questionId: string) => {
-    markQuestionsDirty();
-    setQuestions((current) =>
-      current.map((question) =>
-        question.id === questionId
-          ? { ...question, options: [...question.options, ""] }
-          : question,
+  const addOption = (qId: string) => {
+    dirty();
+    setQuestions((qs) =>
+      qs.map((q) =>
+        q.id === qId ? { ...q, options: [...q.options, ""] } : q,
       ),
     );
   };
 
-  const removeOption = (questionId: string, optionIndex: number) => {
-    markQuestionsDirty();
-    setQuestions((current) =>
-      current.map((question) => {
-        if (question.id !== questionId) {
-          return question;
-        }
-
-        if (question.options.length <= 2) {
-          return question;
-        }
-
-        const nextOptions = question.options.filter((_, index) => index !== optionIndex);
-        const currentCorrectIndex = Number(question.correctIndex);
-        const nextCorrectIndex =
-          currentCorrectIndex === optionIndex
-            ? 0
-            : currentCorrectIndex > optionIndex
-              ? currentCorrectIndex - 1
-              : currentCorrectIndex;
-
-        return {
-          ...question,
-          options: nextOptions,
-          correctIndex: String(nextCorrectIndex),
-        };
+  const removeOption = (qId: string, optIdx: number) => {
+    dirty();
+    setQuestions((qs) =>
+      qs.map((q) => {
+        if (q.id !== qId || q.options.length <= 2) return q;
+        const nextOpts = q.options.filter((_, i) => i !== optIdx);
+        const ci = Number(q.correctIndex);
+        const nextCi = ci === optIdx ? 0 : ci > optIdx ? ci - 1 : ci;
+        return { ...q, options: nextOpts, correctIndex: String(nextCi) };
       }),
     );
   };
 
   const addQuestion = () => {
-    markQuestionsDirty();
-    setQuestions((current) => [...current, createEmptyQuestion(current.length)]);
+    dirty();
+    setQuestions((qs) => [...qs, createEmptyQuestion(qs.length)]);
   };
 
-  const removeQuestion = (questionId: string) => {
-    markQuestionsDirty();
-    setQuestions((current) =>
-      current.length === 1
-        ? [createEmptyQuestion()]
-        : current.filter((question) => question.id !== questionId),
-    );
+  const removeQuestion = (qId: string) => {
+    dirty();
+    setQuestions((qs) => (qs.length === 1 ? [createEmptyQuestion()] : qs.filter((q) => q.id !== qId)));
   };
 
   const applyBulkImport = (mode: "append" | "replace") => {
     try {
       const parsed = JSON.parse(bulkImportText);
-      const importedQuestions = mapBulkQuestionsToEditor(parsed);
-
-      markQuestionsDirty();
-      setQuestions((current) =>
-        mode === "replace" ? importedQuestions : [...current, ...importedQuestions],
-      );
-
+      const imported = mapBulkQuestionsToEditor(parsed);
+      dirty();
+      setQuestions((qs) => (mode === "replace" ? imported : [...qs, ...imported]));
       notify({
         title: mode === "replace" ? "Đã thay toàn bộ câu hỏi" : "Đã thêm câu hỏi hàng loạt",
-        message: `${formatNumber(importedQuestions.length)} câu đã được nạp vào form.`,
+        message: `${formatNumber(imported.length)} câu đã được nạp vào form.`,
         type: "success",
       });
-    } catch (bulkError) {
+    } catch (err) {
       notify({
         title: "Không thể import câu hỏi",
-        message:
-          bulkError instanceof Error
-            ? bulkError.message
-            : "Kiểm tra lại định dạng JSON mẫu.",
+        message: err instanceof Error ? err.message : "Kiểm tra lại định dạng JSON.",
         type: "error",
       });
     }
@@ -351,234 +551,73 @@ export function ExerciseEditorScreen({ exerciseId }: Props) {
 
   const handleSubmit = async () => {
     try {
-      const basePayload = buildBasePayload(form);
-
-      if (!basePayload.title) {
-        notify({
-          title: "Thiếu tiêu đề",
-          message: "Exercise cần có title trước khi lưu.",
-          type: "warning",
-        });
+      const base = buildBasePayload(form);
+      if (!base.title) {
+        notify({ title: "Thiếu tiêu đề", message: "Bài tập cần có tên trước khi lưu.", type: "warning" });
         return;
       }
-
-      const normalizedQuestions =
+      const normalizedQs =
         questionsDirty || !editingItem ? toQuestionPayload(questions) : undefined;
-
-      if (!editingItem && (!normalizedQuestions || normalizedQuestions.length === 0)) {
-        notify({
-          title: "Thiếu câu hỏi",
-          message: "Exercise mới cần ít nhất 1 câu hỏi.",
-          type: "warning",
-        });
+      if (!editingItem && (!normalizedQs || normalizedQs.length === 0)) {
+        notify({ title: "Thiếu câu hỏi", message: "Bài tập mới cần ít nhất 1 câu hỏi.", type: "warning" });
         return;
       }
 
       if (editingItem) {
-        const updateBody: Partial<AdminExercisePayload> = { ...basePayload };
-        if (normalizedQuestions) {
-          updateBody.questions = normalizedQuestions;
-        }
-
-        await updateExercise({ id: editingItem.id, body: updateBody }).unwrap();
-        notify({ title: "Đã cập nhật exercise", type: "success" });
+        const body: Partial<AdminExercisePayload> = { ...base };
+        if (normalizedQs) body.questions = normalizedQs;
+        await updateExercise({ id: editingItem.id, body }).unwrap();
+        notify({ title: "Đã cập nhật bài tập", type: "success" });
       } else {
-        await createExercise({
-          ...basePayload,
-          questions: normalizedQuestions ?? [],
-        }).unwrap();
-        notify({ title: "Đã tạo exercise mới", type: "success" });
+        await createExercise({ ...base, questions: normalizedQs ?? [] }).unwrap();
+        notify({ title: "Đã tạo bài tập mới", type: "success" });
       }
-
       router.push("/admin/exercises");
-    } catch (submitError) {
+    } catch (err) {
       notify({
-        title: "Không thể lưu exercise",
-        message:
-          submitError instanceof Error
-            ? submitError.message
-            : "Kiểm tra lại dữ liệu nhập.",
+        title: "Không thể lưu bài tập",
+        message: err instanceof Error ? err.message : "Kiểm tra lại dữ liệu nhập.",
         type: "error",
       });
     }
   };
 
-  const renderQuestionCard = (
-    question: ExerciseQuestionEditor,
-    index: number,
-    description: string,
-  ) => (
-    <Card key={question.id} className="border-slate-200 bg-white py-5 shadow-none">
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">Câu hỏi {index + 1}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-lg"
-            onClick={() => removeQuestion(question.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            Nội dung câu hỏi
-          </label>
-          <Textarea
-            rows={3}
-            value={question.prompt}
-            onChange={(event) =>
-              updateQuestion(question.id, "prompt", event.target.value)
-            }
-          />
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Danh sách đáp án</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Chọn đáp án đúng rồi thêm hoặc xóa từng option riêng lẻ.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-lg"
-              onClick={() => addOption(question.id)}
-            >
-              <Plus className="h-4 w-4" />
-              Thêm đáp án
-            </Button>
-          </div>
-
-          <RadioGroup
-            value={question.correctIndex}
-            onValueChange={(value) => updateQuestion(question.id, "correctIndex", value)}
-            className="mt-4 gap-3"
-          >
-            {question.options.map((option, optionIndex) => (
-              <div
-                key={`${question.id}-option-${optionIndex}`}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3"
-              >
-                <RadioGroupItem
-                  value={String(optionIndex)}
-                  id={`${question.id}-correct-${optionIndex}`}
-                />
-                <Label
-                  htmlFor={`${question.id}-correct-${optionIndex}`}
-                  className="min-w-8 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400"
-                >
-                  {String.fromCharCode(65 + optionIndex)}
-                </Label>
-                <Input
-                  value={option}
-                  onChange={(event) =>
-                    updateOption(question.id, optionIndex, event.target.value)
-                  }
-                  placeholder={`Đáp án ${optionIndex + 1}`}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-lg text-slate-500 hover:text-rose-600"
-                  onClick={() => removeOption(question.id, optionIndex)}
-                  disabled={question.options.length <= 2}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Đáp án đúng
-            </label>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              {question.options[Number(question.correctIndex)]?.trim() || "Chưa chọn đáp án đúng"}
-            </div>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Score
-            </label>
-            <Input
-              type="number"
-              value={question.score}
-              onChange={(event) =>
-                updateQuestion(question.id, "score", event.target.value)
-              }
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            Giải thích
-          </label>
-          <Textarea
-            rows={3}
-            value={question.explanation}
-            onChange={(event) =>
-              updateQuestion(question.id, "explanation", event.target.value)
-            }
-          />
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  if (isLoading) {
-    return <AdminPageLoading />;
-  }
+  // ── Loading / Error states ────────────────────────────────────────────────
+  if (isLoading) return <AdminPageLoading />;
 
   if (isError) {
-    const message =
+    const msg =
       typeof error === "object" && error && "status" in error
         ? `Yêu cầu thất bại (${String(error.status)}).`
         : undefined;
-
-    return <AdminPageError message={message} />;
+    return <AdminPageError message={msg} />;
   }
 
   if (exerciseId && !editingItem) {
-    return <AdminPageError message="Không tìm thấy exercise để chỉnh sửa." />;
+    return <AdminPageError message="Không tìm thấy bài tập để chỉnh sửa." />;
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-7 shadow-sm">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      {/* ── Page Header ────────────────────────────────────────────────── */}
+      <section className="rounded-3xl border border-slate-200 bg-white px-6 py-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <Badge
               variant="outline"
-              className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500"
+              className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500"
             >
-              Exercise Editor
+              {editingItem ? "Chỉnh sửa bài tập" : "Tạo bài tập mới"}
             </Badge>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-              {editingItem ? "Chỉnh sửa exercise" : "Tạo exercise mới"}
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              Màn hình biên tập tách biệt, có nhập từng câu và import nhiều câu theo mẫu chuẩn.
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+              {editingItem ? `Chỉnh sửa: ${editingItem.title}` : "Tạo bài tập mới"}
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-500">
+              Điền đầy đủ thông tin bên dưới. Câu hỏi có thể nhập từng câu hoặc import JSON hàng loạt.
             </p>
           </div>
-
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline" className="shrink-0 rounded-xl">
             <Link href="/admin/exercises">
               <ArrowLeft className="h-4 w-4" />
               Quay lại danh sách
@@ -587,277 +626,335 @@ export function ExerciseEditorScreen({ exerciseId }: Props) {
         </div>
       </section>
 
-      <Card className="border-slate-200 py-5">
-        <CardContent className="space-y-6 pt-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Tiêu đề
-              </label>
-              <Input
-                value={form.title}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, title: event.target.value }))
-                }
-              />
-            </div>
+      {/* ── Basic Info ─────────────────────────────────────────────────── */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-slate-500" />
+            <CardTitle className="text-base font-bold">Thông tin cơ bản</CardTitle>
+          </div>
+          <CardDescription className="text-xs">
+            Các trường có dấu <span className="text-rose-500 font-bold">*</span> là bắt buộc.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-5 pt-6">
+          {/* Title */}
+          <div className="md:col-span-2">
+            <FormLabel htmlFor="title" required>Tiêu đề bài tập</FormLabel>
+            <Input
+              id="title"
+              placeholder="VD: Grammar – Present Simple Tense"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            />
+            <FieldHint text={FIELD_HINTS.title} />
+          </div>
+
+          {/* Level / Type / Topic / Duration / XP */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Level
-              </label>
+              <FormLabel htmlFor="level" required>Cấp độ (Level)</FormLabel>
               <select
+                id="level"
                 value={form.level}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, level: event.target.value }))
-                }
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))}
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
               >
-                {ADMIN_LEVEL_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                {ADMIN_LEVEL_OPTIONS.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
                   </option>
                 ))}
               </select>
+              <FieldHint text={FIELD_HINTS.level} />
             </div>
+
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Type
-              </label>
+              <FormLabel htmlFor="type" required>Dạng bài (Type)</FormLabel>
               <select
+                id="type"
                 value={form.type}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, type: event.target.value }))
-                }
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
               >
-                {ADMIN_EXERCISE_TYPE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                {ADMIN_EXERCISE_TYPE_OPTIONS.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
                   </option>
                 ))}
               </select>
+              <FieldHint text={FIELD_HINTS.type} />
             </div>
+
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Topic
-              </label>
+              <FormLabel htmlFor="topic">Chủ đề (Topic)</FormLabel>
               <Input
+                id="topic"
+                placeholder="daily-life, work, travel…"
                 value={form.topic}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, topic: event.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
               />
+              <FieldHint text={FIELD_HINTS.topic} />
             </div>
+
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Duration (phút)
-              </label>
+              <FormLabel htmlFor="duration" required>Thời lượng (phút)</FormLabel>
               <Input
+                id="duration"
                 type="number"
+                min={1}
                 value={form.durationMinutes}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    durationMinutes: event.target.value,
-                  }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, durationMinutes: e.target.value }))}
               />
+              <FieldHint text={FIELD_HINTS.durationMinutes} />
             </div>
+
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Rewards XP
-              </label>
+              <FormLabel htmlFor="xp">Điểm thưởng XP</FormLabel>
               <Input
+                id="xp"
                 type="number"
+                min={0}
                 value={form.rewardsXp}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    rewardsXp: event.target.value,
-                  }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, rewardsXp: e.target.value }))}
               />
+              <FieldHint text={FIELD_HINTS.rewardsXp} />
             </div>
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Mô tả
-              </label>
-              <Textarea
-                rows={3}
-                value={form.description}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Skills
-              </label>
+
+            <div>
+              <FormLabel htmlFor="skills">Kỹ năng luyện tập</FormLabel>
               <Input
+                id="skills"
+                placeholder="grammar, vocabulary, reading"
                 value={form.skillsText}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    skillsText: event.target.value,
-                  }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, skillsText: e.target.value }))}
               />
-            </div>
-            <div className="md:col-span-2 lg:col-span-1">
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Cover image
-              </label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    coverImageFile: event.target.files?.[0] ?? null,
-                  }))
-                }
-              />
-              <div className="mt-3 max-w-xs">
-                <ImageUploadPreview
-                  file={form.coverImageFile}
-                  currentUrl={form.coverImage}
-                  alt="Exercise cover preview"
-                  emptyText="Chọn ảnh bìa để xem trước trước khi upload."
-                  ratio={4 / 3}
-                />
-              </div>
+              <FieldHint text={FIELD_HINTS.skillsText} />
             </div>
           </div>
 
-            <Card className="border-slate-200 bg-slate-50/70 py-5 shadow-none">
-              <CardHeader>
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <CardTitle className="text-base">Ngân hàng câu hỏi</CardTitle>
-                    <CardDescription>
-                      Thêm từng câu một hoặc import nhiều câu theo mẫu JSON chuẩn.
-                    </CardDescription>
-                  </div>
-                  <Badge variant="outline" className="w-fit rounded-full">
-                    {formatNumber(questions.length)} câu trong form
-                  </Badge>
+          {/* Description */}
+          <div>
+            <FormLabel htmlFor="description">Mô tả bài tập</FormLabel>
+            <Textarea
+              id="description"
+              rows={3}
+              placeholder="Mô tả ngắn gọn nội dung và mục tiêu của bài tập này."
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+            <FieldHint text={FIELD_HINTS.description} />
+          </div>
+
+          {/* Cover image */}
+          <div>
+            <FormLabel htmlFor="cover">Ảnh bìa (Cover Image)</FormLabel>
+            <Input
+              id="cover"
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setForm((f) => ({ ...f, coverImageFile: e.target.files?.[0] ?? null }))
+              }
+            />
+            <FieldHint text={FIELD_HINTS.coverImage} />
+            <div className="mt-3 max-w-xs">
+              <ImageUploadPreview
+                file={form.coverImageFile}
+                currentUrl={form.coverImage}
+                alt="Ảnh bìa bài tập"
+                emptyText="Chọn file để xem trước."
+                ratio={4 / 3}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Question Bank ───────────────────────────────────────────────── */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-slate-500" />
+              <div>
+                <CardTitle className="text-base font-bold">Ngân hàng câu hỏi</CardTitle>
+                <CardDescription className="mt-0.5 text-xs">
+                  Nhập từng câu hoặc import JSON hàng loạt từ AI.
+                </CardDescription>
+              </div>
+            </div>
+            <Badge variant="outline" className="w-fit rounded-full text-xs">
+              {formatNumber(questions.length)} câu trong form
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4 pt-5">
+          {editingItem && !questionsDirty && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <p className="font-semibold">⚠️ Chỉnh sửa câu hỏi hiện có</p>
+              <p className="mt-1 text-xs">
+                Bài tập này đã có{" "}
+                <strong>{editingItem.questionCount} câu</strong> trên hệ thống. Nếu bạn thêm, xóa
+                hoặc import tại đây, toàn bộ câu hỏi cũ sẽ bị <strong>thay thế hoàn toàn</strong>.
+              </p>
+            </div>
+          )}
+
+          <Tabs defaultValue="single" className="gap-4">
+            <TabsList className="rounded-xl bg-slate-100 p-1">
+              <TabsTrigger value="single" className="gap-1.5 rounded-lg">
+                <Pencil className="h-3.5 w-3.5" />
+                Thêm từng câu
+              </TabsTrigger>
+              <TabsTrigger value="bulk" className="gap-1.5 rounded-lg">
+                <FileJson className="h-3.5 w-3.5" />
+                Import JSON
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ── Single mode ────────────────────────────────────── */}
+            <TabsContent value="single" className="space-y-3">
+              {questions.map((q, i) => (
+                <QuestionCard
+                  key={q.id}
+                  question={q}
+                  index={i}
+                  onUpdate={updateQuestion}
+                  onUpdateOption={updateOption}
+                  onAddOption={addOption}
+                  onRemoveOption={removeOption}
+                  onRemove={removeQuestion}
+                />
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full rounded-xl border-dashed"
+                onClick={addQuestion}
+              >
+                <Plus className="h-4 w-4" />
+                Thêm câu hỏi
+              </Button>
+            </TabsContent>
+
+            {/* ── Bulk import mode ────────────────────────────────── */}
+            <TabsContent value="bulk" className="space-y-4">
+              {/* Format guide */}
+              <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+                <p className="flex items-center gap-1.5 font-bold">
+                  <Sparkles className="h-4 w-4 text-sky-500" />
+                  Hướng dẫn định dạng JSON
+                </p>
+                <ul className="mt-2 space-y-1 text-xs text-sky-800">
+                  <li>
+                    • <strong>prompt</strong> — nội dung câu hỏi (bắt buộc)
+                  </li>
+                  <li>
+                    • <strong>options</strong> — mảng đáp án, tối thiểu 2 phần tử (bắt buộc)
+                  </li>
+                  <li>
+                    • <strong>correctIndex</strong> — vị trí đáp án đúng, bắt đầu từ{" "}
+                    <code>0</code> (bắt buộc)
+                  </li>
+                  <li>
+                    • <strong>explanation</strong> — giải thích cho học viên (khuyến nghị)
+                  </li>
+                  <li>
+                    • <strong>score</strong> — điểm cho câu này, mặc định là <code>1</code>
+                  </li>
+                </ul>
+                <p className="mt-2 text-xs text-sky-700">
+                  💡 Bạn có thể dùng ChatGPT / Claude để sinh JSON theo mẫu trên, sau đó dán vào đây.
+                </p>
+              </div>
+
+              {/* JSON textarea */}
+              <div>
+                <FormLabel htmlFor="bulk-json">Nội dung JSON</FormLabel>
+                <Textarea
+                  id="bulk-json"
+                  rows={18}
+                  value={bulkImportText}
+                  onChange={(e) => setBulkImportText(e.target.value)}
+                  className="font-mono text-xs"
+                  placeholder="Dán mảng JSON câu hỏi vào đây…"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => applyBulkImport("append")}
+                >
+                  <Upload className="h-4 w-4" />
+                  Thêm vào danh sách hiện có
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-xl bg-slate-900 hover:bg-slate-700"
+                  onClick={() => applyBulkImport("replace")}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Thay toàn bộ câu hỏi
+                </Button>
+              </div>
+
+              {/* Preview after import */}
+              {questions.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-slate-700">
+                    Preview — {questions.length} câu đang trong form:
+                  </p>
+                  {questions.map((q, i) => (
+                    <QuestionCard
+                      key={q.id}
+                      question={q}
+                      index={i}
+                      onUpdate={updateQuestion}
+                      onUpdateOption={updateOption}
+                      onAddOption={addOption}
+                      onRemoveOption={removeOption}
+                      onRemove={removeQuestion}
+                    />
+                  ))}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {editingItem && !questionsDirty ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    Nếu bạn thêm, xóa hoặc import ở đây thì hệ thống sẽ cập nhật lại
-                    toàn bộ questions của bài tập này.
-                  </div>
-                ) : null}
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
 
-                <Tabs defaultValue="single" className="gap-4">
-                  <TabsList className="w-full justify-start rounded-xl bg-slate-100 p-1 md:w-fit">
-                    <TabsTrigger value="single">Thêm từng câu</TabsTrigger>
-                    <TabsTrigger value="bulk">Thêm nhiều câu</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="single" className="space-y-4">
-                    {questions.map((question, index) =>
-                      renderQuestionCard(
-                        question,
-                        index,
-                        "Chọn đáp án đúng bằng radio và thêm option khi cần.",
-                      ),
-                    )}
-
-                    <Button type="button" variant="outline" className="rounded-xl" onClick={addQuestion}>
-                      <Plus className="h-4 w-4" />
-                      Thêm một câu hỏi
-                    </Button>
-                  </TabsContent>
-
-                  <TabsContent value="bulk" className="space-y-4">
-                    <Card className="border-slate-200 bg-white py-5 shadow-none">
-                      <CardHeader>
-                        <CardTitle className="text-base">Mẫu import nhiều câu</CardTitle>
-                        <CardDescription>
-                          Dán một mảng JSON. Mỗi phần tử gồm `prompt`, `options`,
-                          `correctIndex`, `explanation`, `score`.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                          <p className="font-medium text-slate-900">Quy định</p>
-                          <p className="mt-2">`options` phải là mảng đáp án.</p>
-                          <p className="mt-1">`correctIndex` bắt đầu từ `0`.</p>
-                          <p className="mt-1">Mỗi object tương ứng một câu hỏi.</p>
-                        </div>
-                        <Textarea
-                          rows={16}
-                          value={bulkImportText}
-                          onChange={(event) => setBulkImportText(event.target.value)}
-                          className="font-mono text-xs"
-                        />
-                      </CardContent>
-                      <CardFooter className="flex flex-wrap gap-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="rounded-xl"
-                          onClick={() => applyBulkImport("append")}
-                        >
-                          <Upload className="h-4 w-4" />
-                          Thêm vào danh sách
-                        </Button>
-                        <Button
-                          type="button"
-                          className="rounded-xl"
-                          onClick={() => applyBulkImport("replace")}
-                        >
-                          <Sparkles className="h-4 w-4" />
-                          Thay toàn bộ danh sách
-                        </Button>
-                      </CardFooter>
-                    </Card>
-
-                    <Card className="border-slate-200 bg-white py-5 shadow-none">
-                      <CardHeader>
-                        <CardTitle className="text-base">Preview câu hỏi đã thêm</CardTitle>
-                        <CardDescription>
-                          Danh sách này đồng bộ trực tiếp với form. Bạn vẫn có thể sửa,
-                          xóa hoặc thêm tiếp ở đây như bình thường.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {questions.map((question, index) =>
-                          renderQuestionCard(
-                            question,
-                            index,
-                            "Preview sau import, có thể chỉnh trực tiếp trước khi lưu.",
-                          ),
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </CardContent>
-
-          <CardFooter className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-6">
+        {/* Footer / Save */}
+        <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
+          <div className="text-xs text-slate-500">
+            {questions.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-emerald-600">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {questions.length} câu sẵn sàng
+              </span>
+            )}
+          </div>
+          <div className="flex gap-3">
             <Button asChild type="button" variant="outline" className="rounded-xl">
               <Link href="/admin/exercises">Hủy</Link>
             </Button>
             <Button
               type="button"
               onClick={() => void handleSubmit()}
-              className="rounded-xl"
-              disabled={isCreating || isUpdating}
+              disabled={isSaving}
+              className="rounded-xl bg-slate-900 hover:bg-slate-700"
             >
-              {editingItem ? "Lưu thay đổi" : "Tạo exercise"}
+              {isSaving ? "Đang lưu…" : editingItem ? "Lưu thay đổi" : "Tạo bài tập"}
             </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }

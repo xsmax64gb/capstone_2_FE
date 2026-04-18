@@ -10,10 +10,14 @@ import {
   ChevronRight,
   Clock3,
   Send,
+  AlertCircle,
 } from "lucide-react";
 import type { ExerciseItem } from "@/store/services/exercisesApi";
 import { useSubmitExerciseAttemptMutation } from "@/store/services/exercisesApi";
 import { useAuth } from "@/lib/auth-context";
+
+// Option letter labels: A, B, C, D…
+const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 type AttemptClientProps = {
   exercise: ExerciseItem;
@@ -22,30 +26,35 @@ type AttemptClientProps = {
 export function AttemptClient({ exercise }: AttemptClientProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const [submitAttempt, { isLoading: isSubmitting }] =
-    useSubmitExerciseAttemptMutation();
+  const [submitAttempt, { isLoading: isSubmitting }] = useSubmitExerciseAttemptMutation();
+
+  const questionList = exercise.questions ?? [];
+  const total = questionList.length;
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [elapsedSec, setElapsedSec] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const questionList = exercise.questions ?? [];
 
+  // Timer
   useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsedSec((prev) => prev + 1);
-    }, 1000);
-
+    const timer = setInterval(() => setElapsedSec((s) => s + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const currentQuestion = questionList[currentIndex];
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
+  const progressPct = Math.round(((currentIndex + 1) / Math.max(total, 1)) * 100);
+  const answeredPct = Math.round((answeredCount / Math.max(total, 1)) * 100);
+
+  const selectAnswer = (index: number) => {
+    if (!currentQuestion) return;
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: index }));
+  };
 
   const submit = async () => {
     setSubmitError(null);
-    const questionList = exercise.questions ?? [];
     const answerIndexes = questionList.map((q) => answers[q.id] ?? -1);
-
     try {
       const result = await submitAttempt({
         id: exercise.id,
@@ -57,149 +66,216 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
       }).unwrap();
 
       const answersParam = result.answers.map((item) => String(item)).join(",");
-
       router.push(
         `/exercises/${exercise.id}/result?score=${result.score}&total=${result.total}&time=${result.time}&answers=${encodeURIComponent(answersParam)}`,
       );
     } catch {
-      setSubmitError("Submit failed. Please try again.");
+      setSubmitError("Nộp bài thất bại. Vui lòng thử lại.");
     }
   };
 
-  const selectAnswer = (index: number) => {
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: index }));
-  };
-
-  if (questionList.length === 0 || !currentQuestion) {
+  // Empty state
+  if (total === 0 || !currentQuestion) {
     return (
-      <main className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10">
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-          <p className="font-semibold">No question data available</p>
-          <p className="mt-1 text-sm text-slate-500">
-            This exercise currently has no questions.
-          </p>
+      <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <AlertCircle className="mx-auto h-10 w-10 text-slate-300" />
+          <p className="mt-3 font-semibold text-slate-700">Bài tập chưa có câu hỏi</p>
+          <p className="mt-1 text-sm text-slate-500">Vui lòng liên hệ quản trị viên.</p>
         </div>
       </main>
     );
   }
 
+  const isAnswered = (qId: string) => answers[qId] !== undefined;
+  const isLastQuestion = currentIndex === total - 1;
+  const allAnswered = answeredCount === total;
+
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10">
-      <section className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+      {/* ── Top Bar ─────────────────────────────────────── */}
+      <div className="mb-6 flex items-center justify-between">
         <Link
           href={`/exercises/${exercise.id}`}
-          className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to detail
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại
         </Link>
-        <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-          <Clock3 className="mr-1.5 h-4 w-4" />
-          {Math.floor(elapsedSec / 60)}:
-          {String(elapsedSec % 60).padStart(2, "0")}
-        </div>
-      </section>
 
-      <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 shadow-sm">
+          <Clock3 className="h-4 w-4 text-violet-500" />
+          {Math.floor(elapsedSec / 60)}:{String(elapsedSec % 60).padStart(2, "0")}
+        </div>
+      </div>
+
+      {/* ── Progress Header ─────────────────────────────── */}
+      <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-slate-500">
-              {exercise.title} - Question {currentIndex + 1}/
-              {questionList.length}
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              {exercise.title}
             </p>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Attempt Session
+            <h1 className="mt-0.5 text-lg font-bold text-slate-900">
+              Câu {currentIndex + 1}{" "}
+              <span className="font-normal text-slate-400">/ {total}</span>
             </h1>
           </div>
-          <p className="text-sm font-semibold text-slate-700">
-            Answered: {answeredCount}/{questionList.length}
-          </p>
+          <div className="text-right">
+            <p className="text-xs text-slate-400">Đã trả lời</p>
+            <p className="text-lg font-bold text-slate-900">
+              {answeredCount}
+              <span className="text-sm font-normal text-slate-400">/{total}</span>
+            </p>
+          </div>
         </div>
 
-        <div className="h-2 w-full rounded-full bg-slate-100">
-          <div
-            className="h-2 rounded-full bg-black transition-all"
-            style={{
-              width: `${((currentIndex + 1) / Math.max(questionList.length, 1)) * 100}%`,
-            }}
-          />
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold leading-relaxed">
-          {currentQuestion.prompt}
-        </h2>
-        <div className="mt-5 space-y-3">
-          {currentQuestion.options.map((option, index) => {
-            const selected = answers[currentQuestion.id] === index;
+        {/* Navigation dots */}
+        <div className="flex flex-wrap gap-1.5">
+          {questionList.map((q, i) => {
+            const isCurrent = i === currentIndex;
+            const isDone = isAnswered(q.id);
             return (
               <button
-                key={option}
-                onClick={() => selectAnswer(index)}
-                className={`w-full rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors ${
-                  selected
-                    ? "border-black bg-black text-white"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                key={q.id}
+                type="button"
+                onClick={() => setCurrentIndex(i)}
+                className={`h-6 w-6 rounded-md text-[10px] font-bold transition-all ${
+                  isCurrent
+                    ? "bg-slate-900 text-white scale-110 shadow"
+                    : isDone
+                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                 }`}
               >
-                {option}
+                {i + 1}
               </button>
             );
           })}
         </div>
 
-        <div className="mt-6 flex flex-wrap justify-between gap-2 border-t border-slate-100 pt-5">
+        {/* Progress bar */}
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            style={{ width: `${answeredPct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* ── Question Card ────────────────────────────────── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        {/* Question text */}
+        <div className="mb-6">
+          <span className="inline-block rounded-lg bg-slate-900 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+            Câu {currentIndex + 1}
+          </span>
+          <h2 className="mt-3 text-xl font-bold leading-relaxed text-slate-900">
+            {currentQuestion.prompt}
+          </h2>
+        </div>
+
+        {/* Options */}
+        <div className="space-y-2.5">
+          {currentQuestion.options.map((option, index) => {
+            const selected = answers[currentQuestion.id] === index;
+            const letter = OPTION_LETTERS[index] ?? String(index + 1);
+            return (
+              <button
+                key={`${currentQuestion.id}-opt-${index}`}
+                type="button"
+                onClick={() => selectAnswer(index)}
+                className={`group flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-medium transition-all duration-150 ${
+                  selected
+                    ? "border-slate-900 bg-slate-900 text-white shadow-md"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+                }`}
+              >
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-black transition-colors ${
+                    selected
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
+                  }`}
+                >
+                  {letter}
+                </span>
+                <span className="leading-relaxed">{option}</span>
+                {selected && <CheckCircle2 className="ml-auto h-4 w-4 shrink-0 text-white/80" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Navigation */}
+        <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
           <button
-            onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+            type="button"
+            onClick={() => setCurrentIndex((p) => Math.max(p - 1, 0))}
             disabled={currentIndex === 0}
-            className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Previous
+            <ChevronLeft className="h-4 w-4" />
+            Câu trước
           </button>
 
-          <div className="flex gap-2">
-            {currentIndex < questionList.length - 1 && (
+          <div className="flex items-center gap-2">
+            {!isLastQuestion && (
               <button
-                onClick={() =>
-                  setCurrentIndex((prev) =>
-                    Math.min(prev + 1, questionList.length - 1),
-                  )
-                }
-                className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                type="button"
+                onClick={() => setCurrentIndex((p) => Math.min(p + 1, total - 1))}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
               >
-                Next
-                <ChevronRight className="ml-1 h-4 w-4" />
+                Câu sau
+                <ChevronRight className="h-4 w-4" />
               </button>
             )}
 
-            {currentIndex === questionList.length - 1 && (
+            {isLastQuestion && (
               <button
-                onClick={submit}
+                type="button"
+                onClick={() => void submit()}
                 disabled={isSubmitting}
-                className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Send className="mr-1.5 h-4 w-4" />
-                {isSubmitting ? "Submitting..." : "Submit"}
+                <Send className="h-4 w-4" />
+                {isSubmitting ? "Đang nộp bài…" : "Nộp bài"}
               </button>
             )}
           </div>
         </div>
-      </section>
+      </div>
 
-      {submitError && (
-        <section className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          {submitError}
-        </section>
+      {/* ── Submit from any position ──────────────────────── */}
+      {!isLastQuestion && allAnswered && (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+          <p className="font-semibold text-emerald-800">Bạn đã trả lời tất cả {total} câu! 🎉</p>
+          <p className="mt-0.5 text-emerald-700">
+            Tiếp tục xem lại hoặc nộp bài ngay.
+          </p>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={isSubmitting}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
+          >
+            <Send className="h-4 w-4" />
+            {isSubmitting ? "Đang nộp bài…" : "Nộp bài ngay"}
+          </button>
+        </div>
       )}
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="inline-flex items-center text-sm text-slate-600">
-          <CheckCircle2 className="mr-1.5 h-4 w-4" />
-          Tip: You can change any answer before submitting.
-        </p>
-      </section>
+      {/* Error */}
+      {submitError && (
+        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {submitError}
+        </div>
+      )}
+
+      {/* Tip */}
+      <p className="mt-4 text-center text-xs text-slate-400">
+        💡 Bạn có thể bấm vào số câu ở trên để chuyển nhanh giữa các câu hỏi.
+      </p>
     </main>
   );
 }

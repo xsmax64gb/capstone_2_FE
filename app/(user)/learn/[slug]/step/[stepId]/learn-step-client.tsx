@@ -1080,111 +1080,204 @@ export function LearnStepClient({ slug, step }: Props) {
         </div>
 
         {ended || ending ? (
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-xl">
+          <div className="rounded-[32px] border border-slate-200 bg-white shadow-xl overflow-hidden">
+            {/* ── Grading in progress ──────────────────────────────── */}
             {ending && !ended ? (
-              <>
-                <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {bi("Đang chấm điểm", "Grading in progress")}
-                </Badge>
-                <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
-                  {bi(
-                    "AI đang chấm buổi học của bạn",
-                    "AI is grading your lesson",
-                  )}
-                </h3>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                  {bi(
-                    "Giao diện chấm điểm đã sẵn sàng. Hệ thống đang tổng hợp điểm và nhận xét từ AI, vui lòng đợi trong giây lát.",
-                    "Your grading screen is ready. The system is now collecting the score and AI feedback, so please wait a moment.",
-                  )}
-                </p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center gap-3 text-slate-600">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-sm font-semibold">
-                        {bi("Đang tính điểm tổng", "Calculating final score")}
-                      </span>
-                    </div>
+              <div className="p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+                    <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center gap-3 text-slate-600">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-sm font-semibold">
-                        {bi("Đang tạo nhận xét AI", "Generating AI feedback")}
-                      </span>
-                    </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {bi("Đang xử lý kết quả", "Processing result")}
+                    </p>
+                    <h3 className="text-base font-bold text-slate-900">
+                      {bi("AI đang chấm buổi học…", "AI is grading your lesson…")}
+                    </h3>
                   </div>
                 </div>
-              </>
+                <p className="mt-4 text-sm leading-relaxed text-slate-500">
+                  {bi(
+                    "Hệ thống đang tổng hợp điểm số và tạo nhận xét cá nhân từ AI. Vui lòng đợi trong giây lát.",
+                    "The system is collecting your score and generating personalized AI feedback. Please wait a moment.",
+                  )}
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {[
+                    bi("Đang tính điểm tổng hợp", "Calculating total score"),
+                    bi("Đang tạo nhận xét AI", "Generating AI feedback"),
+                  ].map((label) => (
+                    <div
+                      key={label}
+                      className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                      <span className="text-sm font-semibold text-slate-600">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : ended ? (
               <>
-                <Badge
-                  className={`rounded-full px-3 py-1 ${ended.passed ? "bg-emerald-600 text-white" : "bg-slate-900 text-white"}`}
+                {/* ── Result Header ─────────────────────────────────── */}
+                <div
+                  className={`border-b px-6 py-5 ${
+                    ended.passed
+                      ? "border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50"
+                      : "border-slate-200 bg-gradient-to-r from-slate-50 to-gray-50"
+                  }`}
                 >
-                  {ended.passed
-                    ? bi("Đạt", "Passed")
-                    : bi("Xem lại và thử lại", "Review and retry")}
-                </Badge>
-                <h3 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
-                  {ended.passed
-                    ? bi("Buổi học hoàn thành", "Lesson completed")
-                    : bi("Phiên học đã kết thúc", "Lesson session ended")}
-                </h3>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                  {ended.feedback ||
-                    bi("Không có nhận xét AI.", "No AI feedback available.")}
-                </p>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+                          ended.passed
+                            ? "bg-emerald-600 text-white"
+                            : "bg-slate-800 text-white"
+                        }`}
+                      >
+                        {ended.passed ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {bi("ĐẠT", "PASSED")}
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            {bi("CHƯA ĐẠT", "NOT PASSED")}
+                          </>
+                        )}
+                      </span>
+                      <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
+                        {ended.passed
+                          ? bi("Buổi học hoàn thành!", "Lesson completed!")
+                          : bi("Phiên học đã kết thúc", "Lesson session ended")}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {ended.replayAttempt
+                          ? bi(
+                              "Lượt ôn lại — không ảnh hưởng tiến độ mới.",
+                              "Review attempt — does not unlock new progress.",
+                            )
+                          : ended.mapCompleted
+                          ? bi("Bạn đã hoàn thành map này! 🎉", "You completed this map! 🎉")
+                          : ended.passed
+                          ? bi("Tiến độ đã được cập nhật.", "Progress has been updated.")
+                          : bi(
+                              "Thử lại để đạt điểm yêu cầu.",
+                              "Try again to reach the required score.",
+                            )}
+                      </p>
+                    </div>
+                    {ended.mapCompleted && (
+                      <span className="text-4xl">🏆</span>
+                    )}
+                  </div>
+                </div>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {/* ── Scores Grid ──────────────────────────────────── */}
+                <div className="grid grid-cols-2 gap-3 px-6 py-5 sm:grid-cols-4">
+                  {/* Score */}
                   {ended.score != null && (
-                    <Meter
-                      label={bi("Điểm", "Score")}
-                      value={`${ended.score}`}
-                      progress={ended.score}
-                      tone="dark"
-                    />
+                    <div className="col-span-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {bi("Điểm số", "Score")}
+                      </p>
+                      <p className="mt-1 text-2xl font-black text-slate-900">
+                        {ended.score}
+                        <span className="text-sm font-normal text-slate-400">/100</span>
+                      </p>
+                    </div>
                   )}
-                  <Meter
-                    label={bi("XP đã nhận", "XP earned")}
-                    value={`+${ended.xp}`}
-                    progress={Math.min(100, (ended.xp / 40) * 100)}
-                    tone="emerald"
-                  />
-                </div>
-                <div className="mt-4 space-y-2 text-sm text-slate-600">
-                  {ended.requiredScore != null ? (
-                    <p>
-                      {bi("Điểm cần để pass", "Score needed to pass")}:{" "}
-                      <strong>{ended.requiredScore}</strong>
+
+                  {/* Required score */}
+                  {ended.requiredScore != null && (
+                    <div className="col-span-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {bi("Điểm cần đạt", "Pass threshold")}
+                      </p>
+                      <p className="mt-1 text-2xl font-black text-slate-600">
+                        {ended.requiredScore}
+                        <span className="text-sm font-normal text-slate-400">/100</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* XP earned */}
+                  <div className="col-span-1 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
+                      {bi("XP nhận được", "XP earned")}
                     </p>
-                  ) : null}
-                  {ended.requiredMapXP != null && ended.currentMapXP != null ? (
-                    <p>
-                      {bi("Tiến độ map", "Map progress")}:{" "}
-                      <strong>{ended.currentMapXP}</strong> /{" "}
-                      <strong>{ended.requiredMapXP}</strong> XP
+                    <p className="mt-1 text-2xl font-black text-emerald-700">
+                      +{ended.xp}
                     </p>
-                  ) : null}
-                  {ended.replayAttempt ? (
-                    <p>
-                      {bi(
-                        "Đây là lượt ôn lại nên sẽ không mở khóa tiến độ mới.",
-                        "This was a review attempt, so it does not unlock new progression.",
-                      )}
-                    </p>
-                  ) : ended.mapCompleted ? (
-                    <p>
-                      {bi(
-                        "Bạn đã hoàn thành map này.",
-                        "You completed this map.",
-                      )}
-                    </p>
-                  ) : null}
+                  </div>
+
+                  {/* Map XP progress */}
+                  {ended.currentMapXP != null && ended.requiredMapXP != null && (
+                    <div className="col-span-1 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-sky-500">
+                        {bi("Tiến độ map", "Map XP")}
+                      </p>
+                      <p className="mt-1 text-lg font-black text-sky-700">
+                        {ended.currentMapXP}
+                        <span className="text-sm font-normal text-sky-400">/{ended.requiredMapXP}</span>
+                      </p>
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-sky-200">
+                        <div
+                          className="h-full rounded-full bg-sky-500 transition-all duration-700"
+                          style={{
+                            width: `${Math.min(100, Math.round((ended.currentMapXP / ended.requiredMapXP) * 100))}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-3">
+                {/* ── Score progress bar ───────────────────────────── */}
+                {ended.score != null && (
+                  <div className="mx-6 mb-4">
+                    <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                      <span>{bi("Điểm của bạn", "Your score")}</span>
+                      {ended.requiredScore != null && (
+                        <span>
+                          {bi("Điểm cần đạt", "Pass")}: {ended.requiredScore}/100
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative h-3 overflow-hidden rounded-full bg-slate-200">
+                      {ended.requiredScore != null && (
+                        <div
+                          className="absolute top-0 h-full w-0.5 bg-slate-400 z-10"
+                          style={{ left: `${ended.requiredScore}%` }}
+                        />
+                      )}
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${
+                          ended.passed ? "bg-emerald-500" : "bg-slate-500"
+                        }`}
+                        style={{ width: `${Math.min(ended.score, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ── AI Feedback ──────────────────────────────────── */}
+                {ended.feedback && (
+                  <div className="mx-6 mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-500">
+                      💬 {bi("Nhận xét từ AI", "AI Feedback")}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-sky-900">
+                      {ended.feedback}
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Actions ────────────────────────────────────── */}
+                <div className="flex flex-wrap gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
                   <Button asChild>
                     <Link href={`/learn/${slug}`}>
                       <ArrowLeft className="h-4 w-4" />

@@ -161,6 +161,7 @@ export const exercisesApi = baseApi.injectEndpoints({
         level?: string;
         type?: string;
         topic?: string;
+        personal?: boolean;
         page?: number;
         limit?: number;
         includeQuestions?: boolean;

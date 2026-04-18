@@ -35,6 +35,9 @@ export default function ExercisesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("query") || "");
+  const [personalOnly, setPersonalOnly] = useState(
+    searchParams.get("personal") === "true",
+  );
   const [selectedLevel, setSelectedLevel] = useState<
     "all" | "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
   >((searchParams.get("level") as any) || "all");
@@ -46,6 +49,7 @@ export default function ExercisesContent() {
 
   const updateFilters = (newFilters: {
     query?: string;
+    personal?: boolean;
     level?: string;
     type?: string;
     page?: number;
@@ -57,6 +61,14 @@ export default function ExercisesContent() {
         params.set("query", newFilters.query);
       } else {
         params.delete("query");
+      }
+    }
+
+    if (newFilters.personal !== undefined) {
+      if (newFilters.personal) {
+        params.set("personal", "true");
+      } else {
+        params.delete("personal");
       }
     }
 
@@ -93,6 +105,7 @@ export default function ExercisesContent() {
     isError,
   } = useGetExercisesQuery({
     query,
+    personal: personalOnly,
     level: selectedLevel,
     type: selectedType,
     page: currentPage,
@@ -148,6 +161,21 @@ export default function ExercisesContent() {
                 <PenLine className="mr-1.5 h-4 w-4" />
                 {t("Tạo bài tập")}
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !personalOnly;
+                  setPersonalOnly(next);
+                  updateFilters({ personal: next, page: 1 });
+                }}
+                className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                  personalOnly
+                    ? "border-violet-200 bg-violet-50 text-violet-800"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {t("Bài tập tôi đã tạo")}
+              </button>
               <Link
                 href="/exercises/recommended"
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"

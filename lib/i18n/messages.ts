@@ -858,6 +858,7 @@ const PHRASES: PhraseValue[] = [
     en: "Cannot upload another file while one is loaded — use Remove file to pick a different PDF.",
   },
   { vi: "Đã tải lên", en: "Uploaded" },
+  { vi: "Bài tập tôi đã tạo", en: "My created exercises" },
 ];
 
 const toLookup = (lang: AppLang) => {

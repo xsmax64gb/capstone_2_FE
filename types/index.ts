@@ -360,6 +360,8 @@ export interface AdminPlacementLevelRuleItem {
 export interface AdminPlacementTestItem {
   id: string;
   title: string;
+  levelFrom?: CefrLevel;
+  levelTo?: CefrLevel;
   description: string;
   instructions: string;
   durationMinutes: number;
@@ -379,12 +381,15 @@ export interface AdminPlacementTestsResponse {
 
 export interface AdminPlacementTestPayload {
   title: string;
+  levelFrom?: CefrLevel;
+  levelTo?: CefrLevel;
   description: string;
   instructions: string;
   durationMinutes: number;
   isActive: boolean;
   questions: AdminPlacementQuestionItem[];
-  levelRules: AdminPlacementLevelRuleItem[];
+  levelRules?: AdminPlacementLevelRuleItem[];
+  autoRules?: boolean;
 }
 
 export interface AdminGeneratePlacementWithAiPayload {

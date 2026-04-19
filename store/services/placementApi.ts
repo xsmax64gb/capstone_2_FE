@@ -121,6 +121,22 @@ export const placementApi = baseApi.injectEndpoints({
         response.data as AdminPlacementTestItem,
     }),
 
+    regenerateAdminPlacementQuestionAudio: builder.mutation<
+      AdminPlacementTestItem,
+      { id: string; questionId: string }
+    >({
+      query: ({ id, questionId }) => ({
+        url: `/admin/placement-tests/${id}/questions/${questionId}/regenerate-audio`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "AdminPlacementTests", id: "LIST" },
+        { type: "AdminPlacementTests", id },
+      ],
+      transformResponse: (response: ApiResponse<AdminPlacementTestItem>) =>
+        response.data as AdminPlacementTestItem,
+    }),
+
     activateAdminPlacementTest: builder.mutation<AdminPlacementTestItem, string>({
       query: (id) => ({
         url: `/admin/placement-tests/${id}/activate`,
@@ -226,6 +242,7 @@ export const {
   useGetAdminPlacementTestByIdQuery,
   useGetAdminPlacementTestsQuery,
   useGetPlacementAttemptByIdQuery,
+  useRegenerateAdminPlacementQuestionAudioMutation,
   useSkipPlacementTestMutation,
   useSubmitPlacementTestMutation,
   useUpdateAdminPlacementTestMutation,

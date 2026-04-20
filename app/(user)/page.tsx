@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Brain,
@@ -21,6 +21,7 @@ import {
 import { Bilingual } from "@/components/i18n/bilingual";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { useI18n } from "@/lib/i18n/context";
+import { AuthAwareLink } from "@/components/auth/auth-aware-link";
 
 export default function UserHomePage() {
   const { t } = useI18n();
@@ -263,18 +264,18 @@ export default function UserHomePage() {
                 secondaryClassName="mt-2 block text-sm leading-relaxed text-slate-500 md:text-base"
               />
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link
+                <AuthAwareLink
                   href="/learn"
                   className="rounded-lg bg-black px-7 py-3 text-sm font-semibold text-white transition-all hover:translate-y-[-1px] hover:bg-slate-800"
                 >
                   {t("Bắt đầu luyện nói AI")}
-                </Link>
-                <Link
+                </AuthAwareLink>
+                <AuthAwareLink
                   href="/vocabulary"
                   className="rounded-lg border border-slate-300 bg-white px-7 py-3 text-sm font-semibold text-slate-700 transition-all hover:translate-y-[-1px] hover:bg-slate-50"
                 >
                   {t("Mở từ vựng")}
-                </Link>
+                </AuthAwareLink>
               </div>
             </div>
 
@@ -346,7 +347,7 @@ export default function UserHomePage() {
               const Icon = item.icon;
               return (
                 <ScrollReveal key={item.title} delay={120 + index * 120}>
-                  <Link
+                  <AuthAwareLink
                     href={item.href}
                     className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-black hover:shadow-xl"
                   >
@@ -372,7 +373,7 @@ export default function UserHomePage() {
                         {item.action}
                       </span>
                     </div>
-                  </Link>
+                  </AuthAwareLink>
                 </ScrollReveal>
               );
             })}
@@ -463,13 +464,13 @@ export default function UserHomePage() {
                 )}
               </p>
             </div>
-            <Link
+            <AuthAwareLink
               href="/learn"
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <Target className="mr-2 h-4 w-4" />
               {t("Áp dụng kế hoạch này")}
-            </Link>
+            </AuthAwareLink>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -645,18 +646,18 @@ export default function UserHomePage() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link
+                <AuthAwareLink
                   href="/learn"
                   className="rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800"
                 >
                   {t("Mở bản đồ AI")}
-                </Link>
-                <Link
+                </AuthAwareLink>
+                <AuthAwareLink
                   href="/exercises"
                   className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-slate-50"
                 >
                   {t("Xem luồng bài tập")}
-                </Link>
+                </AuthAwareLink>
               </div>
             </div>
           </div>

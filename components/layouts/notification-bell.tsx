@@ -160,7 +160,7 @@ export function NotificationBell() {
                     className="flex w-full gap-3 px-3 py-3 text-left"
                     onClick={() => void onItemClick(item)}
                   >
-                    <div className="mt-0.5 shrink-0 rounded-lg bg-white p-1.5 shadow-sm ring-1 ring-slate-100">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-slate-100">
                       {categoryIcon(item.category)}
                     </div>
                     <div className="min-w-0 flex-1">

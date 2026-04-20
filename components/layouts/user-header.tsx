@@ -30,7 +30,7 @@ const DEFAULT_AVATAR_URL =
 export function UserHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { t } = useI18n();
   /** Tránh hydration mismatch: Redux đọc user từ localStorage chỉ phía client. */
   const [mounted, setMounted] = useState(false);
@@ -38,16 +38,14 @@ export function UserHeader() {
     setMounted(true);
   }, []);
 
-  const profileName = mounted
-    ? user?.fullName ||
-      user?.name ||
-      (user?.email ? user.email.split("@")[0] : null) ||
-      t("Profile")
-    : t("Profile");
-  const avatarUrl =
-    mounted && user?.avatarUrl ? user.avatarUrl : DEFAULT_AVATAR_URL;
+  const profileName =
+    user?.fullName ||
+    user?.name ||
+    (user?.email ? user.email.split("@")[0] : null) ||
+    t("Hồ sơ");
+  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
   const navLinks =
-    mounted && user?.role === "admin"
+    user?.role === "admin"
       ? [...navItems, { labelKey: "Quản trị", href: "/admin" }]
       : navItems;
 
@@ -115,47 +113,53 @@ export function UserHeader() {
 
         <div className="flex items-center gap-4">
           <LanguageSwitch />
-          {/* Chỉ mount sau khi client mounted — tránh hydration mismatch (Redux auth vs SSR). */}
-          {mounted ? (
-            <NotificationBell />
-          ) : (
-            <div className="h-9 w-9 shrink-0" aria-hidden />
-          )}
+          {mounted && <NotificationBell />}
           <div className="h-8 w-px bg-slate-200" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 transition-colors hover:bg-slate-50"
-              >
-                <div className="h-6 w-6 overflow-hidden rounded-full bg-slate-200">
-                  <img
-                    src={avatarUrl}
-                    alt="User avatar"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <span className="text-sm font-medium">{profileName}</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => router.push("/profile")}>
-                <User className="h-4 w-4" />
-                {t("Profile")}
-              </DropdownMenuItem>
-              {mounted && user?.role === "admin" && (
-                <DropdownMenuItem onClick={() => router.push("/admin")}>
-                  <ShieldCheck className="h-4 w-4" />
-                  {t("Quản trị")}
+          {mounted && isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 transition-colors hover:bg-slate-50"
+                >
+                  <div className="h-6 w-6 overflow-hidden rounded-full bg-slate-200">
+                    <img
+                      src={avatarUrl}
+                      alt="User avatar"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium">{profileName}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                  <User className="h-4 w-4" />
+                  {t("Hồ sơ")}
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                {t("Logout")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {user?.role === "admin" && (
+                  <DropdownMenuItem onClick={() => router.push("/admin")}>
+                    <ShieldCheck className="h-4 w-4" />
+                    {t("Quản trị")}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  {t("Đăng xuất")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : mounted ? (
+            <Link
+              href="/login"
+              className="rounded-lg border border-slate-200 px-4 py-1.5 text-sm font-medium transition-colors hover:bg-slate-50"
+            >
+              {t("Đăng nhập")}
+            </Link>
+          ) : (
+            <div className="h-9 w-24 animate-pulse rounded-lg bg-slate-100" />
+          )}
         </div>
       </div>
     </header>

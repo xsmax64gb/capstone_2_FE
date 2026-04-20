@@ -9,11 +9,20 @@ import {
   Clock3,
   Copy,
   LoaderCircle,
-  RefreshCcw,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { API_BASE_URL } from "@/config/api";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/admin";
+import { AI_CREATOR_FEATURE_KEYS } from "@/lib/feature-quota";
 import { tokenManager } from "@/lib/token-manager";
 import {
   useCancelPaymentMutation,
@@ -58,8 +68,8 @@ type UpgradeConfirmationToastState = {
   nextPlan: PricingPlan;
 };
 
-const MANUAL_CHECK_COOLDOWN_SECONDS = 10;
-const AUTO_CHECK_DELAY_MS = 10000;
+/** Interval while QR dialog is open to call POST /payments/reconcile (server queries XGate). */
+const PAYMENT_POLL_INTERVAL_MS = 5000;
 const MIN_PAID_PACKAGE_AMOUNT = 2000;
 
 const buildApiUrl = (path: string) => {
@@ -181,6 +191,28 @@ const formatRemainingQuotaLabel = (feature: FeatureQuotaItem) => {
   return `Còn ${Math.max(0, feature.remaining)}/${feature.quota} lượt`;
 };
 
+const getQuotaPeriodDisplay = (feature: FeatureQuotaItem) => {
+  if (!feature.quotaPeriod) {
+    return feature.quotaPeriodLabel ?? "Không kỳ hạn";
+  }
+
+  return QUOTA_PERIOD_LABELS[feature.quotaPeriod];
+};
+
+const getUsagePercent = (feature: FeatureQuotaItem) => {
+  if (
+    !feature.enabled ||
+    feature.isUnlimited ||
+    typeof feature.quota !== "number" ||
+    feature.quota <= 0 ||
+    typeof feature.used !== "number"
+  ) {
+    return null;
+  }
+
+  return Math.min(100, Math.round((feature.used / feature.quota) * 100));
+};
+
 const extractErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error === "object" && error && "data" in error) {
     const data = (error as { data?: { message?: string; error?: string } })
@@ -265,22 +297,28 @@ export default function PaymentPackagesPage() {
     null,
   );
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+  const [isExitPaymentConfirmOpen, setIsExitPaymentConfirmOpen] =
+    useState(false);
   const [checkoutPlanName, setCheckoutPlanName] = useState<string>("");
   const [checkoutPayment, setCheckoutPayment] = useState<PaymentRecord | null>(
     null,
   );
-  const [checkoutSyncSummary, setCheckoutSyncSummary] =
+  const [_checkoutSyncSummary, setCheckoutSyncSummary] =
     useState<PaymentSyncSummary | null>(null);
   const [checkoutSyncError, setCheckoutSyncError] = useState<string | null>(
     null,
   );
   const [upgradeConfirmation, setUpgradeConfirmation] =
     useState<UpgradeConfirmationToastState | null>(null);
-  const [checkCooldownSeconds, setCheckCooldownSeconds] = useState(0);
   const [clockNow, setClockNow] = useState<number>(Date.now());
+  const [mounted, setMounted] = useState(false);
   const autoCheckedInvoiceRef = useRef<string | null>(null);
   const cancelledInvoiceRef = useRef<string | null>(null);
   const checkoutPaymentRef = useRef<PaymentRecord | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const packages = useMemo(
     () => [...(data?.packages ?? [])].sort((a, b) => a.price - b.price),
@@ -296,6 +334,32 @@ export default function PaymentPackagesPage() {
         ]),
       ),
     [data?.featureCatalog],
+  );
+
+  const resolvedFeatureQuotas = useMemo(
+    () => featureQuotaOverview?.features ?? [],
+    [featureQuotaOverview?.features],
+  );
+
+  const aiQuotaFeatures = useMemo(
+    () =>
+      resolvedFeatureQuotas.filter((feature) =>
+        AI_CREATOR_FEATURE_KEYS.includes(
+          feature.featureKey as (typeof AI_CREATOR_FEATURE_KEYS)[number],
+        ),
+      ),
+    [resolvedFeatureQuotas],
+  );
+
+  const otherQuotaFeatures = useMemo(
+    () =>
+      resolvedFeatureQuotas.filter(
+        (feature) =>
+          !AI_CREATOR_FEATURE_KEYS.includes(
+            feature.featureKey as (typeof AI_CREATOR_FEATURE_KEYS)[number],
+          ),
+      ),
+    [resolvedFeatureQuotas],
   );
 
   const pricingPlans = useMemo<PricingPlan[]>(() => {
@@ -421,6 +485,12 @@ export default function PaymentPackagesPage() {
     return planRankLookup.get(currentPricingPlan.id) ?? null;
   }, [currentPricingPlan, planRankLookup]);
 
+  const resolveFeatureLabel = useCallback(
+    (feature: FeatureQuotaItem) =>
+      featureLabelLookup.get(feature.featureKey) ?? feature.featureLabel,
+    [featureLabelLookup],
+  );
+
   useEffect(() => {
     checkoutPaymentRef.current = checkoutPayment;
   }, [checkoutPayment]);
@@ -456,7 +526,7 @@ export default function PaymentPackagesPage() {
   const isCancelledPayment =
     checkoutPayment?.status === "failed" &&
     checkoutPayment.failureReason === "cancelled_by_user";
-  const canManualCheckPayment =
+  const canPollCheckoutPayment =
     checkoutPayment?.status === "pending" &&
     !isExpiredPayment &&
     !isCancelledPayment;
@@ -577,7 +647,7 @@ export default function PaymentPackagesPage() {
 
   const runReconcile = useCallback(
     async (silent: boolean) => {
-      if (!checkoutPayment?.invoiceNumber || !canManualCheckPayment) {
+      if (!checkoutPayment?.invoiceNumber || !canPollCheckoutPayment) {
         return;
       }
 
@@ -618,21 +688,8 @@ export default function PaymentPackagesPage() {
         }
       }
     },
-    [canManualCheckPayment, checkoutPayment?.invoiceNumber, reconcilePayment],
+    [canPollCheckoutPayment, checkoutPayment?.invoiceNumber, reconcilePayment],
   );
-
-  const handleManualCheckPayment = async () => {
-    if (
-      checkCooldownSeconds > 0 ||
-      isReconcilingPayment ||
-      !canManualCheckPayment
-    ) {
-      return;
-    }
-
-    setCheckCooldownSeconds(MANUAL_CHECK_COOLDOWN_SECONDS);
-    await runReconcile(false);
-  };
 
   const handleCreateNewInvoice = async () => {
     if (!checkoutPayment?.packageId) {
@@ -656,7 +713,6 @@ export default function PaymentPackagesPage() {
       setCheckoutPlanName(created.packageName || checkoutPlanName);
       setCheckoutSyncSummary(null);
       setCheckoutSyncError(null);
-      setCheckCooldownSeconds(0);
       setClockNow(Date.now());
 
       notify({
@@ -676,10 +732,19 @@ export default function PaymentPackagesPage() {
     }
   };
 
+  const handleConfirmExitPayment = async () => {
+    setIsExitPaymentConfirmOpen(false);
+    await cancelCurrentPendingPayment("request");
+    setIsQrDialogOpen(false);
+  };
+
   const handleDialogOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      void cancelCurrentPendingPayment("request");
-      setCheckCooldownSeconds(0);
+      if (canCancelPendingPayment(checkoutPaymentRef.current)) {
+        setIsExitPaymentConfirmOpen(true);
+        return;
+      }
+
       setIsQrDialogOpen(false);
       return;
     }
@@ -743,43 +808,41 @@ export default function PaymentPackagesPage() {
   }, [expiredByClock]);
 
   useEffect(() => {
-    if (checkCooldownSeconds <= 0) {
-      return;
-    }
-
-    const timerId = window.setTimeout(() => {
-      setCheckCooldownSeconds((current) => Math.max(0, current - 1));
-    }, 1000);
-
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [checkCooldownSeconds]);
-
-  useEffect(() => {
     if (
       !isQrDialogOpen ||
-      !canManualCheckPayment ||
+      !canPollCheckoutPayment ||
       !checkoutPayment?.invoiceNumber
     ) {
       return;
     }
 
-    if (autoCheckedInvoiceRef.current === checkoutPayment.invoiceNumber) {
-      return;
-    }
+    let cancelled = false;
+    let inFlight = false;
 
-    autoCheckedInvoiceRef.current = checkoutPayment.invoiceNumber;
+    const tick = async () => {
+      if (cancelled || inFlight) {
+        return;
+      }
 
-    const timeoutId = window.setTimeout(() => {
-      void runReconcile(true);
-    }, AUTO_CHECK_DELAY_MS);
+      inFlight = true;
+      try {
+        await runReconcile(true);
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void tick();
+    const intervalId = window.setInterval(() => {
+      void tick();
+    }, PAYMENT_POLL_INTERVAL_MS);
 
     return () => {
-      window.clearTimeout(timeoutId);
+      cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, [
-    canManualCheckPayment,
+    canPollCheckoutPayment,
     checkoutPayment?.invoiceNumber,
     isQrDialogOpen,
     runReconcile,
@@ -820,7 +883,6 @@ export default function PaymentPackagesPage() {
         setCheckoutPayment(payment);
         setCheckoutSyncSummary(null);
         setCheckoutSyncError(null);
-        setCheckCooldownSeconds(0);
         setClockNow(Date.now());
         setIsQrDialogOpen(true);
 
@@ -903,11 +965,10 @@ export default function PaymentPackagesPage() {
   };
 
   const qrData = checkoutPayment?.paymentQr;
-  const manualCheckButtonLabel = isReconcilingPayment
-    ? "Đang kiểm tra..."
-    : checkCooldownSeconds > 0
-      ? `Đã thanh toán (${checkCooldownSeconds}s)`
-      : "Đã thanh toán";
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <ProtectedRoute>
@@ -949,72 +1010,73 @@ export default function PaymentPackagesPage() {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {featureQuotaOverview.features.map((feature) => {
-                const usagePercent =
-                  feature.enabled &&
-                  !feature.isUnlimited &&
-                  typeof feature.quota === "number" &&
-                  feature.quota > 0 &&
-                  typeof feature.used === "number"
-                    ? Math.min(
-                        100,
-                        Math.round((feature.used / feature.quota) * 100),
-                      )
-                    : null;
+            {resolvedFeatureQuotas.length > 0 ? (
+              <div className="mt-5">
+                <p className="text-sm font-semibold text-slate-950">
+                  Quyền và quota
+                </p>
 
-                return (
-                  <article
-                    key={feature.featureKey}
-                    className={`rounded-2xl border px-4 py-4 ${
-                      feature.isBlocked
-                        ? "border-rose-200 bg-rose-50"
-                        : "border-slate-200 bg-slate-50"
-                    }`}
-                  >
-                    <p className="text-sm font-semibold text-slate-900">
-                      {feature.featureLabel}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {feature.enabled
-                        ? `${ACCESS_LEVEL_LABELS[feature.accessLevel ?? "basic"]} - ${feature.quotaPeriodLabel ?? "Không kỳ hạn"}`
-                        : "Chưa được mở trong gói hiện tại"}
-                    </p>
+                <div className="mt-3 grid gap-3 md:grid-cols-3 lg:grid-cols-5">
+                  {resolvedFeatureQuotas.map((feature) => {
+                    const usagePercent = getUsagePercent(feature);
 
-                    <p
-                      className={`mt-3 text-sm font-semibold ${
-                        feature.isBlocked ? "text-rose-700" : "text-slate-900"
-                      }`}
-                    >
-                      {formatRemainingQuotaLabel(feature)}
-                    </p>
-
-                    {feature.enabled &&
-                    !feature.isUnlimited &&
-                    feature.quota !== null &&
-                    feature.used !== null ? (
-                      <>
-                        <div className="mt-2 h-2 rounded-full bg-slate-200">
-                          <div
-                            className={`h-full rounded-full ${
-                              feature.isBlocked
-                                ? "bg-rose-500"
-                                : usagePercent !== null && usagePercent >= 85
-                                  ? "bg-amber-500"
-                                  : "bg-emerald-500"
-                            }`}
-                            style={{ width: `${usagePercent ?? 0}%` }}
-                          />
-                        </div>
-                        <p className="mt-2 text-xs text-slate-500">
-                          Đã dùng {feature.used}/{feature.quota} lượt
+                    return (
+                      <article
+                        key={feature.featureKey}
+                        className={`rounded-2xl border px-4 py-4 ${
+                          feature.isBlocked
+                            ? "border-rose-200 bg-rose-50"
+                            : feature.enabled
+                              ? "border-slate-200 bg-slate-50"
+                              : "border-slate-200 bg-white"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold text-slate-900">
+                          {resolveFeatureLabel(feature)}
                         </p>
-                      </>
-                    ) : null}
-                  </article>
-                );
-              })}
-            </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {feature.enabled
+                            ? `${ACCESS_LEVEL_LABELS[feature.accessLevel ?? "basic"]} - ${getQuotaPeriodDisplay(feature)}`
+                            : "Chưa mở trong gói hiện tại"}
+                        </p>
+
+                        <p
+                          className={`mt-3 text-sm font-semibold ${
+                            feature.isBlocked ? "text-rose-700" : "text-slate-900"
+                          }`}
+                        >
+                          {formatRemainingQuotaLabel(feature)}
+                        </p>
+
+                        {feature.enabled &&
+                        !feature.isUnlimited &&
+                        feature.quota !== null &&
+                        feature.used !== null ? (
+                          <>
+                            <div className="mt-2 h-2 rounded-full bg-slate-200">
+                              <div
+                                className={`h-full rounded-full ${
+                                  feature.isBlocked
+                                    ? "bg-rose-500"
+                                    : usagePercent !== null &&
+                                        usagePercent >= 85
+                                      ? "bg-amber-500"
+                                      : "bg-emerald-500"
+                                }`}
+                                style={{ width: `${usagePercent ?? 0}%` }}
+                              />
+                            </div>
+                            <p className="mt-2 text-xs text-slate-500">
+                              Đã dùng {feature.used}/{feature.quota} lượt
+                            </p>
+                          </>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -1288,33 +1350,33 @@ export default function PaymentPackagesPage() {
         </Dialog>
 
         <Dialog open={isQrDialogOpen} onOpenChange={handleDialogOpenChange}>
-          <DialogContent className="w-[min(920px,96vw)] gap-0 overflow-hidden border border-slate-200 p-0 shadow-2xl sm:max-w-[920px]">
+          <DialogContent className="w-[min(760px,96vw)] gap-0 overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl sm:max-w-[760px]">
             <DialogHeader className="border-b border-slate-200 px-6 py-5 text-left sm:text-left">
               <DialogTitle className="text-xl font-semibold text-slate-900">
                 Thanh toán gói{" "}
                 {checkoutPlanName || checkoutPayment?.packageName || "học"}
               </DialogTitle>
-              <DialogDescription className="text-sm text-slate-500">
+              <DialogDescription className="text-sm font-medium text-slate-500">
                 Hóa đơn: {checkoutPayment?.invoiceNumber || "N/A"}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
-              <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
-                <div className="inline-flex items-center gap-2 text-emerald-700">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-semibold text-white">
+            <div className="border-b border-slate-200 bg-slate-50 px-6 py-3">
+              <div className="flex items-center justify-center gap-3 text-sm font-semibold text-slate-400">
+                <div className="inline-flex items-center gap-2 text-slate-500">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-semibold text-white">
                     1
                   </span>
                   Xác nhận
                 </div>
-                <ArrowRight className="h-4 w-4 text-slate-400" />
-                <div className="inline-flex items-center gap-2 text-slate-900">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-white">
+                <ArrowRight className="h-4 w-4 text-slate-300" />
+                <div className="inline-flex items-center gap-2 text-slate-700">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-xs font-semibold text-white">
                     2
                   </span>
                   Chuyển khoản
                 </div>
-                <ArrowRight className="h-4 w-4 text-slate-400" />
+                <ArrowRight className="h-4 w-4 text-slate-300" />
                 <div className="inline-flex items-center gap-2">
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-500">
                     3
@@ -1324,15 +1386,18 @@ export default function PaymentPackagesPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 p-6 lg:grid-cols-[1fr_1.15fr]">
+            <div className="grid gap-6 p-6 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="space-y-4">
-                <div className="mx-auto w-full max-w-[260px] rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mx-auto w-full max-w-[260px] rounded-2xl border border-slate-200 bg-white p-4">
                   {qrData ? (
-                    <img
-                      src={qrData.qrImageUrl}
-                      alt="QR thanh toán"
-                      className="h-auto w-full rounded-xl"
-                    />
+                    <div className="relative overflow-hidden rounded-xl border border-slate-200">
+                      <img
+                        src={qrData.qrImageUrl}
+                        alt="QR thanh toán"
+                        className="h-auto w-full rounded-xl"
+                      />
+                      <div className="pointer-events-none absolute inset-x-2 top-0 h-8 rounded-full bg-linear-to-b from-emerald-300/60 via-emerald-400/25 to-transparent qr-scan-line" />
+                    </div>
                   ) : (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-5 text-center text-sm text-amber-700">
                       {checkoutPayment?.paymentQrSetupError ||
@@ -1340,29 +1405,9 @@ export default function PaymentPackagesPage() {
                     </div>
                   )}
                 </div>
-
-                <Button
-                  type="button"
-                  onClick={() => void handleManualCheckPayment()}
-                  disabled={
-                    !canManualCheckPayment ||
-                    isReconcilingPayment ||
-                    checkCooldownSeconds > 0
-                  }
-                  className="h-11 w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                >
-                  {isReconcilingPayment ? (
-                    <>
-                      <Clock3 className="mr-2 h-4 w-4 animate-spin" />
-                      {manualCheckButtonLabel}
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCcw className="mr-2 h-4 w-4" />
-                      {manualCheckButtonLabel}
-                    </>
-                  )}
-                </Button>
+                <p className="text-center text-sm text-slate-400">
+                  Quét mã QR để tự động nhập số tiền và nội dung
+                </p>
 
                 {checkoutPayment?.status === "paid" ? (
                   <Button
@@ -1378,33 +1423,15 @@ export default function PaymentPackagesPage() {
                   </Button>
                 ) : null}
 
-                {(isExpiredPayment || isCancelledPayment) &&
-                checkoutPayment?.packageId ? (
-                  <Button
-                    type="button"
-                    onClick={() => void handleCreateNewInvoice()}
-                    disabled={isCreatingPayment}
-                    className="h-11 w-full rounded-xl bg-amber-500 text-white hover:bg-amber-400"
-                  >
-                    {isCreatingPayment ? (
-                      <>
-                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                        Đang tạo mã mới...
-                      </>
-                    ) : (
-                      "Tạo mã thanh toán mới"
-                    )}
-                  </Button>
-                ) : null}
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="space-y-3">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                       Ngân hàng
                     </p>
-                    <p className="mt-1 text-lg font-semibold text-slate-900">
+                    <p className="mt-1 text-2xl font-semibold text-slate-800">
                       {getBankDisplayName(qrData?.bankCode)}
                     </p>
                   </div>
@@ -1418,15 +1445,15 @@ export default function PaymentPackagesPage() {
                       onClick={() =>
                         handleCopy(qrData?.accountNumber, "số tài khoản")
                       }
-                      className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-slate-900"
+                      className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-slate-800"
                     >
                       {qrData?.accountNumber || "N/A"}
                       <Copy className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                  <div className="rounded-xl border border-emerald-600/80 bg-emerald-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                       Nội dung chuyển khoản
                     </p>
                     <button
@@ -1444,62 +1471,116 @@ export default function PaymentPackagesPage() {
                     </button>
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopy(`${Number(checkoutPayment?.amount ?? 0)}`, "số tiền")
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left"
+                  >
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                       Số tiền
                     </p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-900">
+                    <p className="mt-1 inline-flex items-center gap-2 text-3xl font-semibold text-emerald-800">
                       {formatCurrency(
                         Number(checkoutPayment?.amount ?? 0),
                         checkoutPayment?.currency || "VND",
                       )}
+                      <Copy className="h-4 w-4 text-slate-500" />
                     </p>
-                  </div>
+                  </button>
                 </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Hướng dẫn thanh toán
-                  </p>
-                  <ol className="mt-2 space-y-2 text-sm text-slate-600">
-                    <li>1. Mở ứng dụng ngân hàng của bạn.</li>
-                    <li>2. Quét QR trên màn hình.</li>
-                    <li>
-                      3. Vui lòng chờ đợi, hệ thống sẽ xác nhận sau ít giây.
-                    </li>
-                    <li>
-                      4. Nếu chưa cập nhật, hãy bấm nút Đã thanh toán để hệ
-                      thống kiểm tra giao dịch.
-                    </li>
-                  </ol>
-                </div>
-
-                {checkoutSyncSummary ? (
-                  <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs text-cyan-900">
-                    <p className="font-semibold">Kết quả kiểm tra gần nhất</p>
-                    <p className="mt-1">{checkoutSyncSummary.message}</p>
-                  </div>
-                ) : null}
 
                 {checkoutSyncError ? (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
                     {checkoutSyncError}
                   </div>
                 ) : null}
 
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-                  {resolveCheckoutStatusText()}
+              </div>
+            </div>
+            <div className="px-6 pb-6">
+              {(isExpiredPayment || isCancelledPayment) &&
+              checkoutPayment?.packageId ? (
+                <Button
+                  type="button"
+                  onClick={() => void handleCreateNewInvoice()}
+                  disabled={isCreatingPayment}
+                  className="h-11 w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800"
+                >
+                  {isCreatingPayment ? (
+                    <>
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      Đang tạo mã mới...
+                    </>
+                  ) : (
+                    "Tạo mã thanh toán mới"
+                  )}
+                </Button>
+              ) : (
+                <div className="rounded-xl border border-emerald-200 border-dashed bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                  <span className="inline-flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 animate-spin" />
+                    {resolveCheckoutStatusText()}
+                  </span>
                   {checkoutPayment?.status === "pending" ? (
                     <span className="ml-2 inline-flex items-center gap-1 font-semibold">
-                      <Clock3 className="h-4 w-4" />
                       {formatCountdown(remainingSeconds ?? 0)}
                     </span>
                   ) : null}
                 </div>
-              </div>
+              )}
             </div>
+            <style jsx>{`
+              .qr-scan-line {
+                animation: qrScanDown 2.4s linear infinite;
+              }
+
+              @keyframes qrScanDown {
+                0% {
+                  transform: translateY(-140%);
+                  opacity: 0.15;
+                }
+                8% {
+                  opacity: 1;
+                }
+                92% {
+                  opacity: 1;
+                }
+                100% {
+                  transform: translateY(900%);
+                  opacity: 0.15;
+                }
+              }
+            `}</style>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog
+          open={isExitPaymentConfirmOpen}
+          onOpenChange={setIsExitPaymentConfirmOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Thoát khỏi thanh toán?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Đơn hàng của bạn sẽ bị hủy. Nếu bạn đã thanh toán trước đó, hệ
+                thống sẽ tự động cập nhật khi đối soát giao dịch.
+                <br />
+                Vui lòng không chuyển tiếp số tiền với mã giao dịch vừa rồi.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Ở lại</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-rose-600 text-white hover:bg-rose-500"
+                onClick={() => void handleConfirmExitPayment()}
+              >
+                Thoát và hủy đơn
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </ProtectedRoute>
   );

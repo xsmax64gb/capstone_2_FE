@@ -148,6 +148,18 @@ const DEFAULT_FEATURE_CATALOG: PaymentPackageFeature[] = [
     description: "Học từ mới theo chủ đề và bộ từ luyện tập.",
     category: "Từ vựng",
   },
+  {
+    key: "ai_exercise_builder",
+    label: "Tạo bài tập với AI",
+    description: "Tạo bài tập cá nhân bằng AI từ prompt hoặc PDF.",
+    category: "AI Creator",
+  },
+  {
+    key: "ai_vocabulary_builder",
+    label: "Tạo từ vựng với AI",
+    description: "Tạo bộ từ vựng cá nhân bằng AI từ prompt hoặc PDF.",
+    category: "AI Creator",
+  },
 ];
 
 const createInitialFormState = (): PaymentPackageFormState => ({

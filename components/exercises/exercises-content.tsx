@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -20,6 +20,14 @@ import {
   useGetExercisesQuery,
   useGetExerciseSummaryQuery,
 } from "@/store/services/exercisesApi";
+import { useGetMyFeatureQuotasQuery } from "@/store/services/paymentApi";
+import { notify } from "@/lib/admin";
+import {
+  AI_EXERCISE_BUILDER_FEATURE_KEY,
+  getFeatureQuotaBlockedMessage,
+  getFeatureQuotaItem,
+  isFeatureQuotaBlocked,
+} from "@/lib/feature-quota";
 import { useI18n } from "@/lib/i18n/context";
 import {
   Pagination,
@@ -112,12 +120,34 @@ export default function ExercisesContent() {
     limit: 8,
   });
   const { data: summaryData } = useGetExerciseSummaryQuery();
+  const { data: featureQuotaOverview } = useGetMyFeatureQuotasQuery();
 
   const items = listData?.items ?? [];
   const pagination = listData?.pagination;
   const totalQuestions = summaryData?.totalQuestions ?? 0;
   const totalXp = summaryData?.totalXp ?? 0;
   const pastAttempts = summaryData?.pastAttempts ?? 0;
+  const aiExerciseQuota = useMemo(
+    () =>
+      getFeatureQuotaItem(featureQuotaOverview, AI_EXERCISE_BUILDER_FEATURE_KEY),
+    [featureQuotaOverview],
+  );
+
+  const handleOpenAiExerciseBuilder = () => {
+    if (isFeatureQuotaBlocked(aiExerciseQuota)) {
+      notify({
+        title: t("Đã hết quota tạo AI"),
+        message: getFeatureQuotaBlockedMessage(
+          aiExerciseQuota,
+          t("Tạo bài tập bằng AI"),
+        ),
+        type: "warning",
+      });
+      return;
+    }
+
+    router.push("/exercises/create-ai");
+  };
 
   const getTopicLabel = (topic: string) => {
     const labels: Record<string, string> = {
@@ -154,13 +184,14 @@ export default function ExercisesContent() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link
-                href="/exercises/create-ai"
+              <button
+                type="button"
+                onClick={handleOpenAiExerciseBuilder}
                 className="inline-flex items-center rounded-lg bg-black px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
               >
                 <PenLine className="mr-1.5 h-4 w-4" />
                 {t("Tạo bài tập")}
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={() => {

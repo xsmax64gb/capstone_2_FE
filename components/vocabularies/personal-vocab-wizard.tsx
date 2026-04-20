@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Loader2, Upload, Wand2, X } from "lucide-react";
+import { handleApiError } from "@/lib/api-error-handler";
+import { notify } from "@/lib/admin";
+import {
+  AI_VOCABULARY_BUILDER_FEATURE_KEY,
+  getFeatureQuotaBadgeText,
+  getFeatureQuotaBlockedMessage,
+  getFeatureQuotaItem,
+  isFeatureQuotaBlocked,
+} from "@/lib/feature-quota";
 import { useI18n } from "@/lib/i18n/context";
 import {
   type PersonalVocabItem,
@@ -11,6 +20,7 @@ import {
   useGeneratePersonalVocabularyFromPdfMutation,
   useGeneratePersonalVocabularyFromPromptMutation,
 } from "@/store/services/vocabulariesApi";
+import { useGetMyFeatureQuotasQuery } from "@/store/services/paymentApi";
 
 type Mode = "manual" | "ai" | null;
 type AiMode = "prompt" | "pdf";
@@ -56,9 +66,24 @@ export default function PersonalVocabWizard() {
   const [saveManual, { isLoading: savingManual }] =
     useCreatePersonalVocabularyManualMutation();
   const [saveAi, { isLoading: savingAi }] = useCreatePersonalVocabularyAiMutation();
+  const { data: featureQuotaOverview } = useGetMyFeatureQuotasQuery();
 
   const generating = generatingPrompt || generatingPdf;
   const saving = savingManual || savingAi;
+  const aiVocabularyQuota = useMemo(
+    () =>
+      getFeatureQuotaItem(
+        featureQuotaOverview,
+        AI_VOCABULARY_BUILDER_FEATURE_KEY,
+      ),
+    [featureQuotaOverview],
+  );
+  const isAiVocabularyBlocked = isFeatureQuotaBlocked(aiVocabularyQuota);
+  const aiVocabularyQuotaBadge = getFeatureQuotaBadgeText(aiVocabularyQuota);
+  const aiVocabularyBlockedMessage = getFeatureQuotaBlockedMessage(
+    aiVocabularyQuota,
+    t("Tạo từ vựng bằng AI"),
+  );
 
   useEffect(() => {
     if (!pdfFile) {
@@ -97,6 +122,20 @@ export default function PersonalVocabWizard() {
   const pick = (m: Mode) => {
     setMode(m);
     setStep("form");
+  };
+
+  const handlePickAi = () => {
+    if (isAiVocabularyBlocked) {
+      notify({
+        title: t("Đã hết quota tạo AI"),
+        message: aiVocabularyBlockedMessage,
+        type: "warning",
+      });
+      return;
+    }
+
+    setAiMode("prompt");
+    pick("ai");
   };
 
   const resetPreview = () => {
@@ -174,54 +213,72 @@ export default function PersonalVocabWizard() {
 
   const runAiGenerate = async () => {
     resetPreview();
-    if (aiMode === "prompt") {
-      const res = await genPrompt({
-        title: title.trim() || t("Thêm từ vựng"),
-        topic,
-        level,
-        number_of_words: numberOfWords,
-        include_pronunciation: includePronunciation,
-        include_meaning: includeMeaning,
-        include_example: includeExample,
-        additional_instruction: additionalInstruction,
-      }).unwrap();
+    if (isAiVocabularyBlocked) {
+      notify({
+        title: t("Đã hết quota tạo AI"),
+        message: aiVocabularyBlockedMessage,
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      if (aiMode === "prompt") {
+        const res = await genPrompt({
+          title: title.trim() || t("Thêm từ vựng"),
+          topic,
+          level,
+          number_of_words: numberOfWords,
+          include_pronunciation: includePronunciation,
+          include_meaning: includeMeaning,
+          include_example: includeExample,
+          additional_instruction: additionalInstruction,
+        }).unwrap();
+        setRawText(res.rawText);
+        setItems(res.items ?? []);
+        setErrors(res.errors ?? []);
+        setStep("preview");
+        return;
+      }
+
+      if (!pdfFile) {
+        window.dispatchEvent(
+          new CustomEvent("elapp:notify", {
+            detail: {
+              title: t("Lỗi"),
+              message: t("Vui lòng chọn file PDF"),
+              type: "warning",
+              duration: 2200,
+            },
+          }),
+        );
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append("file_pdf", pdfFile);
+      fd.append("title", title.trim() || "Personal vocab (PDF)");
+      fd.append("topic", topic);
+      fd.append("level", level);
+      fd.append("number_of_words", String(numberOfWords));
+      fd.append("include_pronunciation", String(includePronunciation));
+      fd.append("include_meaning", String(includeMeaning));
+      fd.append("include_example", String(includeExample));
+      fd.append("additional_instruction", additionalInstruction);
+
+      const res = await genPdf(fd).unwrap();
       setRawText(res.rawText);
       setItems(res.items ?? []);
       setErrors(res.errors ?? []);
       setStep("preview");
-      return;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      notify({
+        title: t("Không thể tạo từ vựng với AI"),
+        message: apiError.message,
+        type: "error",
+      });
     }
-
-    if (!pdfFile) {
-      window.dispatchEvent(
-        new CustomEvent("elapp:notify", {
-          detail: {
-            title: t("Lỗi"),
-            message: t("Vui lòng chọn file PDF"),
-            type: "warning",
-            duration: 2200,
-          },
-        }),
-      );
-      return;
-    }
-
-    const fd = new FormData();
-    fd.append("file_pdf", pdfFile);
-    fd.append("title", title.trim() || "Personal vocab (PDF)");
-    fd.append("topic", topic);
-    fd.append("level", level);
-    fd.append("number_of_words", String(numberOfWords));
-    fd.append("include_pronunciation", String(includePronunciation));
-    fd.append("include_meaning", String(includeMeaning));
-    fd.append("include_example", String(includeExample));
-    fd.append("additional_instruction", additionalInstruction);
-
-    const res = await genPdf(fd).unwrap();
-    setRawText(res.rawText);
-    setItems(res.items ?? []);
-    setErrors(res.errors ?? []);
-    setStep("preview");
   };
 
   const updateItem = (index: number, patch: Partial<PersonalVocabItem>) => {
@@ -236,8 +293,33 @@ export default function PersonalVocabWizard() {
     if (!mode) return;
     if (items.length === 0 && mode !== "manual") return;
 
-    if (mode === "manual") {
-      const { id } = await saveManual({
+    try {
+      if (mode === "manual") {
+        const { id } = await saveManual({
+          title: title.trim() || t("Bộ từ cá nhân"),
+          topic,
+          level,
+          include_pronunciation: includePronunciation,
+          include_meaning: includeMeaning,
+          include_example: includeExample,
+          additional_instruction: additionalInstruction,
+          rawText: rawText || manualText,
+        }).unwrap();
+        router.push(`/vocabularies/${id}/flashcards`);
+        return;
+      }
+
+      if (isAiVocabularyBlocked) {
+        notify({
+          title: t("Đã hết quota tạo AI"),
+          message: aiVocabularyBlockedMessage,
+          type: "warning",
+        });
+        return;
+      }
+
+      const { id } = await saveAi({
+        source: aiMode === "pdf" ? "ai_pdf" : "ai_prompt",
         title: title.trim() || t("Bộ từ cá nhân"),
         topic,
         level,
@@ -245,24 +327,20 @@ export default function PersonalVocabWizard() {
         include_meaning: includeMeaning,
         include_example: includeExample,
         additional_instruction: additionalInstruction,
-        rawText: rawText || manualText,
+        items,
       }).unwrap();
       router.push(`/vocabularies/${id}/flashcards`);
-      return;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      notify({
+        title:
+          mode === "manual"
+            ? t("Không thể lưu bộ từ")
+            : t("Không thể lưu bộ từ AI"),
+        message: apiError.message,
+        type: "error",
+      });
     }
-
-    const { id } = await saveAi({
-      source: aiMode === "pdf" ? "ai_pdf" : "ai_prompt",
-      title: title.trim() || t("Bộ từ cá nhân"),
-      topic,
-      level,
-      include_pronunciation: includePronunciation,
-      include_meaning: includeMeaning,
-      include_example: includeExample,
-      additional_instruction: additionalInstruction,
-      items,
-    }).unwrap();
-    router.push(`/vocabularies/${id}/flashcards`);
   };
 
   if (step === "pick") {
@@ -281,10 +359,7 @@ export default function PersonalVocabWizard() {
         </button>
         <button
           type="button"
-          onClick={() => {
-            setAiMode("prompt");
-            pick("ai");
-          }}
+          onClick={handlePickAi}
           className="flex flex-col items-start rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-slate-400 hover:shadow"
         >
           <Wand2 className="mb-3 h-10 w-10 text-slate-700" />
@@ -292,6 +367,15 @@ export default function PersonalVocabWizard() {
           <p className="mt-2 text-sm text-slate-600">
             {t("Chỉ tạo bằng AI hoặc nhập thủ công")}
           </p>
+          <span
+            className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+              isAiVocabularyBlocked
+                ? "bg-amber-100 text-amber-800"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {aiVocabularyQuotaBadge}
+          </span>
         </button>
       </div>
     );
@@ -710,4 +794,3 @@ export default function PersonalVocabWizard() {
     </div>
   );
 }
-

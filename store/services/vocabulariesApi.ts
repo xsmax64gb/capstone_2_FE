@@ -333,7 +333,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<{ id: string }>) =>
         response.data as { id: string },
-      invalidatesTags: ["Vocabularies"],
+      invalidatesTags: ["Vocabularies", "FeatureQuotas"],
     }),
 
     updatePersonalVocabularySet: builder.mutation<

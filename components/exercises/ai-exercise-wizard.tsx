@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Upload, Wand2, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/context";
+import { handleApiError } from "@/lib/api-error-handler";
+import { notify } from "@/lib/admin";
 import {
   type AiGeneratedQuestion,
   useCreateUserAiExerciseMutation,
@@ -116,58 +118,67 @@ export default function AiExerciseWizard() {
     setQuestions([]);
     setRawText("");
 
-    if (mode === "prompt") {
-      const res = await genPrompt({
-        title: title.trim() || t("Tạo bài tập bằng AI"),
-        topic: topic.trim() || "general",
-        level,
-        number_of_questions: numberOfQuestions,
-        grammar_focus: grammarFocus,
-        vocabulary_focus: vocabularyFocus,
-        difficulty,
-        context,
-        additional_instruction: additionalInstruction,
-      }).unwrap();
+    try {
+      if (mode === "prompt") {
+        const res = await genPrompt({
+          title: title.trim() || t("Tạo bài tập bằng AI"),
+          topic: topic.trim() || "general",
+          level,
+          number_of_questions: numberOfQuestions,
+          grammar_focus: grammarFocus,
+          vocabulary_focus: vocabularyFocus,
+          difficulty,
+          context,
+          additional_instruction: additionalInstruction,
+        }).unwrap();
 
+        setRawText(res.rawText);
+        setParseErrors(res.parseErrors ?? []);
+        setQuestions(res.questions ?? []);
+        setStep("preview");
+        return;
+      }
+
+      if (!pdfFile) {
+        window.dispatchEvent(
+          new CustomEvent("elapp:notify", {
+            detail: {
+              title: t("Lỗi"),
+              message: t("Vui lòng chọn file PDF"),
+              type: "warning",
+              duration: 2200,
+            },
+          }),
+        );
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append("file_pdf", pdfFile);
+      fd.append("title", title.trim() || "PDF exercise");
+      fd.append("description", description);
+      fd.append("topic", topic.trim() || "general");
+      fd.append("level", level);
+      fd.append("number_of_questions", String(numberOfQuestions));
+      fd.append("grammar_focus", grammarFocus);
+      fd.append("vocabulary_focus", vocabularyFocus);
+      fd.append("difficulty", difficulty);
+      fd.append("additional_instruction", additionalInstruction);
+
+      const res = await genPdf(fd).unwrap();
       setRawText(res.rawText);
       setParseErrors(res.parseErrors ?? []);
       setQuestions(res.questions ?? []);
+      setPdfTruncated(Boolean(res.pdfTruncated));
       setStep("preview");
-      return;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      notify({
+        title: t("Không thể tạo bài tập với AI"),
+        message: apiError.message,
+        type: "error",
+      });
     }
-
-    if (!pdfFile) {
-      window.dispatchEvent(
-        new CustomEvent("elapp:notify", {
-          detail: {
-            title: t("Lỗi"),
-            message: t("Vui lòng chọn file PDF"),
-            type: "warning",
-            duration: 2200,
-          },
-        }),
-      );
-      return;
-    }
-
-    const fd = new FormData();
-    fd.append("file_pdf", pdfFile);
-    fd.append("title", title.trim() || "PDF exercise");
-    fd.append("description", description);
-    fd.append("topic", topic.trim() || "general");
-    fd.append("level", level);
-    fd.append("number_of_questions", String(numberOfQuestions));
-    fd.append("grammar_focus", grammarFocus);
-    fd.append("vocabulary_focus", vocabularyFocus);
-    fd.append("difficulty", difficulty);
-    fd.append("additional_instruction", additionalInstruction);
-
-    const res = await genPdf(fd).unwrap();
-    setRawText(res.rawText);
-    setParseErrors(res.parseErrors ?? []);
-    setQuestions(res.questions ?? []);
-    setPdfTruncated(Boolean(res.pdfTruncated));
-    setStep("preview");
   };
 
   const updateQuestion = (index: number, patch: Partial<AiGeneratedQuestion>) => {
@@ -203,17 +214,13 @@ export default function AiExerciseWizard() {
 
       const { id } = await saveExercise(body).unwrap();
       router.push(`/exercises/${id}`);
-    } catch {
-      window.dispatchEvent(
-        new CustomEvent("elapp:notify", {
-          detail: {
-            title: t("Lỗi"),
-            message: t("Không tải được bài tập. Vui lòng kiểm tra token đăng nhập hoặc kết nối backend."),
-            type: "error",
-            duration: 3200,
-          },
-        }),
-      );
+    } catch (error) {
+      const apiError = handleApiError(error);
+      notify({
+        title: t("Không thể lưu bài tập AI"),
+        message: apiError.message,
+        type: "error",
+      });
     }
   };
 

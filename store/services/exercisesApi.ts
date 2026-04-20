@@ -304,7 +304,7 @@ export const exercisesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<{ id: string }>) =>
         response.data as { id: string },
-      invalidatesTags: ["Exercises"],
+      invalidatesTags: ["Exercises", "FeatureQuotas"],
     }),
 
     updateUserAiExercise: builder.mutation<

@@ -1,8 +1,5 @@
 import { baseApi } from "@/store/api/baseApi";
 import type {
-  AdminAiLevelItem,
-  AdminAiLevelPayload,
-  AdminAiLevelsResponse,
   AdminCreateUserPayload,
   AdminExerciseItem,
   AdminExercisePayload,
@@ -398,67 +395,19 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminVocabulary", "AdminOverview"],
     }),
-
-    getAdminAiLevels: builder.query<AdminAiLevelItem[], void>({
-      query: () => ({
-        url: "/admin/ai-levels",
-        method: "GET",
-      }),
-      providesTags: ["AdminAiLevels"],
-      transformResponse: (response: ApiResponse<AdminAiLevelsResponse>) =>
-        response.data?.items ?? [],
-    }),
-
-    createAdminAiLevel: builder.mutation<AdminAiLevelItem, AdminAiLevelPayload>(
-      {
-        query: (body) => ({
-          url: "/admin/ai-levels",
-          method: "POST",
-          body,
-        }),
-        invalidatesTags: ["AdminAiLevels", "AdminReports", "AdminOverview"],
-        transformResponse: (response: ApiResponse<AdminAiLevelItem>) =>
-          response.data as AdminAiLevelItem,
-      },
-    ),
-
-    updateAdminAiLevel: builder.mutation<
-      AdminAiLevelItem,
-      { id: string; body: Partial<AdminAiLevelPayload> }
-    >({
-      query: ({ id, body }) => ({
-        url: `/admin/ai-levels/${id}`,
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["AdminAiLevels", "AdminReports", "AdminOverview"],
-      transformResponse: (response: ApiResponse<AdminAiLevelItem>) =>
-        response.data as AdminAiLevelItem,
-    }),
-
-    deleteAdminAiLevel: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `/admin/ai-levels/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["AdminAiLevels", "AdminReports", "AdminOverview"],
-    }),
   }),
 });
 
 export const {
-  useCreateAdminAiLevelMutation,
   useCreateAdminExerciseMutation,
   useCreateAdminUserMutation,
   useCreateAdminVocabularyMutation,
   useCreateAdminVocabularyWordMutation,
   useCreateAdminVocabularyWordsBulkMutation,
-  useDeleteAdminAiLevelMutation,
   useDeleteAdminExerciseMutation,
   useDeleteAdminUserMutation,
   useDeleteAdminVocabularyMutation,
   useDeleteAdminVocabularyWordMutation,
-  useGetAdminAiLevelsQuery,
   useGetAdminExercisesQuery,
   useGetAdminOverviewQuery,
   useGetAdminReportsQuery,
@@ -467,7 +416,6 @@ export const {
   useGetAdminVocabularyByIdQuery,
   useGetAdminVocabularyQuery,
   useResetAdminUserPasswordMutation,
-  useUpdateAdminAiLevelMutation,
   useUpdateAdminExerciseMutation,
   useUpdateAdminUserMutation,
   useUpdateAdminUserRoleMutation,

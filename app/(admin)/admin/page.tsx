@@ -30,6 +30,11 @@ const quickActions = [
     href: "/admin/users",
   },
   {
+    title: "Thông báo",
+    description: "Gửi thông báo toàn hệ thống hoặc cho một học viên cụ thể.",
+    href: "/admin/notifications",
+  },
+  {
     title: "Quản trị exercises",
     description: "Duyệt ngân hàng bài tập với preview lớn và CRUD đầy đủ.",
     href: "/admin/exercises",
@@ -43,11 +48,6 @@ const quickActions = [
     title: "Quản trị vocabulary",
     description: "Quản lý bộ từ vựng và các từ (word, meaning, example), hỗ trợ import hàng loạt.",
     href: "/admin/vocabulary",
-  },
-  {
-    title: "Quản trị AI",
-    description: "Điều chỉnh level AI, stage flow và activation.",
-    href: "/admin/ai",
   },
   {
     title: "Báo cáo vận hành",

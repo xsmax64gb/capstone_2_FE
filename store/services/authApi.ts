@@ -64,12 +64,20 @@ const toAuthResponse = (response: ApiResponse<AuthPayload>): AuthResponse => {
   };
 };
 
+const mergeUserIntoAuth = (prev: User | null, next: User): User => ({
+  ...(prev ?? {}),
+  ...next,
+  name: next.fullName || next.name || prev?.name,
+});
+
 const syncProfileState = async (
   dispatch: (action: unknown) => unknown,
-  queryFulfilled: Promise<{ data: User }>
+  getState: () => { auth: { user: User | null } },
+  queryFulfilled: Promise<{ data: User }>,
 ) => {
   const { data } = await queryFulfilled;
-  dispatch(setUser(data));
+  const merged = mergeUserIntoAuth(getState().auth.user, data);
+  dispatch(setUser(merged));
   dispatch(authApi.util.upsertQueryData("getProfile", undefined, data));
 };
 
@@ -126,6 +134,15 @@ export const authApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Profile"],
       transformResponse: (response: ApiResponse<User>) => response.data as User,
+      async onQueryStarted(_arg, { dispatch, queryFulfilled, getState }) {
+        try {
+          const { data } = await queryFulfilled;
+          const merged = mergeUserIntoAuth(getState().auth.user, data);
+          dispatch(setUser(merged));
+        } catch {
+          /* ignore */
+        }
+      },
     }),
 
     updateProfile: builder.mutation<User, UpdateProfileRequest>({
@@ -136,8 +153,8 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Profile"],
       transformResponse: (response: ApiResponse<User>) => response.data as User,
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await syncProfileState(dispatch, queryFulfilled);
+      async onQueryStarted(_arg, { dispatch, queryFulfilled, getState }) {
+        await syncProfileState(dispatch, getState, queryFulfilled);
       },
     }),
 
@@ -149,8 +166,8 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Profile"],
       transformResponse: (response: ApiResponse<User>) => response.data as User,
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await syncProfileState(dispatch, queryFulfilled);
+      async onQueryStarted(_arg, { dispatch, queryFulfilled, getState }) {
+        await syncProfileState(dispatch, getState, queryFulfilled);
       },
     }),
 
@@ -161,8 +178,8 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Profile"],
       transformResponse: (response: ApiResponse<User>) => response.data as User,
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await syncProfileState(dispatch, queryFulfilled);
+      async onQueryStarted(_arg, { dispatch, queryFulfilled, getState }) {
+        await syncProfileState(dispatch, getState, queryFulfilled);
       },
     }),
   }),

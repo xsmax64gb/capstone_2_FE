@@ -1,3 +1,4 @@
+//các type cho toàn bộ ứng dụng, bao gồm cả auth, api response, notification, admin dashboard, placement test, v.v. Giúp định nghĩa rõ ràng cấu trúc dữ liệu và giao diện giữa các phần của ứng dụng. nhận res đồng bộ
 // Auth Types
 export interface User {
   id: string;
@@ -238,39 +239,6 @@ export interface AdminVocabularySetItem {
 
 export type AdminVocabularyItem = AdminVocabularySetItem;
 
-export interface AdminAiStage {
-  stageId: string;
-  name: string;
-  order: number;
-  type: string;
-  context: string;
-  aiRole: string;
-  objective: string;
-  systemPrompt: string;
-  suggestedVocabulary: string[];
-  passRules: {
-    minScore: number;
-    minTurns: number;
-  };
-  rewards: {
-    exp: number;
-    unlockNextLevel: string | null;
-  };
-}
-
-export interface AdminAiLevelItem {
-  id: string;
-  level: string;
-  title: string;
-  description: string;
-  minPlacementLevel: string;
-  isActive: boolean;
-  stageCount: number;
-  stages: AdminAiStage[];
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
 export interface AdminReportsResponse {
   summary: {
     totalUsers: number;
@@ -300,10 +268,6 @@ export interface AdminExercisesResponse {
 
 export interface AdminVocabularyResponse {
   items: AdminVocabularySetItem[];
-}
-
-export interface AdminAiLevelsResponse {
-  items: AdminAiLevelItem[];
 }
 
 export interface AdminExercisePayload {
@@ -356,15 +320,6 @@ export interface AdminVocabularyWordsBulkResponse {
   items: AdminVocabularyWordItem[];
 }
 
-export interface AdminAiLevelPayload {
-  level: string;
-  title: string;
-  description: string;
-  minPlacementLevel: string;
-  isActive: boolean;
-  stages: AdminAiStage[];
-}
-
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 export type PlacementSkillType = "grammar" | "vocab" | "reading" | "listening";
 export type PlacementQuestionType = "mcq" | "true_false" | "fill_blank";
@@ -405,6 +360,8 @@ export interface AdminPlacementLevelRuleItem {
 export interface AdminPlacementTestItem {
   id: string;
   title: string;
+  levelFrom?: CefrLevel;
+  levelTo?: CefrLevel;
   description: string;
   instructions: string;
   durationMinutes: number;
@@ -424,12 +381,15 @@ export interface AdminPlacementTestsResponse {
 
 export interface AdminPlacementTestPayload {
   title: string;
+  levelFrom?: CefrLevel;
+  levelTo?: CefrLevel;
   description: string;
   instructions: string;
   durationMinutes: number;
   isActive: boolean;
   questions: AdminPlacementQuestionItem[];
-  levelRules: AdminPlacementLevelRuleItem[];
+  levelRules?: AdminPlacementLevelRuleItem[];
+  autoRules?: boolean;
 }
 
 export interface AdminGeneratePlacementWithAiPayload {
@@ -525,4 +485,267 @@ export interface PlacementSkipPayload {
 export interface PlacementFinalizeResponse {
   user: User;
   result: PlacementResultItem;
+}
+
+export type PaymentMethod = "bank_transfer" | "cash" | "card";
+export type PaymentStatus = "pending" | "paid" | "failed";
+export type PaymentPackageBillingCycle =
+  | "month"
+  | "quarter"
+  | "year"
+  | "one_time";
+export type PaymentFeatureAccessLevel =
+  | "basic"
+  | "standard"
+  | "advanced"
+  | "full";
+export type PaymentFeatureScopePeriod =
+  | "day"
+  | "week"
+  | "month"
+  | "billing_cycle"
+  | "lifetime";
+
+export interface PaymentFeatureScope {
+  featureKey: string;
+  accessLevel: PaymentFeatureAccessLevel;
+  quota: number | null;
+  quotaPeriod: PaymentFeatureScopePeriod;
+  note: string;
+}
+
+export interface PaymentQrData {
+  provider: "vietqr";
+  qrImageUrl: string;
+  bankCode: string;
+  accountNumber: string;
+  accountName: string | null;
+  transferContent: string;
+  amount: number;
+  currency: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  invoiceNumber: string;
+  externalRef: string | null;
+  pricingKey: string | null;
+  packageId: string | null;
+  packageSlug: string | null;
+  packageName: string | null;
+  packageFeatureKeys: string[];
+  packageFeatureScopes: PaymentFeatureScope[];
+  amount: number;
+  currency: string;
+  paymentMethod: PaymentMethod;
+  status: PaymentStatus;
+  xgateReference: string | null;
+  matchedContent: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  paidAt: string | null;
+  syncedAt: string | null;
+  expiresAt: string | null;
+  failureReason: string | null;
+  isExpired: boolean;
+  paymentQr?: PaymentQrData | null;
+  paymentQrSetupError?: string | null;
+}
+
+export interface PaymentPackageFeature {
+  key: string;
+  label: string;
+  description: string;
+  category: string;
+}
+
+export interface PaymentPackage {
+  id: string;
+  name: string;
+  slug: string;
+  isDefault: boolean;
+  description: string;
+  price: number;
+  currency: string;
+  billingCycle: PaymentPackageBillingCycle;
+  featureKeys: string[];
+  featureScopes: PaymentFeatureScope[];
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface PaymentPackageCatalogResponse {
+  packages: PaymentPackage[];
+  featureCatalog: PaymentPackageFeature[];
+  scopeConfig?: {
+    accessLevelOptions: PaymentFeatureAccessLevel[];
+    quotaPeriodOptions: PaymentFeatureScopePeriod[];
+  };
+  activeLimit: number;
+}
+
+export interface PaymentPackageUpsertRequest {
+  name: string;
+  slug?: string;
+  description: string;
+  price: number;
+  currency?: string;
+  billingCycle: PaymentPackageBillingCycle;
+  featureKeys: string[];
+  featureScopes?: PaymentFeatureScope[];
+  isActive: boolean;
+  displayOrder: number;
+}
+
+export interface FeatureQuotaItem {
+  featureKey: string;
+  featureLabel: string;
+  enabled: boolean;
+  accessLevel: PaymentFeatureAccessLevel | null;
+  quota: number | null;
+  used: number | null;
+  remaining: number | null;
+  isUnlimited: boolean;
+  isBlocked: boolean;
+  quotaPeriod: PaymentFeatureScopePeriod | null;
+  quotaPeriodLabel: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  note: string;
+}
+
+export interface FeatureQuotaOverviewResponse {
+  generatedAt: string;
+  packageName: string;
+  packageSlug: string | null;
+  billingCycle: PaymentPackageBillingCycle;
+  source: "paid_payment" | "default_package";
+  features: FeatureQuotaItem[];
+}
+
+export interface PaymentSyncSummary {
+  source: string;
+  startedAt: string;
+  finishedAt: string;
+  pendingChecked: number;
+  matchedPayments: number;
+  updatedPayments: number;
+  xgateRequests: number;
+  xgateTransactions: number;
+  skippedByRateLimit: boolean;
+  status: string;
+  message: string;
+}
+
+export interface PaymentCreateRequest {
+  packageId?: string;
+  packageSlug?: string;
+  externalRef?: string;
+  pricingKey?: string;
+  amount?: number;
+  currency?: string;
+  paymentMethod?: PaymentMethod;
+}
+
+export interface PaymentReconcileResponse {
+  invoiceNumber: string;
+  allowProceed: boolean;
+  payment: PaymentRecord;
+  syncSummary: PaymentSyncSummary;
+}
+
+export interface PaymentCancelResponse {
+  invoiceNumber: string;
+  cancelled: boolean;
+  payment: PaymentRecord | null;
+}
+
+export type PaymentVerifyRequest =
+  | ({ action: "create" } & PaymentCreateRequest)
+  | {
+      action: "verify";
+      invoiceNumber: string;
+      externalRef?: string;
+    };
+
+export interface PaymentVerifyResponse {
+  action: "create" | "verify";
+  allowProceed: boolean;
+  payment: PaymentRecord;
+  nextStep?: string;
+  decision?: string;
+}
+
+export interface RevenueRange {
+  from: string;
+  to: string;
+  label: string;
+  rangeDays: number;
+}
+
+export interface AdminRevenueOverviewResponse {
+  range: RevenueRange;
+  summary: {
+    systemRevenue: number;
+    systemPaidTransactions: number;
+    revenueInRange: number;
+    paidTransactions: number;
+    pendingTransactions: number;
+    failedTransactions: number;
+    successRate: number;
+    averageTicket: number;
+    latestPaidAt: string | null;
+    currency: string;
+  };
+}
+
+export interface AdminRevenueChartPoint {
+  date: string;
+  label: string;
+  revenue: number;
+  paidTransactions: number;
+}
+
+export interface AdminRevenueChartResponse {
+  range: RevenueRange;
+  timezone: string;
+  points: AdminRevenueChartPoint[];
+  totals: {
+    revenue: number;
+    paidTransactions: number;
+    currency: string;
+  };
+}
+
+export interface RevenueBreakdownItem {
+  key: string;
+  count: number;
+  amount: number;
+}
+
+export interface AdminRevenueRecentPaidItem {
+  invoiceNumber: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  pricingKey: string | null;
+  externalRef: string | null;
+  xgateReference: string | null;
+  paidAt: string | null;
+}
+
+export interface AdminRevenueStatisticsResponse {
+  range: RevenueRange;
+  totals: {
+    transactions: number;
+    currency: string;
+  };
+  breakdowns: {
+    status: RevenueBreakdownItem[];
+    paymentMethod: RevenueBreakdownItem[];
+    pricing: RevenueBreakdownItem[];
+  };
+  recentPaid: AdminRevenueRecentPaidItem[];
 }

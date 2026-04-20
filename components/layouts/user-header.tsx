@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Languages, LogOut, ShieldCheck, User } from "lucide-react";
+import { Languages, LogOut, ShieldCheck, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
 import {
@@ -14,12 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LanguageSwitch } from "./language-switch";
+import { NotificationBell } from "./notification-bell";
+import { useLevel } from "@/contexts/level-context";
 
 const navItems = [
   { labelKey: "Trang chủ", href: "/" },
   { labelKey: "Bài tập", href: "/exercises" },
   { labelKey: "Từ vựng", href: "/vocabularies" },
   { labelKey: "Nói với AI", href: "/learn" },
+  { labelKey: "Đăng ký", href: "/payments" },
 ];
 
 const DEFAULT_AVATAR_URL =
@@ -28,21 +31,23 @@ const DEFAULT_AVATAR_URL =
 export function UserHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { t } = useI18n();
+  const { levelInfo } = useLevel();
   /** Tránh hydration mismatch: Redux đọc user từ localStorage chỉ phía client. */
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const profileName = mounted
-    ? user?.fullName || user?.name || t("Profile")
-    : t("Profile");
-  const avatarUrl =
-    mounted && user?.avatarUrl ? user.avatarUrl : DEFAULT_AVATAR_URL;
+  const profileName =
+    user?.fullName ||
+    user?.name ||
+    (user?.email ? user.email.split("@")[0] : null) ||
+    t("Hồ sơ");
+  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
   const navLinks =
-    mounted && user?.role === "admin"
+    user?.role === "admin"
       ? [...navItems, { labelKey: "Quản trị", href: "/admin" }]
       : navItems;
 
@@ -64,9 +69,7 @@ export function UserHeader() {
     const activeIndex = getActiveIndex();
     if (activeIndex < 0) return 0;
 
-    // Base position for each item (gap-8 = 32px between items)
-    const basePositions = [0, 96, 192, 288]; // Approximate positions for each nav item
-    return basePositions[activeIndex] || 0;
+    return activeIndex * 96;
   };
 
   const handleLogout = () => {
@@ -85,7 +88,7 @@ export function UserHeader() {
         </Link>
 
         <nav className="relative hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-          {navLinks.map((item, index) => (
+          {navLinks.map((item) => (
             <Link
               key={item.labelKey}
               href={item.href}
@@ -112,45 +115,83 @@ export function UserHeader() {
 
         <div className="flex items-center gap-4">
           <LanguageSwitch />
-          <button className="relative rounded-full p-2 text-slate-600 transition-colors hover:bg-slate-100">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
-          </button>
+          {mounted && <NotificationBell />}
           <div className="h-8 w-px bg-slate-200" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 transition-colors hover:bg-slate-50"
-              >
-                <div className="h-6 w-6 overflow-hidden rounded-full bg-slate-200">
-                  <img
-                    src={avatarUrl}
-                    alt="User avatar"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <span className="text-sm font-medium">{profileName}</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => router.push("/profile")}>
-                <User className="h-4 w-4" />
-                {t("Profile")}
-              </DropdownMenuItem>
-              {mounted && user?.role === "admin" && (
-                <DropdownMenuItem onClick={() => router.push("/admin")}>
-                  <ShieldCheck className="h-4 w-4" />
-                  Quản trị
+          {mounted && isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 transition-colors hover:bg-slate-50"
+                >
+                  <div className="relative h-9 w-9">
+                    {/* Progress ring */}
+                    {levelInfo && (
+                      <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 36 36">
+                        {/* Background circle */}
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="16"
+                          fill="none"
+                          stroke="#e2e8f0"
+                          strokeWidth="2.5"
+                        />
+                        {/* Progress circle */}
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="16"
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 16}`}
+                          strokeDashoffset={`${2 * Math.PI * 16 * (1 - levelInfo.progressPercentage / 100)}`}
+                          className="transition-all duration-300"
+                        />
+                      </svg>
+                    )}
+                    {/* Avatar */}
+                    <div className="absolute inset-[4px] overflow-hidden rounded-full bg-slate-200">
+                      <img
+                        src={avatarUrl}
+                        alt="User avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium">{profileName}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                  <User className="h-4 w-4" />
+                  {t("Hồ sơ")}
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                {t("Logout")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {user?.role === "admin" && (
+                  <DropdownMenuItem onClick={() => router.push("/admin")}>
+                    <ShieldCheck className="h-4 w-4" />
+                    {t("Quản trị")}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  {t("Đăng xuất")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : mounted ? (
+            <Link
+              href="/login"
+              className="rounded-lg border border-slate-200 px-4 py-1.5 text-sm font-medium transition-colors hover:bg-slate-50"
+            >
+              {t("Đăng nhập")}
+            </Link>
+          ) : (
+            <div className="h-9 w-24 animate-pulse rounded-lg bg-slate-100" />
+          )}
         </div>
       </div>
     </header>

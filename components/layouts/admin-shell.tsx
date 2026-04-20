@@ -7,15 +7,18 @@ import {
   ArrowUpRight,
   BarChart3,
   BookOpen,
+  CircleDollarSign,
   ChevronRight,
   FileText,
   LayoutDashboard,
   Languages,
   LogOut,
   Map as MapIcon,
+  Megaphone,
   ShieldCheck,
   Sparkles,
   Users2,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useGetAdminOverviewQuery } from "@/store/services/adminApi";
@@ -54,6 +57,12 @@ const adminNavigation = [
     icon: Users2,
   },
   {
+    title: "Thông báo",
+    heading: "Gửi thông báo toàn hệ thống hoặc từng người",
+    href: "/admin/notifications",
+    icon: Megaphone,
+  },
+  {
     title: "Exercises",
     heading: "Quản trị ngân hàng bài tập",
     href: "/admin/exercises",
@@ -66,16 +75,16 @@ const adminNavigation = [
     icon: FileText,
   },
   {
+    title: "Level tests",
+    heading: "Bài kiểm tra cấp độ và quản lý tiến trình",
+    href: "/admin/level-tests",
+    icon: ShieldCheck,
+  },
+  {
     title: "Vocabulary",
     heading: "Quản trị ngân hàng từ vựng",
     href: "/admin/vocabularies",
     icon: Languages,
-  },
-  {
-    title: "AI",
-    heading: "Quản trị hành trình AI speaking",
-    href: "/admin/ai",
-    icon: Sparkles,
   },
   {
     title: "Learn maps",
@@ -88,6 +97,18 @@ const adminNavigation = [
     heading: "Theo dõi hiệu suất và cảnh báo",
     href: "/admin/reports",
     icon: BarChart3,
+  },
+  {
+    title: "Gói thanh toán",
+    heading: "Quản lý gói, quyền và quota theo module",
+    href: "/admin/payment-packages",
+    icon: Wallet,
+  },
+  {
+    title: "Doanh thu",
+    heading: "Phân tích doanh thu và đối soát thanh toán",
+    href: "/admin/revenue",
+    icon: CircleDollarSign,
   },
 ] as const;
 
@@ -270,7 +291,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <p className="truncate text-sm font-semibold text-slate-900">
                   {displayName}
                 </p>
-                <p className="text-xs text-slate-500">{user?.email || roleLabel}</p>
+                <p className="text-xs text-slate-500">
+                  {user?.email || roleLabel}
+                </p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between gap-3">

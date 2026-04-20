@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BookOpen,
@@ -14,11 +14,15 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "../data";
 import { VocabularyDetailSkeleton } from "@/components/vocabularies/skeletons";
 import {
+  useDeletePersonalVocabularySetMutation,
   useGetVocabularyByIdQuery,
   useGetVocabularyLeaderboardQuery,
 } from "@/store/services/vocabulariesApi";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function VocabularyDetailPage() {
+  const { t } = useI18n();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
@@ -29,6 +33,8 @@ export default function VocabularyDetailPage() {
   const { data: leaderboardData } = useGetVocabularyLeaderboardQuery(id, {
     skip: !id,
   });
+  const [deletePersonal, { isLoading: deleting }] =
+    useDeletePersonalVocabularySetMutation();
 
   const vocabulary = data?.vocabulary;
   const related = data?.related ?? [];
@@ -44,7 +50,7 @@ export default function VocabularyDetailPage() {
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Vocabulary Lab
+            {t("Quay lại Lớp học từ vựng")}
           </Link>
           {vocabulary && (
             <div className="flex gap-2">
@@ -53,14 +59,14 @@ export default function VocabularyDetailPage() {
                 className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Sparkles className="mr-1.5 inline h-3.5 w-3.5" />
-                AI Hints
+                {t("Gợi ý AI")}
               </Link>
               <Link
                 href={`/vocabularies/${vocabulary.id}/leaderboard`}
                 className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Trophy className="mr-1.5 inline h-3.5 w-3.5" />
-                Leaderboard
+                {t("Bảng xếp hạng")}
               </Link>
             </div>
           )}
@@ -70,13 +76,15 @@ export default function VocabularyDetailPage() {
 
         {isError && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load vocabulary detail.
+            {t("Không tải được chi tiết bộ từ.")}
           </div>
         )}
 
         {!isLoading && !isError && !vocabulary && (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="font-semibold">Vocabulary set not found</p>
+            <p className="font-semibold">
+              {t("Không tìm thấy bộ từ vựng")}
+            </p>
           </div>
         )}
 
@@ -99,11 +107,18 @@ export default function VocabularyDetailPage() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
-                  <h1 className="text-3xl font-bold text-white">
-                    {vocabulary.title}
-                  </h1>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-3xl font-bold text-white">
+                      {vocabulary.title}
+                    </h1>
+                    {vocabulary.quizMastered ? (
+                      <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white shadow">
+                        {t("Đã thuộc")}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-1 text-sm text-white/80">
-                    {vocabulary.description || "No description"}
+                    {vocabulary.description || t("Không có mô tả.")}
                   </p>
                 </div>
               </div>
@@ -115,7 +130,7 @@ export default function VocabularyDetailPage() {
                     <Brain className="h-4 w-4 text-slate-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Level</p>
+                    <p className="text-xs text-slate-500">{t("Cấp độ")}</p>
                     <p className="text-sm font-semibold">
                       {LEVEL_LABELS[vocabulary.level] ?? vocabulary.level}
                     </p>
@@ -126,7 +141,7 @@ export default function VocabularyDetailPage() {
                     <BookOpen className="h-4 w-4 text-slate-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Topic</p>
+                    <p className="text-xs text-slate-500">{t("Chủ đề")}</p>
                     <p className="text-sm font-semibold">
                       {TOPIC_LABELS[vocabulary.topic] ?? vocabulary.topic}
                     </p>
@@ -137,7 +152,7 @@ export default function VocabularyDetailPage() {
                     <BookOpen className="h-4 w-4 text-slate-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Words</p>
+                    <p className="text-xs text-slate-500">{t("từ")}</p>
                     <p className="text-sm font-semibold">
                       {vocabulary.wordCount}
                     </p>
@@ -148,9 +163,9 @@ export default function VocabularyDetailPage() {
                     <Clock3 className="h-4 w-4 text-slate-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Duration</p>
+                    <p className="text-xs text-slate-500">{t("Thời lượng")}</p>
                     <p className="text-sm font-semibold">
-                      {vocabulary.durationMinutes} min
+                      {vocabulary.durationMinutes} {t("phút")}
                     </p>
                   </div>
                 </div>
@@ -162,20 +177,42 @@ export default function VocabularyDetailPage() {
                   href={`/vocabularies/${vocabulary.id}/flashcards`}
                   className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  Study Flashcards
+                  {t("Học Flashcard")}
                 </Link>
                 <Link
                   href={`/vocabularies/${vocabulary.id}/quiz`}
                   className="inline-flex items-center rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
                 >
-                  Take Quiz
+                  {t("Làm Quiz")}
                 </Link>
+                {vocabulary.isPersonal ? (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() => {
+                    if (
+                      typeof window !== "undefined" &&
+                      !window.confirm(t("Bạn có chắc muốn xóa bộ từ này?"))
+                    ) {
+                        return;
+                      }
+                      void deletePersonal(vocabulary.id).then(() => {
+                        router.push("/vocabularies");
+                      });
+                    }}
+                    className="inline-flex items-center rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                  >
+                    {t("Xóa bộ từ")}
+                  </button>
+                ) : null}
               </div>
             </section>
 
             {/* Words list */}
             <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-bold">Words in this set</h2>
+              <h2 className="mb-4 text-lg font-bold">
+                {t("Các từ trong bộ này")}
+              </h2>
               <div className="space-y-3">
                 {vocabulary.words.map((word) => (
                   <div
@@ -209,7 +246,7 @@ export default function VocabularyDetailPage() {
             {related.length > 0 && (
               <section className="mb-8">
                 <h2 className="mb-4 text-lg font-bold">
-                  Related Vocabulary Sets
+                  {t("Bộ từ vựng liên quan")}
                 </h2>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   {related.map((set) => (
@@ -221,7 +258,7 @@ export default function VocabularyDetailPage() {
                       <h3 className="font-semibold">{set.title}</h3>
                       <p className="mt-1 text-xs text-slate-500">
                         {TOPIC_LABELS[set.topic] ?? set.topic} · {set.wordCount}{" "}
-                        words
+                        {t("từ")}
                       </p>
                     </Link>
                   ))}
@@ -233,10 +270,11 @@ export default function VocabularyDetailPage() {
             {topRank && (
               <section className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-6">
                 <h3 className="mb-2 text-sm font-semibold text-amber-800">
-                  Top Performer
+                  {t("Người dẫn đầu")}
                 </h3>
                 <p className="text-amber-900">
-                  <span className="font-bold">{topRank.name}</span> with score{" "}
+                  <span className="font-bold">{topRank.name}</span>{" "}
+                  {t("với điểm")}{" "}
                   <span className="font-bold">{topRank.score}</span>
                 </p>
               </section>

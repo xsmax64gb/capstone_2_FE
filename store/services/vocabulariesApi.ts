@@ -28,6 +28,13 @@ export interface VocabularySet {
   durationMinutes: number;
   rewardsXp: number;
   words: VocabularyWord[];
+  /** Quiz 100% — đã thuộc cả bộ (theo lần làm quiz tốt nhất) */
+  quizMastered?: boolean;
+  bestQuizPercent?: number;
+  xpEligibleForSet?: boolean;
+  ownerId?: string | null;
+  isPersonal?: boolean;
+  source?: string;
 }
 
 export interface VocabularyFlashcard {
@@ -105,6 +112,27 @@ export interface VocabularyListResponse {
   };
 }
 
+export interface PersonalVocabParseError {
+  line: number;
+  raw: string;
+  message: string;
+}
+
+export interface PersonalVocabItem {
+  word: string;
+  pronunciation?: string;
+  meaning?: string;
+  example?: string;
+}
+
+export interface PersonalVocabAiGenerateResponse {
+  rawText: string;
+  model?: string;
+  items: PersonalVocabItem[];
+  errors: PersonalVocabParseError[];
+  pdfTruncated?: boolean;
+}
+
 export interface VocabularyDetailResponse {
   vocabulary: VocabularySet;
   related: VocabularySet[];
@@ -120,6 +148,8 @@ export interface SubmitVocabularyBody {
   mode: "flashcards" | "quiz";
   answers: (number | null)[];
   wordIds?: string[];
+  /** Nội dung đáp án đã chọn (quiz) — backend so khớp với nghĩa đúng trong DB */
+  selectedLabels?: string[];
   durationSec?: number;
 }
 
@@ -130,6 +160,9 @@ export interface SubmitVocabularyResponse {
   percent: number;
   time: number;
   earnedXp: number;
+  xpAwarded?: boolean;
+  xpReason?: string;
+  userExp?: number;
   resultLabel: string;
   answers: (number | null)[];
 }
@@ -144,6 +177,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
         query?: string;
         level?: string;
         topic?: string;
+        personal?: boolean;
         page?: number;
         limit?: number;
       } | void
@@ -155,6 +189,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<VocabularyListResponse>) =>
         response.data as VocabularyListResponse,
+      providesTags: ["Vocabularies"],
     }),
 
     getVocabularySummary: builder.query<VocabularySummary, void>({
@@ -164,6 +199,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<VocabularySummary>) =>
         response.data as VocabularySummary,
+      providesTags: ["VocabularySummary"],
     }),
 
     getRecommendedVocabularies: builder.query<
@@ -243,6 +279,83 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<SubmitVocabularyResponse>) =>
         response.data as SubmitVocabularyResponse,
+      invalidatesTags: ["Vocabularies", "VocabularySummary"],
+    }),
+
+    generatePersonalVocabularyFromPrompt: builder.mutation<
+      PersonalVocabAiGenerateResponse,
+      Record<string, unknown>
+    >({
+      query: (body) => ({
+        url: "/vocabularies/personal/generate-prompt",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<PersonalVocabAiGenerateResponse>) =>
+        response.data as PersonalVocabAiGenerateResponse,
+    }),
+
+    generatePersonalVocabularyFromPdf: builder.mutation<
+      PersonalVocabAiGenerateResponse,
+      FormData
+    >({
+      query: (body) => ({
+        url: "/vocabularies/personal/generate-pdf",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<PersonalVocabAiGenerateResponse>) =>
+        response.data as PersonalVocabAiGenerateResponse,
+    }),
+
+    createPersonalVocabularyManual: builder.mutation<
+      { id: string },
+      Record<string, unknown>
+    >({
+      query: (body) => ({
+        url: "/vocabularies/personal/manual",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<{ id: string }>) =>
+        response.data as { id: string },
+      invalidatesTags: ["Vocabularies"],
+    }),
+
+    createPersonalVocabularyAi: builder.mutation<
+      { id: string },
+      Record<string, unknown>
+    >({
+      query: (body) => ({
+        url: "/vocabularies/personal/ai",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<{ id: string }>) =>
+        response.data as { id: string },
+      invalidatesTags: ["Vocabularies", "FeatureQuotas"],
+    }),
+
+    updatePersonalVocabularySet: builder.mutation<
+      { id: string },
+      { id: string; body: Record<string, unknown> }
+    >({
+      query: ({ id, body }) => ({
+        url: `/vocabularies/personal/${id}`,
+        method: "PUT",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<{ id: string }>) =>
+        response.data as { id: string },
+      invalidatesTags: ["Vocabularies"],
+    }),
+
+    deletePersonalVocabularySet: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/vocabularies/personal/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Vocabularies", "VocabularySummary"],
     }),
   }),
 });
@@ -257,4 +370,10 @@ export const {
   useGetVocabularyLeaderboardQuery,
   useGetVocabularyReviewQuery,
   useSubmitVocabularyAttemptMutation,
+  useGeneratePersonalVocabularyFromPromptMutation,
+  useGeneratePersonalVocabularyFromPdfMutation,
+  useCreatePersonalVocabularyManualMutation,
+  useCreatePersonalVocabularyAiMutation,
+  useUpdatePersonalVocabularySetMutation,
+  useDeletePersonalVocabularySetMutation,
 } = vocabulariesApi;

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Brain,
@@ -18,8 +18,10 @@ import {
   TrendingUp,
   Waves,
 } from "lucide-react";
+import { Bilingual } from "@/components/i18n/bilingual";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { useI18n } from "@/lib/i18n/context";
+import { AuthAwareLink } from "@/components/auth/auth-aware-link";
 
 export default function UserHomePage() {
   const { t } = useI18n();
@@ -247,31 +249,33 @@ export default function UserHomePage() {
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                 {t("Học tiếng Anh với AI")}
               </span>
-              <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-6xl">
-                {t(
-                  "Trung tâm luyện tập tiếng Anh hoàn chỉnh của bạn được xây dựng cho đà học tập hàng ngày",
-                )}{" "}
-                <br className="hidden md:block" />
-                {t("Built For Daily Momentum")}
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 md:text-lg">
-                {t(
-                  "SmartLingo cung cấp cho bạn một routine đầy đủ từ nói chuyện đến từ vựng và bài tập có cấu trúc. Thay vì bài học ngẫu nhiên, bạn nhận được hành trình học tập dài hạn mà bạn có thể theo dõi mỗi ngày với hướng dẫn rõ ràng và tiến độ đo lường được.",
-                )}
-              </p>
+              <Bilingual
+                as="h1"
+                viKey="Luyện tiếng Anh mỗi ngày với lộ trình rõ ràng"
+                className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-6xl"
+                primaryClassName="block"
+                secondaryClassName="mt-3 block text-xl font-semibold leading-snug text-slate-600 md:text-2xl"
+              />
+              <Bilingual
+                as="p"
+                viKey="Nói, từ vựng và bài tập trong một vòng lặp — theo dõi tiến độ mỗi ngày."
+                className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 md:text-lg"
+                primaryClassName="block"
+                secondaryClassName="mt-2 block text-sm leading-relaxed text-slate-500 md:text-base"
+              />
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link
+                <AuthAwareLink
                   href="/learn"
                   className="rounded-lg bg-black px-7 py-3 text-sm font-semibold text-white transition-all hover:translate-y-[-1px] hover:bg-slate-800"
                 >
                   {t("Bắt đầu luyện nói AI")}
-                </Link>
-                <Link
+                </AuthAwareLink>
+                <AuthAwareLink
                   href="/vocabulary"
                   className="rounded-lg border border-slate-300 bg-white px-7 py-3 text-sm font-semibold text-slate-700 transition-all hover:translate-y-[-1px] hover:bg-slate-50"
                 >
                   {t("Mở từ vựng")}
-                </Link>
+                </AuthAwareLink>
               </div>
             </div>
 
@@ -343,7 +347,7 @@ export default function UserHomePage() {
               const Icon = item.icon;
               return (
                 <ScrollReveal key={item.title} delay={120 + index * 120}>
-                  <Link
+                  <AuthAwareLink
                     href={item.href}
                     className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-black hover:shadow-xl"
                   >
@@ -369,7 +373,7 @@ export default function UserHomePage() {
                         {item.action}
                       </span>
                     </div>
-                  </Link>
+                  </AuthAwareLink>
                 </ScrollReveal>
               );
             })}
@@ -460,13 +464,13 @@ export default function UserHomePage() {
                 )}
               </p>
             </div>
-            <Link
+            <AuthAwareLink
               href="/learn"
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <Target className="mr-2 h-4 w-4" />
               {t("Áp dụng kế hoạch này")}
-            </Link>
+            </AuthAwareLink>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -642,18 +646,18 @@ export default function UserHomePage() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link
+                <AuthAwareLink
                   href="/learn"
                   className="rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800"
                 >
                   {t("Mở bản đồ AI")}
-                </Link>
-                <Link
+                </AuthAwareLink>
+                <AuthAwareLink
                   href="/exercises"
                   className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-slate-50"
                 >
                   {t("Xem luồng bài tập")}
-                </Link>
+                </AuthAwareLink>
               </div>
             </div>
           </div>

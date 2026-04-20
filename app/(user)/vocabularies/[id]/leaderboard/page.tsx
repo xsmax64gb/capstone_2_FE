@@ -7,8 +7,10 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { VocabularyLeaderboardSkeleton } from "@/components/vocabularies/skeletons";
 import { useGetVocabularyLeaderboardQuery } from "@/store/services/vocabulariesApi";
 import { formatDuration } from "../../data";
+import { useI18n } from "@/lib/i18n/context";
 
 export default function VocabularyLeaderboardPage() {
+  const { t } = useI18n();
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
 
@@ -19,7 +21,7 @@ export default function VocabularyLeaderboardPage() {
 
   return (
     <ProtectedRoute>
-      <main className="mx-auto w-full max-w-3xl px-6 py-10 lg:px-10">
+      <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
         {/* Back */}
         <div className="mb-8">
           <Link
@@ -95,7 +97,7 @@ export default function VocabularyLeaderboardPage() {
                 {/* Score */}
                 <div className="text-right">
                   <p className="text-xl font-bold">{entry.score}</p>
-                  <p className="text-xs text-slate-500">points</p>
+                  <p className="text-xs text-slate-500">{t("điểm")}</p>
                 </div>
               </div>
             ))}

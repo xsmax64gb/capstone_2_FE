@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  CheckCircle2,
   BookCheck,
   Clock3,
   History,
+  PenLine,
   Search,
   Sparkles,
   Trophy,
@@ -18,6 +20,14 @@ import {
   useGetExercisesQuery,
   useGetExerciseSummaryQuery,
 } from "@/store/services/exercisesApi";
+import { useGetMyFeatureQuotasQuery } from "@/store/services/paymentApi";
+import { notify } from "@/lib/admin";
+import {
+  AI_EXERCISE_BUILDER_FEATURE_KEY,
+  getFeatureQuotaBlockedMessage,
+  getFeatureQuotaItem,
+  isFeatureQuotaBlocked,
+} from "@/lib/feature-quota";
 import { useI18n } from "@/lib/i18n/context";
 import {
   Pagination,
@@ -33,6 +43,9 @@ export default function ExercisesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("query") || "");
+  const [personalOnly, setPersonalOnly] = useState(
+    searchParams.get("personal") === "true",
+  );
   const [selectedLevel, setSelectedLevel] = useState<
     "all" | "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
   >((searchParams.get("level") as any) || "all");
@@ -44,6 +57,7 @@ export default function ExercisesContent() {
 
   const updateFilters = (newFilters: {
     query?: string;
+    personal?: boolean;
     level?: string;
     type?: string;
     page?: number;
@@ -55,6 +69,14 @@ export default function ExercisesContent() {
         params.set("query", newFilters.query);
       } else {
         params.delete("query");
+      }
+    }
+
+    if (newFilters.personal !== undefined) {
+      if (newFilters.personal) {
+        params.set("personal", "true");
+      } else {
+        params.delete("personal");
       }
     }
 
@@ -91,18 +113,41 @@ export default function ExercisesContent() {
     isError,
   } = useGetExercisesQuery({
     query,
+    personal: personalOnly,
     level: selectedLevel,
     type: selectedType,
     page: currentPage,
     limit: 8,
   });
   const { data: summaryData } = useGetExerciseSummaryQuery();
+  const { data: featureQuotaOverview } = useGetMyFeatureQuotasQuery();
 
   const items = listData?.items ?? [];
   const pagination = listData?.pagination;
   const totalQuestions = summaryData?.totalQuestions ?? 0;
   const totalXp = summaryData?.totalXp ?? 0;
   const pastAttempts = summaryData?.pastAttempts ?? 0;
+  const aiExerciseQuota = useMemo(
+    () =>
+      getFeatureQuotaItem(featureQuotaOverview, AI_EXERCISE_BUILDER_FEATURE_KEY),
+    [featureQuotaOverview],
+  );
+
+  const handleOpenAiExerciseBuilder = () => {
+    if (isFeatureQuotaBlocked(aiExerciseQuota)) {
+      notify({
+        title: t("Đã hết quota tạo AI"),
+        message: getFeatureQuotaBlockedMessage(
+          aiExerciseQuota,
+          t("Tạo bài tập bằng AI"),
+        ),
+        type: "warning",
+      });
+      return;
+    }
+
+    router.push("/exercises/create-ai");
+  };
 
   const getTopicLabel = (topic: string) => {
     const labels: Record<string, string> = {
@@ -139,6 +184,29 @@ export default function ExercisesContent() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleOpenAiExerciseBuilder}
+                className="inline-flex items-center rounded-lg bg-black px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                <PenLine className="mr-1.5 h-4 w-4" />
+                {t("Tạo bài tập")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !personalOnly;
+                  setPersonalOnly(next);
+                  updateFilters({ personal: next, page: 1 });
+                }}
+                className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                  personalOnly
+                    ? "border-violet-200 bg-violet-50 text-violet-800"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {t("Bài tập tôi đã tạo")}
+              </button>
               <Link
                 href="/exercises/recommended"
                 className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -266,9 +334,22 @@ export default function ExercisesContent() {
                       {item.description}
                     </p>
                   </div>
-                  <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold">
-                    {item.level}
-                  </span>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {item.isCompleted ? (
+                      <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                        {t("Đã hoàn thành")}
+                      </span>
+                    ) : null}
+                    {item.isPersonal ? (
+                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800">
+                        {t("Bài cá nhân (AI)")}
+                      </span>
+                    ) : null}
+                    <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold">
+                      {item.level}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
@@ -286,8 +367,17 @@ export default function ExercisesContent() {
                     <Clock3 className="mr-1 h-3.5 w-3.5" />
                     {item.durationMinutes} {t("phút")}
                   </span>
-                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
-                    <Trophy className="mr-1 h-3.5 w-3.5" />+{item.rewardsXp} XP
+                  <span
+                    className={`inline-flex items-center rounded-md px-2 py-1 font-medium ${
+                      item.isPersonal
+                        ? "bg-slate-200 text-slate-600"
+                        : "bg-slate-100 text-slate-700"
+                    }`}
+                  >
+                    <Trophy className="mr-1 h-3.5 w-3.5" />
+                    {item.isPersonal
+                      ? t("Không cộng XP")
+                      : `+${item.rewardsXp} XP`}
                   </span>
                 </div>
 

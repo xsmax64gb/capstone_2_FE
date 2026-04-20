@@ -12,17 +12,29 @@ import type {
   PlacementResultItem,
   PlacementSkipPayload,
   PlacementSubmitPayload,
+  User,
 } from "@/types";
 
 const syncUserState = async (
   dispatch: (action: unknown) => unknown,
-  queryFulfilled: Promise<{ data: PlacementFinalizeResponse }>
+  getState: () => { auth: { user: User | null } },
+  queryFulfilled: Promise<{ data: PlacementFinalizeResponse }>,
 ) => {
   try {
     const { data } = await queryFulfilled;
-    dispatch(setUser(data.user));
+    const prev = getState().auth.user;
+    const next = data.user;
+    dispatch(
+      setUser({
+        ...(prev ?? {}),
+        ...next,
+        name: next.fullName || next.name || prev?.name,
+      }),
+    );
     dispatch(baseApi.util.invalidateTags(["Profile"]));
-  } catch {}
+  } catch {
+    /* ignore */
+  }
 };
 
 export const placementApi = baseApi.injectEndpoints({
@@ -109,6 +121,22 @@ export const placementApi = baseApi.injectEndpoints({
         response.data as AdminPlacementTestItem,
     }),
 
+    regenerateAdminPlacementQuestionAudio: builder.mutation<
+      AdminPlacementTestItem,
+      { id: string; questionId: string }
+    >({
+      query: ({ id, questionId }) => ({
+        url: `/admin/placement-tests/${id}/questions/${questionId}/regenerate-audio`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "AdminPlacementTests", id: "LIST" },
+        { type: "AdminPlacementTests", id },
+      ],
+      transformResponse: (response: ApiResponse<AdminPlacementTestItem>) =>
+        response.data as AdminPlacementTestItem,
+    }),
+
     activateAdminPlacementTest: builder.mutation<AdminPlacementTestItem, string>({
       query: (id) => ({
         url: `/admin/placement-tests/${id}/activate`,
@@ -180,8 +208,8 @@ export const placementApi = baseApi.injectEndpoints({
       ],
       transformResponse: (response: ApiResponse<PlacementFinalizeResponse>) =>
         response.data as PlacementFinalizeResponse,
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await syncUserState(dispatch, queryFulfilled);
+      async onQueryStarted(_arg, { dispatch, queryFulfilled, getState }) {
+        await syncUserState(dispatch, getState, queryFulfilled);
       },
     }),
 
@@ -197,8 +225,8 @@ export const placementApi = baseApi.injectEndpoints({
       invalidatesTags: ["PlacementAttempt", "Profile"],
       transformResponse: (response: ApiResponse<PlacementFinalizeResponse>) =>
         response.data as PlacementFinalizeResponse,
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await syncUserState(dispatch, queryFulfilled);
+      async onQueryStarted(_arg, { dispatch, queryFulfilled, getState }) {
+        await syncUserState(dispatch, getState, queryFulfilled);
       },
     }),
   }),
@@ -214,6 +242,7 @@ export const {
   useGetAdminPlacementTestByIdQuery,
   useGetAdminPlacementTestsQuery,
   useGetPlacementAttemptByIdQuery,
+  useRegenerateAdminPlacementQuestionAudioMutation,
   useSkipPlacementTestMutation,
   useSubmitPlacementTestMutation,
   useUpdateAdminPlacementTestMutation,

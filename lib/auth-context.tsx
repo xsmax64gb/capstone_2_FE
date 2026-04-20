@@ -1,32 +1,32 @@
-'use client'
-
-import React, { createContext, useContext, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '@/store/store'
-import { setLoading, logout } from '@/store/slices/authSlice'
-import type { User } from '@/types'
+"use client";
+//auth provider để xác định trạng thái đăng nhập của người dùng và cung cấp các phương thức liên quan đến xác thực cho các component con trong ứng dụng.
+import React, { createContext, useContext, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
+import { setLoading, logout } from "@/store/slices/authSlice";
+import type { User } from "@/types";
 
 interface AuthContextType {
-  user: User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  error: string | null
-  logout: () => void
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const dispatch = useDispatch()
-  const auth = useSelector((state: RootState) => state.auth)
+  const dispatch = useDispatch();
+  const auth = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    dispatch(setLoading(false))
-  }, [dispatch])
+    dispatch(setLoading(false));
+  }, [dispatch]);
 
   const handleLogout = () => {
-    dispatch(logout())
-  }
+    dispatch(logout());
+  };
 
   return (
     <AuthContext.Provider
@@ -40,13 +40,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

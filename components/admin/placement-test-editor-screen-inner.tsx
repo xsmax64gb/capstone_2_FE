@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   useCreateAdminPlacementTestMutation,
   useGetAdminPlacementTestByIdQuery,
+  useRegenerateAdminPlacementQuestionAudioMutation,
   useUpdateAdminPlacementTestMutation,
 } from "@/store/services/placementApi";
 import {
@@ -30,7 +31,11 @@ import {
   loadPlacementAiDraft,
 } from "@/lib/placement-ai-draft";
 import { handleApiError } from "@/lib/api-error-handler";
-import { CEFR_LEVELS, calculatePlacementMaxScore } from "@/lib/placement";
+import {
+  buildPlacementLevelRules,
+  calculatePlacementMaxScore,
+  CEFR_LEVELS,
+} from "@/lib/placement";
 import type {
   AdminPlacementLevelRuleItem,
   AdminPlacementQuestionItem,
@@ -43,7 +48,10 @@ type Props = {
   source?: string;
 };
 
-type PlacementTestDraft = AdminPlacementTestItem;
+type PlacementTestDraft = AdminPlacementTestItem & {
+  levelFrom?: (typeof CEFR_LEVELS)[number];
+  levelTo?: (typeof CEFR_LEVELS)[number];
+};
 
 const createId = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -65,14 +73,12 @@ function createEmptyPlacementQuestion(): AdminPlacementQuestionItem {
   };
 }
 
-function createEmptyPlacementLevelRule(level: AdminPlacementLevelRuleItem["level"] = "A1") {
-  return { id: createId("placement-rule"), level, minScore: 0, maxScore: 0 };
-}
-
 function createEmptyPlacementTest(): PlacementTestDraft {
   return {
     id: createId("placement-test"),
     title: "",
+    levelFrom: "A1",
+    levelTo: "C2",
     description: "",
     instructions: "",
     durationMinutes: 10,
@@ -81,7 +87,7 @@ function createEmptyPlacementTest(): PlacementTestDraft {
     activeQuestionCount: 1,
     maxScore: 1,
     questions: [createEmptyPlacementQuestion()],
-    levelRules: CEFR_LEVELS.map((level) => createEmptyPlacementLevelRule(level)),
+    levelRules: [],
     createdAt: null,
     updatedAt: null,
   };
@@ -90,12 +96,14 @@ function createEmptyPlacementTest(): PlacementTestDraft {
 function toPlacementPayload(draft: PlacementTestDraft): AdminPlacementTestPayload {
   return {
     title: draft.title,
+    levelFrom: draft.levelFrom,
+    levelTo: draft.levelTo,
     description: draft.description,
     instructions: draft.instructions,
     durationMinutes: draft.durationMinutes,
     isActive: draft.isActive,
     questions: draft.questions,
-    levelRules: draft.levelRules,
+    autoRules: true,
   };
 }
 
@@ -143,43 +151,23 @@ function validatePlacementTestDraft(draft: PlacementTestDraft) {
     throw new Error("Cần ít nhất 1 câu hỏi active để chấm placement test.");
   }
 
-  const rules = draft.levelRules
-    .map((rule) => ({
-      ...rule,
-      minScore: Math.max(0, Number(rule.minScore) || 0),
-      maxScore: Math.max(0, Number(rule.maxScore) || 0),
-    }))
-    .sort((a, b) => a.minScore - b.minScore);
-
-  if (!rules.length) {
-    throw new Error("Cần cấu hình ít nhất 1 scoring rule.");
-  }
-
-  for (let index = 0; index < rules.length; index += 1) {
-    const rule = rules[index];
-
-    if (rule.minScore > rule.maxScore) {
-      throw new Error(`Rule ${rule.level} có minScore lớn hơn maxScore.`);
-    }
-
-    if (index === 0 && rule.minScore !== 0) {
-      throw new Error("Rule đầu tiên phải bắt đầu từ 0 điểm.");
-    }
-
-    if (index > 0 && rule.minScore !== rules[index - 1].maxScore + 1) {
-      throw new Error("Các rule cần nối liên tục và không overlap.");
-    }
-  }
-
   const maxScore = calculatePlacementMaxScore(activeQuestions);
+  const levelFrom =
+    (draft.levelFrom as (typeof CEFR_LEVELS)[number] | undefined) ?? "A1";
+  const levelTo =
+    (draft.levelTo as (typeof CEFR_LEVELS)[number] | undefined) ?? "C2";
 
-  if (rules[rules.length - 1].maxScore < maxScore) {
-    throw new Error(`Rule cuối phải bao phủ đến ít nhất ${formatNumber(maxScore)} điểm.`);
+  if (CEFR_LEVELS.indexOf(levelFrom) > CEFR_LEVELS.indexOf(levelTo)) {
+    throw new Error("Level bắt đầu cần nhỏ hơn hoặc bằng level kết thúc.");
   }
+
+  const rules = buildPlacementLevelRules(activeQuestions, levelFrom, levelTo);
 
   return {
     ...draft,
     title,
+    levelFrom,
+    levelTo,
     description: draft.description.trim(),
     instructions: draft.instructions.trim(),
     durationMinutes: Math.max(1, Number(draft.durationMinutes) || 10),
@@ -195,6 +183,7 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
   );
   const [isInitializingDraft, setIsInitializingDraft] = useState(!testId);
   const [draftSource, setDraftSource] = useState<"manual" | "ai">("manual");
+  const [step, setStep] = useState<"setup" | "questions" | "review">("setup");
   const { data, isLoading, error } = useGetAdminPlacementTestByIdQuery(testId as string, {
     skip: !testId,
   });
@@ -202,6 +191,15 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
     useCreateAdminPlacementTestMutation();
   const [updatePlacementTest, { isLoading: isUpdating }] =
     useUpdateAdminPlacementTestMutation();
+  const [regenerateAudio, { isLoading: isRegeneratingAudio }] =
+    useRegenerateAdminPlacementQuestionAudioMutation();
+
+  const autoRules = useMemo(() => {
+    if (!draft) return [];
+    const levelFrom = (draft.levelFrom as (typeof CEFR_LEVELS)[number] | undefined) ?? "A1";
+    const levelTo = (draft.levelTo as (typeof CEFR_LEVELS)[number] | undefined) ?? "C2";
+    return buildPlacementLevelRules(draft.questions, levelFrom, levelTo);
+  }, [draft]);
 
   useEffect(() => {
     if (data) {
@@ -231,6 +229,7 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
       }
 
       setIsInitializingDraft(false);
+      setStep("questions");
       return;
     }
 
@@ -238,6 +237,7 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
     setDraft(createEmptyPlacementTest());
     setDraftSource("manual");
     setIsInitializingDraft(false);
+    setStep("setup");
   }, [source, testId]);
 
   useEffect(() => {
@@ -273,20 +273,32 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
     );
   };
 
-  const updateRule = (
-    ruleId: string,
-    updater: (rule: AdminPlacementLevelRuleItem) => AdminPlacementLevelRuleItem
-  ) => {
-    setDraft((current) =>
-      current
-        ? {
-            ...current,
-            levelRules: current.levelRules.map((rule) =>
-              rule.id === ruleId ? updater(rule) : rule
-            ),
-          }
-        : current
-    );
+  const handleRegenerateAudio = async (questionId: string) => {
+    if (!testId) {
+      notify({
+        title: "Chưa thể tạo audio",
+        message: "Hãy lưu placement test trước, sau đó mới retry TTS cho từng câu nghe.",
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      const updated = await regenerateAudio({ id: testId, questionId }).unwrap();
+      setDraft(updated);
+      notify({
+        title: "Đã tạo lại audio",
+        message: "Audio URL đã được cập nhật vào câu hỏi.",
+        type: "success",
+      });
+    } catch (error) {
+      const apiError = handleApiError(error);
+      notify({
+        title: "Không thể tạo lại audio",
+        message: apiError.message,
+        type: "error",
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -324,6 +336,25 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
         type: "error",
       });
     }
+  };
+
+  const handleNext = () => {
+    try {
+      const nextDraft = validatePlacementTestDraft(draft);
+      setDraft(nextDraft);
+      setStep((current) => (current === "setup" ? "questions" : "review"));
+    } catch (error) {
+      const apiError = handleApiError(error);
+      notify({
+        title: "Thiếu hoặc sai thông tin",
+        message: apiError.message,
+        type: "warning",
+      });
+    }
+  };
+
+  const handleBack = () => {
+    setStep((current) => (current === "review" ? "questions" : "setup"));
   };
 
   if ((testId && isLoading && !draft) || (!testId && isInitializingDraft)) {
@@ -371,8 +402,36 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
         </Card>
       ) : null}
 
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant={step === "setup" ? "default" : "outline"}
+          className="rounded-xl"
+          onClick={() => setStep("setup")}
+        >
+          1. Setup
+        </Button>
+        <Button
+          type="button"
+          variant={step === "questions" ? "default" : "outline"}
+          className="rounded-xl"
+          onClick={() => setStep("questions")}
+        >
+          2. Questions
+        </Button>
+        <Button
+          type="button"
+          variant={step === "review" ? "default" : "outline"}
+          className="rounded-xl"
+          onClick={() => setStep("review")}
+        >
+          3. Review
+        </Button>
+      </div>
+
       <Card className="border-slate-200 py-5">
         <CardContent className="space-y-6 pt-6">
+          {step === "setup" ? (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <Label className="mb-2 block">Tiêu đề</Label>
@@ -397,6 +456,48 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
                   )
                 }
               />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label className="mb-2 block">Level từ</Label>
+                <select
+                  value={(draft.levelFrom as string | undefined) ?? "A1"}
+                  onChange={(event) =>
+                    setDraft((current) =>
+                      current
+                        ? { ...current, levelFrom: event.target.value as (typeof CEFR_LEVELS)[number] }
+                        : current
+                    )
+                  }
+                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                >
+                  {CEFR_LEVELS.map((option) => (
+                    <option key={`levelFrom-${option}`} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="mb-2 block">Level đến</Label>
+                <select
+                  value={(draft.levelTo as string | undefined) ?? "C2"}
+                  onChange={(event) =>
+                    setDraft((current) =>
+                      current
+                        ? { ...current, levelTo: event.target.value as (typeof CEFR_LEVELS)[number] }
+                        : current
+                    )
+                  }
+                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                >
+                  {CEFR_LEVELS.map((option) => (
+                    <option key={`levelTo-${option}`} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
               <div className="flex items-start justify-between gap-4">
@@ -437,7 +538,9 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
               />
             </div>
           </div>
+          ) : null}
 
+          {step === "review" ? (
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="border-slate-200 shadow-none">
               <CardContent className="pt-6">
@@ -453,14 +556,16 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
             </Card>
             <Card className="border-slate-200 shadow-none">
               <CardContent className="pt-6">
-                <p className="text-sm text-slate-500">Scoring rules</p>
+                <p className="text-sm text-slate-500">Scoring rules (auto)</p>
                 <p className="mt-2 text-3xl font-semibold text-slate-950">
-                  {formatNumber(draft.levelRules.length)}
+                  {formatNumber(autoRules.length)}
                 </p>
               </CardContent>
             </Card>
           </div>
+          ) : null}
 
+          {step === "questions" ? (
           <Card className="border-slate-200 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Ngân hàng câu hỏi</CardTitle>
@@ -484,6 +589,17 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
                       <p className="text-sm text-slate-500">Objective scoring question.</p>
                     </div>
                     <div className="flex items-center gap-3">
+                      {question.skillType === "listening" && !question.audioUrl ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isRegeneratingAudio}
+                          onClick={() => handleRegenerateAudio(question.id)}
+                        >
+                          {isRegeneratingAudio ? "Đang tạo audio..." : "Tạo audio"}
+                        </Button>
+                      ) : null}
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-slate-500">Active</span>
                         <Switch
@@ -707,103 +823,45 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
               ))}
             </CardContent>
           </Card>
+          ) : null}
 
+          {step === "review" ? (
           <Card className="border-slate-200 shadow-none">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Quy định chấm điểm</CardTitle>
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() =>
-                  setDraft((current) =>
-                    current
-                      ? { ...current, levelRules: [...current.levelRules, createEmptyPlacementLevelRule()] }
-                      : current
-                  )
-                }
-              >
-                <Plus className="h-4 w-4" />
-                Thêm rule
-              </Button>
+            <CardHeader>
+              <CardTitle className="text-base">Scoring (auto)</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {draft.levelRules.map((rule) => (
-                <div
-                  key={rule.id}
-                  className="grid gap-3 rounded-2xl border border-slate-200 p-4 md:grid-cols-[1fr_1fr_1fr_auto]"
-                >
-                  <select
-                    value={rule.level}
-                    onChange={(event) =>
-                      updateRule(rule.id, (item) => ({
-                        ...item,
-                        level: event.target.value as AdminPlacementLevelRuleItem["level"],
-                      }))
-                    }
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-                  >
-                    {ADMIN_LEVEL_OPTIONS.map((option) => (
-                      <option key={`${rule.id}-${option}`} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={rule.minScore}
-                    onChange={(event) =>
-                      updateRule(rule.id, (item) => ({
-                        ...item,
-                        minScore: Math.max(0, Number(event.target.value) || 0),
-                      }))
-                    }
-                  />
-                  <Input
-                    type="number"
-                    min={0}
-                    value={rule.maxScore}
-                    onChange={(event) =>
-                      updateRule(rule.id, (item) => ({
-                        ...item,
-                        maxScore: Math.max(0, Number(event.target.value) || 0),
-                      }))
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      setDraft((current) => {
-                        if (!current) {
-                          return current;
-                        }
-
-                        const nextRules = current.levelRules.filter((item) => item.id !== rule.id);
-                        return {
-                          ...current,
-                          levelRules: nextRules.length ? nextRules : [createEmptyPlacementLevelRule()],
-                        };
-                      })
-                    }
-                    disabled={draft.levelRules.length <= 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+            <CardContent className="grid gap-3 md:grid-cols-3">
+              {autoRules.map((rule) => (
+                <div key={rule.id} className="rounded-2xl border border-slate-200 p-4">
+                  <p className="text-sm font-semibold text-slate-900">{rule.level}</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {formatNumber(rule.minScore)} → {formatNumber(rule.maxScore)}
+                  </p>
                 </div>
               ))}
             </CardContent>
           </Card>
+          ) : null}
         </CardContent>
         <CardFooter className="justify-end gap-3 border-t border-slate-100">
           <Button asChild type="button" variant="outline" className="rounded-xl">
             <Link href="/admin/placement-tests">Hủy</Link>
           </Button>
-          <Button type="button" className="rounded-xl" onClick={handleSave} disabled={isSaving}>
-            <ShieldCheck className="h-4 w-4" />
-            {isSaving ? "Đang lưu..." : testId ? "Lưu thay đổi" : "Tạo placement test"}
-          </Button>
+          {step !== "setup" ? (
+            <Button type="button" variant="outline" className="rounded-xl" onClick={handleBack}>
+              Quay lại
+            </Button>
+          ) : null}
+          {step !== "review" ? (
+            <Button type="button" className="rounded-xl" onClick={handleNext}>
+              Tiếp tục
+            </Button>
+          ) : (
+            <Button type="button" className="rounded-xl" onClick={handleSave} disabled={isSaving}>
+              <ShieldCheck className="h-4 w-4" />
+              {isSaving ? "Đang lưu..." : testId ? "Lưu thay đổi" : "Tạo placement test"}
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

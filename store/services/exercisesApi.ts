@@ -24,7 +24,11 @@ export interface ExerciseItem {
   rewardsXp: number;
   coverImage: string;
   skills: string[];
+  isCompleted?: boolean;
   questions?: ExerciseQuestion[];
+  ownerId?: string | null;
+  isPersonal?: boolean;
+  source?: string;
 }
 
 export interface ExerciseHistoryItem {
@@ -34,6 +38,12 @@ export interface ExerciseHistoryItem {
   score: number;
   total: number;
   durationSec: number;
+  earnedXp: number;
+  perfectScore: boolean;
+  xpAwarded: boolean;
+  xpReason: string;
+  exerciseCompleted: boolean;
+  firstCompletion: boolean;
   userName?: string;
   answers?: number[];
   exercise?: ExerciseItem;
@@ -110,8 +120,36 @@ export interface SubmitExerciseResponse {
   percent: number;
   time: number;
   earnedXp: number;
+  perfectScore: boolean;
+  xpAwarded: boolean;
+  xpReason: string;
+  exerciseCompleted: boolean;
+  firstCompletion: boolean;
+  userExp: number;
   resultLabel: string;
   answers: number[];
+}
+
+export interface AiMcqParseError {
+  blockIndex: number;
+  message: string;
+}
+
+export interface AiGeneratedQuestion {
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+  correctAnswer: number;
+  explanation?: string;
+  score?: number;
+}
+
+export interface AiGenerateResponse {
+  rawText: string;
+  model?: string;
+  questions: AiGeneratedQuestion[];
+  parseErrors: AiMcqParseError[];
+  pdfTruncated?: boolean;
 }
 
 export const exercisesApi = baseApi.injectEndpoints({
@@ -123,6 +161,7 @@ export const exercisesApi = baseApi.injectEndpoints({
         level?: string;
         type?: string;
         topic?: string;
+        personal?: boolean;
         page?: number;
         limit?: number;
         includeQuestions?: boolean;
@@ -135,6 +174,7 @@ export const exercisesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<ExerciseListResponse>) =>
         response.data as ExerciseListResponse,
+      providesTags: ["Exercises"],
     }),
 
     getExerciseSummary: builder.query<ExerciseSummary, void>({
@@ -144,6 +184,7 @@ export const exercisesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<ExerciseSummary>) =>
         response.data as ExerciseSummary,
+      providesTags: ["ExerciseSummary"],
     }),
 
     getRecommendedExercises: builder.query<
@@ -223,6 +264,69 @@ export const exercisesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<SubmitExerciseResponse>) =>
         response.data as SubmitExerciseResponse,
+      invalidatesTags: ["Exercises", "ExerciseSummary"],
+    }),
+
+    generateExerciseAiFromPrompt: builder.mutation<
+      AiGenerateResponse,
+      Record<string, unknown>
+    >({
+      query: (body) => ({
+        url: "/exercises/ai/generate-prompt",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<AiGenerateResponse>) =>
+        response.data as AiGenerateResponse,
+    }),
+
+    generateExerciseAiFromPdf: builder.mutation<
+      AiGenerateResponse,
+      FormData
+    >({
+      query: (formData) => ({
+        url: "/exercises/ai/generate-pdf",
+        method: "POST",
+        body: formData,
+      }),
+      transformResponse: (response: ApiResponse<AiGenerateResponse & { pdfTruncated?: boolean }>) =>
+        response.data as AiGenerateResponse,
+    }),
+
+    createUserAiExercise: builder.mutation<
+      { id: string },
+      Record<string, unknown>
+    >({
+      query: (body) => ({
+        url: "/exercises/ai",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<{ id: string }>) =>
+        response.data as { id: string },
+      invalidatesTags: ["Exercises", "FeatureQuotas"],
+    }),
+
+    updateUserAiExercise: builder.mutation<
+      { id: string },
+      { id: string; body: Record<string, unknown> }
+    >({
+      query: ({ id, body }) => ({
+        url: `/exercises/ai/${id}`,
+        method: "PUT",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<{ id: string }>) =>
+        response.data as { id: string },
+      invalidatesTags: ["Exercises"],
+    }),
+
+    deleteUserAiExercise: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/exercises/ai/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Exercises", "ExerciseSummary"],
     }),
   }),
 });
@@ -237,4 +341,9 @@ export const {
   useGetExerciseLeaderboardQuery,
   useGetExerciseReviewQuery,
   useSubmitExerciseAttemptMutation,
+  useGenerateExerciseAiFromPromptMutation,
+  useGenerateExerciseAiFromPdfMutation,
+  useCreateUserAiExerciseMutation,
+  useUpdateUserAiExerciseMutation,
+  useDeleteUserAiExerciseMutation,
 } = exercisesApi;

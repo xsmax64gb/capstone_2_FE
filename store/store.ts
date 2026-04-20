@@ -4,8 +4,10 @@ import "./services/adminApi";
 import "./services/authApi";
 import "./services/exercisesApi";
 import "./services/learnApi";
+import "./services/paymentApi";
 import "./services/placementApi";
 import "./services/vocabulariesApi";
+import "./services/inboxNotificationsApi";
 import authReducer from "./slices/authSlice";
 import notificationReducer from "./slices/notificationSlice";
 

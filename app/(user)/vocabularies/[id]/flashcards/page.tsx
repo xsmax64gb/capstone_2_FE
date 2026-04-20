@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,8 +13,19 @@ import {
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useGetVocabularyByIdQuery } from "@/store/services/vocabulariesApi";
 import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
+import { useI18n } from "@/lib/i18n/context";
 
 type StudyMode = "all" | "unknown";
+
+type KeyNavHandlers = {
+  enabled: boolean;
+  goPrev: () => void;
+  goNext: () => void;
+  flip: () => void;
+  speak: () => void;
+};
+
+const noop = () => {};
 
 const shuffleArray = <T,>(input: T[]) => {
   const output = [...input];
@@ -29,6 +40,7 @@ export default function FlashcardsPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
   const router = useRouter();
+  const { t, lang } = useI18n();
 
   const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, {
     skip: !id,
@@ -54,6 +66,18 @@ export default function FlashcardsPage() {
     [allWordIds, knownSet],
   );
 
+  const effectiveDeckIds = useMemo(() => {
+    if (deckIds.length > 0) {
+      return deckIds;
+    }
+    if (studyMode === "unknown") {
+      return unknownIds;
+    }
+    return allWordIds;
+  }, [deckIds, studyMode, unknownIds, allWordIds]);
+
+  const deckCount = effectiveDeckIds.length;
+
   const hasSpeechSupport =
     typeof window !== "undefined" &&
     "speechSynthesis" in window &&
@@ -71,6 +95,7 @@ export default function FlashcardsPage() {
     }
   };
 
+  // Reset session only when vocab id set changes (wordIdSignature), not when RTK returns a new words[] reference.
   useEffect(() => {
     if (!wordIdSignature) {
       setDeckIds([]);
@@ -86,7 +111,8 @@ export default function FlashcardsPage() {
     setIsFlipped(false);
     setKnownIds([]);
     setStudyMode("all");
-  }, [id, wordIdSignature, allWordIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- allWordIds read on signature change only
+  }, [id, wordIdSignature]);
 
   useEffect(() => {
     if (studyMode !== "unknown") {
@@ -94,8 +120,8 @@ export default function FlashcardsPage() {
     }
 
     if (unknownIds.length === 0) {
-      setStudyMode("all");
-      setDeckIds(allWordIds);
+      // Keep review mode; show completion UI instead of switching deck (common flashcard UX).
+      setDeckIds([]);
       setCurrentIndex(0);
       setIsFlipped(false);
       return;
@@ -113,17 +139,74 @@ export default function FlashcardsPage() {
   }, [studyMode, unknownIds, allWordIds]);
 
   useEffect(() => {
-    if (deckIds.length === 0) {
-      setCurrentIndex(0);
-      return;
-    }
-
-    setCurrentIndex((index) => (index >= deckIds.length ? 0 : index));
-  }, [deckIds]);
+    setCurrentIndex((index) => {
+      if (deckCount === 0) {
+        return 0;
+      }
+      return Math.min(index, deckCount - 1);
+    });
+  }, [deckCount]);
 
   useEffect(() => {
     return () => safeCancelSpeech();
   }, []);
+
+  const keyNavRef = useRef<KeyNavHandlers>({
+    enabled: false,
+    goPrev: noop,
+    goNext: noop,
+    flip: noop,
+    speak: noop,
+  });
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const nav = keyNavRef.current;
+      if (!nav.enabled) {
+        return;
+      }
+      const el = event.target;
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      ) {
+        return;
+      }
+
+      switch (event.key) {
+        case "ArrowLeft":
+          event.preventDefault();
+          nav.goPrev();
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          nav.goNext();
+          break;
+        case "ArrowUp":
+          event.preventDefault();
+          nav.flip();
+          break;
+        case "ArrowDown":
+          event.preventDefault();
+          nav.speak();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  keyNavRef.current = {
+    enabled: false,
+    goPrev: noop,
+    goNext: noop,
+    flip: noop,
+    speak: noop,
+  };
 
   if (isLoading) {
     return (
@@ -140,25 +223,27 @@ export default function FlashcardsPage() {
       <ProtectedRoute>
         <main className="mx-auto w-full max-w-3xl px-6 py-10 lg:px-10">
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-            Failed to load flashcards.
+            {t("Không tải được flashcards.")}
           </div>
         </main>
       </ProtectedRoute>
     );
   }
 
-  const effectiveDeckIds =
-    deckIds.length > 0
-      ? deckIds
-      : studyMode === "unknown"
-        ? unknownIds
-        : allWordIds;
-  const deckCount = effectiveDeckIds.length;
-  const safeCurrentIndex = deckCount > 0 ? currentIndex % deckCount : 0;
-  const activeWordId = deckCount > 0 ? effectiveDeckIds[safeCurrentIndex] : "";
+  const sessionIndex =
+    deckCount === 0 ? 0 : Math.min(currentIndex, deckCount - 1);
+  const activeWordId =
+    deckCount > 0 ? (effectiveDeckIds[sessionIndex] ?? "") : "";
   const currentWord = activeWordId ? wordMap.get(activeWordId) : undefined;
   const progress =
-    deckCount > 0 ? ((safeCurrentIndex + 1) / deckCount) * 100 : 0;
+    deckCount > 0 ? ((sessionIndex + 1) / deckCount) * 100 : 0;
+  const isAtDeckStart = deckCount > 0 && sessionIndex === 0;
+  const isAtDeckEnd = deckCount > 0 && sessionIndex === deckCount - 1;
+  const canGoNext = deckCount > 0 && sessionIndex < deckCount - 1;
+  const unknownReviewDone =
+    studyMode === "unknown" &&
+    unknownIds.length === 0 &&
+    allWordIds.length > 0;
 
   const stopSpeaking = () => {
     setIsSpeaking(false);
@@ -167,6 +252,10 @@ export default function FlashcardsPage() {
 
   const toggleKnown = () => {
     if (!currentWord) {
+      return;
+    }
+    const already = knownSet.has(currentWord.id);
+    if (!already && !isFlipped) {
       return;
     }
 
@@ -178,21 +267,28 @@ export default function FlashcardsPage() {
   };
 
   const goNext = () => {
-    if (deckCount === 0) {
+    if (deckCount === 0 || sessionIndex >= deckCount - 1) {
       return;
     }
-
-    setCurrentIndex((index) => (index + 1) % deckCount);
+    setCurrentIndex((index) => Math.min(index + 1, deckCount - 1));
     setIsFlipped(false);
     stopSpeaking();
   };
 
   const goPrev = () => {
+    if (deckCount === 0 || sessionIndex === 0) {
+      return;
+    }
+    setCurrentIndex((index) => Math.max(index - 1, 0));
+    setIsFlipped(false);
+    stopSpeaking();
+  };
+
+  const restartSessionFromStart = () => {
     if (deckCount === 0) {
       return;
     }
-
-    setCurrentIndex((index) => (index - 1 + deckCount) % deckCount);
+    setCurrentIndex(0);
     setIsFlipped(false);
     stopSpeaking();
   };
@@ -264,7 +360,7 @@ export default function FlashcardsPage() {
     stopSpeaking();
 
     const shouldStartQuiz = window.confirm(
-      "Bạn muốn làm bài trắc nghiệm (quiz) ngay bây giờ không?",
+      t("Bạn muốn làm bài trắc nghiệm (quiz) ngay bây giờ không?"),
     );
 
     if (shouldStartQuiz) {
@@ -273,6 +369,33 @@ export default function FlashcardsPage() {
     }
 
     router.push(`/vocabularies/${id}`);
+  };
+
+  const flipCard = () => {
+    if (!currentWord || unknownReviewDone) {
+      return;
+    }
+    setIsFlipped((flipped) => !flipped);
+  };
+
+  keyNavRef.current = {
+    enabled: !unknownReviewDone && !!currentWord && deckCount > 0,
+    goPrev: () => {
+      if (!isAtDeckStart) {
+        goPrev();
+      }
+    },
+    goNext: () => {
+      if (canGoNext) {
+        goNext();
+      }
+    },
+    flip: flipCard,
+    speak: () => {
+      if (hasSpeechSupport && currentWord) {
+        speakCurrentWord();
+      }
+    },
   };
 
   return (
@@ -284,24 +407,35 @@ export default function FlashcardsPage() {
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-black"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to {data.vocabulary.title}
+            {lang === "vi"
+              ? `Quay lại: ${data.vocabulary.title}`
+              : `Back to ${data.vocabulary.title}`}
           </button>
         </div>
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Flashcards</h1>
+            <h1 className="text-2xl font-bold">{t("Thẻ ghi nhớ")}</h1>
             <p className="mt-0.5 text-sm text-slate-500">
-              Flip, mark known, review unknown cards, and then continue to quiz.
+              {t(
+                "Lật thẻ, đánh dấu đã nhớ, ôn thẻ chưa nhớ, rồi chuyển sang quiz.",
+              )}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              {t(
+                "Phím tắt: ← → thẻ trước/sau, ↑ lật thẻ, ↓ phát âm (trình duyệt).",
+              )}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600">
             <span>
-              {deckCount > 0 ? safeCurrentIndex + 1 : 0} / {deckCount}
+              {deckCount > 0 ? sessionIndex + 1 : 0} / {deckCount}
             </span>
             <span className="text-slate-300">|</span>
             <span>
-              {studyMode === "unknown" ? "Unknown only" : "All cards"}
+              {studyMode === "unknown"
+                ? t("Chỉ thẻ chưa thuộc")
+                : t("Tất cả thẻ")}
             </span>
           </div>
         </div>
@@ -313,13 +447,28 @@ export default function FlashcardsPage() {
           />
         </div>
 
-        {deckCount === 0 && (
-          <div className="mb-8 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-slate-500">
-            This set does not have any flashcards yet.
+        {unknownReviewDone && (
+          <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-10 text-center">
+            <p className="text-lg font-semibold text-emerald-900">
+              {t("Bạn đã ôn xong các thẻ trong danh sách chưa thuộc.")}
+            </p>
+            <button
+              type="button"
+              onClick={backToAllCards}
+              className="mt-6 inline-flex items-center rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              {t("Về tất cả thẻ")}
+            </button>
           </div>
         )}
 
-        {currentWord && (
+        {!unknownReviewDone && deckCount === 0 && (
+          <div className="mb-8 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-slate-500">
+            {t("Bộ này chưa có thẻ flashcard nào.")}
+          </div>
+        )}
+
+        {!unknownReviewDone && currentWord && (
           <div className="mb-8">
             <div
               className="mx-auto max-w-2xl"
@@ -337,7 +486,7 @@ export default function FlashcardsPage() {
                     setIsFlipped((flipped) => !flipped);
                   }
                 }}
-                aria-label="Flip flashcard"
+                aria-label={t("Lật thẻ flashcard")}
               >
                 <div
                   className="relative h-full w-full rounded-3xl transition-transform duration-700"
@@ -352,7 +501,7 @@ export default function FlashcardsPage() {
                   >
                     <div className="mb-5 flex items-center justify-between">
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Front
+                        {t("Mặt trước")}
                       </span>
                       <button
                         type="button"
@@ -366,7 +515,7 @@ export default function FlashcardsPage() {
                         <Volume2
                           className={`h-3.5 w-3.5 ${isSpeaking ? "animate-pulse" : ""}`}
                         />
-                        Voice
+                        {t("Phát âm")}
                       </button>
                     </div>
                     <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -380,7 +529,7 @@ export default function FlashcardsPage() {
                       )}
                     </div>
                     <p className="mt-3 text-center text-xs text-slate-400">
-                      Click to flip
+                      {t("Chạm để lật")}
                     </p>
                   </div>
 
@@ -391,10 +540,24 @@ export default function FlashcardsPage() {
                       transform: "rotateY(180deg)",
                     }}
                   >
-                    <div className="mb-5">
+                    <div className="mb-5 flex items-center justify-between">
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Back
+                        {t("Mặt sau")}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          speakCurrentWord();
+                        }}
+                        disabled={!hasSpeechSupport}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Volume2
+                          className={`h-3.5 w-3.5 ${isSpeaking ? "animate-pulse" : ""}`}
+                        />
+                        {t("Phát âm")}
+                      </button>
                     </div>
                     <div className="flex flex-1 flex-col items-center justify-center text-center">
                       <p className="text-2xl font-semibold text-slate-800">
@@ -407,7 +570,7 @@ export default function FlashcardsPage() {
                       )}
                     </div>
                     <p className="mt-3 text-center text-xs text-slate-400">
-                      Click to flip back
+                      {t("Chạm để lật lại")}
                     </p>
                   </div>
                 </div>
@@ -418,84 +581,88 @@ export default function FlashcardsPage() {
 
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-            <p className="text-slate-500">Known</p>
+            <p className="text-slate-500">{t("Đã nhớ")}</p>
             <p className="text-lg font-bold text-emerald-600">
               {knownIds.length}
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-            <p className="text-slate-500">Unknown</p>
+            <p className="text-slate-500">{t("Chưa nhớ")}</p>
             <p className="text-lg font-bold text-amber-600">
               {unknownIds.length}
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-            <p className="text-slate-500">Current Deck</p>
+            <p className="text-slate-500">{t("Bộ thẻ hiện tại")}</p>
             <p className="text-lg font-bold text-slate-800">{deckCount}</p>
           </div>
         </div>
 
-        {studyMode === "unknown" && deckCount > 0 && (
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
-            <p className="text-sm font-semibold text-amber-900">
-              Review mode: only cards not marked known
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {deckIds.map((wordId) => {
-                const word = wordMap.get(wordId);
-                if (!word) {
-                  return null;
-                }
+        {!unknownReviewDone && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={deckCount === 0 || isAtDeckStart}
+              className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t("Trước")}
+            </button>
 
-                return (
-                  <span
-                    key={wordId}
-                    className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-900"
-                  >
-                    {word.word}
-                  </span>
-                );
-              })}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={toggleKnown}
+                disabled={
+                  !currentWord ||
+                  (!isFlipped && !knownSet.has(currentWord.id))
+                }
+                title={
+                  !isFlipped && currentWord && !knownSet.has(currentWord.id)
+                    ? t("Lật thẻ xem nghĩa rồi mới đánh dấu đã nhớ.")
+                    : undefined
+                }
+                className={`inline-flex items-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+                  currentWord && knownSet.has(currentWord.id)
+                    ? "bg-emerald-600 text-white"
+                    : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                } disabled:cursor-not-allowed disabled:opacity-40`}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                {currentWord && knownSet.has(currentWord.id)
+                  ? t("Đã nhớ")
+                  : t("Đánh dấu đã nhớ")}
+              </button>
+
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canGoNext}
+                className="inline-flex items-center rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {t("Tiếp theo")}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </button>
+
+              {isAtDeckEnd ? (
+                <button
+                  type="button"
+                  onClick={restartSessionFromStart}
+                  className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                >
+                  {t("Ôn lại từ đầu")}
+                </button>
+              ) : null}
             </div>
           </div>
         )}
 
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <button
-            onClick={goPrev}
-            disabled={deckCount === 0}
-            className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Previous
-          </button>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={toggleKnown}
-              disabled={!currentWord}
-              className={`inline-flex items-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
-                currentWord && knownSet.has(currentWord.id)
-                  ? "bg-emerald-600 text-white"
-                  : "border border-slate-200 text-slate-700 hover:bg-slate-50"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              {currentWord && knownSet.has(currentWord.id)
-                ? "Known"
-                : "Mark Known"}
-            </button>
-
-            <button
-              onClick={goNext}
-              disabled={deckCount === 0}
-              className="inline-flex items-center rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Next
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        {!unknownReviewDone && deckCount > 0 && isAtDeckEnd ? (
+          <p className="mb-6 text-center text-xs text-slate-500">
+            {t("Đang ở thẻ cuối của phiên này.")}
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -504,7 +671,7 @@ export default function FlashcardsPage() {
             className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Shuffle className="mr-2 h-4 w-4" />
-            Shuffle
+            {t("Xáo trộn")}
           </button>
 
           {studyMode === "unknown" ? (
@@ -512,7 +679,7 @@ export default function FlashcardsPage() {
               onClick={backToAllCards}
               className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Back to all cards
+              {t("Về tất cả thẻ")}
             </button>
           ) : (
             <button
@@ -520,7 +687,7 @@ export default function FlashcardsPage() {
               disabled={unknownIds.length === 0}
               className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Review unknown ({unknownIds.length})
+              {t("Ôn thẻ chưa nhớ")} ({unknownIds.length})
             </button>
           )}
 
@@ -529,14 +696,14 @@ export default function FlashcardsPage() {
             className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             <RotateCcw className="mr-2 h-4 w-4" />
-            Reset progress
+            {t("Đặt lại tiến độ")}
           </button>
 
           <button
             onClick={handleComplete}
             className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           >
-            Complete
+            {t("Hoàn thành")}
           </button>
         </div>
       </main>

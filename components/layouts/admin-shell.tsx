@@ -75,6 +75,12 @@ const adminNavigation = [
     icon: FileText,
   },
   {
+    title: "Level tests",
+    heading: "Bài kiểm tra cấp độ và quản lý tiến trình",
+    href: "/admin/level-tests",
+    icon: ShieldCheck,
+  },
+  {
     title: "Vocabulary",
     heading: "Quản trị ngân hàng từ vựng",
     href: "/admin/vocabularies",

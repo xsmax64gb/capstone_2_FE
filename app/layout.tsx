@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { NotificationProvider } from "@/lib/providers/notification-provider";
 import { I18nProvider } from "@/lib/i18n/context";
 import { GlobalLanguageFab } from "@/components/layouts/global-language-fab";
+import { LevelProvider } from "@/contexts/level-context";
 
 const poppins = Poppins({
   subsets: ["latin", "latin-ext"],
@@ -44,13 +45,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
+      <head>
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+      </head>
       <body className={poppins.variable} suppressHydrationWarning>
         <ReduxProvider>
           <I18nProvider>
             <AuthProvider>
-              {children}
-              <NotificationProvider />
-              <GlobalLanguageFab />
+              <LevelProvider>
+                {children}
+                <NotificationProvider />
+                <GlobalLanguageFab />
+              </LevelProvider>
             </AuthProvider>
           </I18nProvider>
         </ReduxProvider>

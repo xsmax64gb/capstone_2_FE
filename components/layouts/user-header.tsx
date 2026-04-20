@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LanguageSwitch } from "./language-switch";
 import { NotificationBell } from "./notification-bell";
+import { useLevel } from "@/contexts/level-context";
 
 const navItems = [
   { labelKey: "Trang chủ", href: "/" },
@@ -32,6 +33,7 @@ export function UserHeader() {
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
   const { t } = useI18n();
+  const { levelInfo } = useLevel();
   /** Tránh hydration mismatch: Redux đọc user từ localStorage chỉ phía client. */
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -122,12 +124,42 @@ export function UserHeader() {
                   type="button"
                   className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 transition-colors hover:bg-slate-50"
                 >
-                  <div className="h-6 w-6 overflow-hidden rounded-full bg-slate-200">
-                    <img
-                      src={avatarUrl}
-                      alt="User avatar"
-                      className="h-full w-full object-cover"
-                    />
+                  <div className="relative h-9 w-9">
+                    {/* Progress ring */}
+                    {levelInfo && (
+                      <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 36 36">
+                        {/* Background circle */}
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="16"
+                          fill="none"
+                          stroke="#e2e8f0"
+                          strokeWidth="2.5"
+                        />
+                        {/* Progress circle */}
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="16"
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 16}`}
+                          strokeDashoffset={`${2 * Math.PI * 16 * (1 - levelInfo.progressPercentage / 100)}`}
+                          className="transition-all duration-300"
+                        />
+                      </svg>
+                    )}
+                    {/* Avatar */}
+                    <div className="absolute inset-[4px] overflow-hidden rounded-full bg-slate-200">
+                      <img
+                        src={avatarUrl}
+                        alt="User avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
                   </div>
                   <span className="text-sm font-medium">{profileName}</span>
                 </button>

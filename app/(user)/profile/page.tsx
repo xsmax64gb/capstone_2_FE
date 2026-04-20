@@ -1,7 +1,7 @@
 "use client";
 
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AtSign, GraduationCap, Mail, MapPin, Plus, Save, Trash2 } from "lucide-react";
+import { AtSign, GraduationCap, Mail, MapPin, Plus, Save, Trash2, Edit, Lock } from "lucide-react";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ChangePasswordOtpForm } from "@/components/auth/change-password-otp-form";
@@ -9,6 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   useDeleteAvatarMutation,
   useGetProfileQuery,
@@ -18,6 +24,9 @@ import {
 import { notify } from "@/lib/admin";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
+import { LevelHistoryTimeline } from "@/components/learn/level-history-timeline";
+import { LevelProgressBar } from "@/components/layouts/level-progress-bar";
+import { useLevel } from "@/contexts/level-context";
 
 const DEFAULT_AVATAR_URL = "/placeholder-user.jpg";
 
@@ -58,9 +67,9 @@ const appendVersion = (url: string, version?: string) => {
 
 export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const securitySectionRef = useRef<HTMLDivElement | null>(null);
   const { user: authUser } = useAuth();
   const { t } = useI18n();
+  const { levelInfo } = useLevel();
 
   const { data: profile, isLoading, isError } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
@@ -68,6 +77,10 @@ export default function ProfilePage() {
   const [deleteAvatar, { isLoading: isDeletingAvatar }] = useDeleteAvatarMutation();
   const [form, setForm] = useState<ProfileFormState>(emptyForm);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  
+  // Dialog states
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!profile) {
@@ -165,6 +178,7 @@ export default function ProfilePage() {
         message: t("Thông tin của bạn đã được lưu."),
         type: "success",
       });
+      setIsEditDialogOpen(false);
     } catch (error) {
       notify({
         title: t("Không thể cập nhật profile"),
@@ -290,35 +304,68 @@ export default function ProfilePage() {
                   type="button"
                   variant="outline"
                   className="h-12 rounded-2xl border-slate-200 bg-slate-100 text-slate-950 hover:bg-slate-200"
-                  onClick={() =>
-                    securitySectionRef.current?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    })
-                  }
+                  onClick={() => setIsEditDialogOpen(true)}
                 >
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t("Chỉnh sửa thông tin")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 rounded-2xl border-slate-200 bg-slate-100 text-slate-950 hover:bg-slate-200"
+                  onClick={() => setIsPasswordDialogOpen(true)}
+                >
+                  <Lock className="mr-2 h-4 w-4" />
                   {t("Đổi mật khẩu")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 rounded-2xl border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                  onClick={() => void handleRemoveAvatar()}
+                  disabled={isDeletingAvatar || !profile?.avatarUrl}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeletingAvatar ? t("Đang xóa...") : t("Xóa avatar")}
                 </Button>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">
-                    {t("Chỉnh sửa thông tin")}
-                  </h2>
-                </div>
-                <Avatar className="h-14 w-14 border border-slate-200">
-                <AvatarImage src={avatarUrl} alt={profileName} className="object-cover" />
-                <AvatarFallback className="bg-slate-100 text-slate-500">
-                  {profileName.slice(0, 1).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
+        {isError ? (
+          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {t("Không thể tải hồ sơ của bạn. Vui lòng thử lại sau.")}
+          </div>
+        ) : null}
+
+        {levelInfo && (
+          <section className="mt-8">
+            <LevelProgressBar
+              currentLevel={levelInfo.currentLevel}
+              currentLevelName={levelInfo.currentLevelName}
+              totalXp={levelInfo.totalXp}
+              currentLevelThreshold={levelInfo.currentLevelThreshold}
+              nextLevelThreshold={levelInfo.nextLevelThreshold}
+              progressPercentage={levelInfo.progressPercentage}
+              testAvailable={levelInfo.testAvailable}
+              canAttemptTest={levelInfo.canAttemptTest}
+            />
+          </section>
+        )}
+
+        <section className="mt-8">
+          <LevelHistoryTimeline />
+        </section>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-h-[90vh] w-[min(600px,94vw)] overflow-y-auto sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">
+                {t("Chỉnh sửa thông tin")}
+              </DialogTitle>
+            </DialogHeader>
 
             <div className="space-y-5">
               <div>
@@ -395,50 +442,42 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  type="button"
-                  className="rounded-xl"
-                  onClick={() => void handleSave()}
-                  disabled={isUpdating || isLoading || !profile}
-                >
-                  <Save className="h-4 w-4" />
-                  {isUpdating ? t("Đang lưu...") : t("Lưu thay đổi")}
-                </Button>
+              <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                  onClick={() => void handleRemoveAvatar()}
-                  disabled={isDeletingAvatar || !profile?.avatarUrl}
+                  className="flex-1"
+                  onClick={() => setIsEditDialogOpen(false)}
                 >
-                  <Trash2 className="h-4 w-4" />
-                  {isDeletingAvatar ? t("Đang xóa...") : t("Xóa avatar")}
+                  {t("Hủy")}
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={() => void handleSave()}
+                  disabled={isUpdating || isLoading || !profile}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {isUpdating ? t("Đang lưu...") : t("Lưu thay đổi")}
                 </Button>
               </div>
             </div>
-          </div>
+          </DialogContent>
+        </Dialog>
 
-          <div
-            ref={securitySectionRef}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-semibold text-slate-950">
-                {t("Bảo mật tài khoản")}
-              </h2>
-            </div>
-            <div className="pt-5">
+        {/* Change Password Dialog */}
+        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+          <DialogContent className="w-[min(500px,94vw)] sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">
+                {t("Đổi mật khẩu")}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="pt-2">
               <ChangePasswordOtpForm />
             </div>
-          </div>
-        </section>
-
-        {isError ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {t("Không thể tải hồ sơ của bạn. Vui lòng thử lại sau.")}
-          </div>
-        ) : null}
+          </DialogContent>
+        </Dialog>
       </main>
     </ProtectedRoute>
   );

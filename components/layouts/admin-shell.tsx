@@ -284,9 +284,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <SidebarFooter className="px-3 pb-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm group-data-[collapsible=icon]:hidden">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
-                {initials}
-              </div>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={displayName}
+                  className="h-11 w-11 rounded-full object-cover ring-2 ring-slate-100"
+                />
+              ) : (
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-sm font-semibold text-white ring-2 ring-slate-100">
+                  {initials}
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-900">
                   {displayName}
@@ -360,9 +368,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <Link href="/exercises">Xem learner</Link>
               </Button>
               <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm md:flex">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
-                  {initials}
-                </div>
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={displayName}
+                    className="h-10 w-10 rounded-full object-cover ring-2 ring-slate-100"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-sm font-semibold text-white ring-2 ring-slate-100">
+                    {initials}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-900">
                     {displayName}

@@ -114,6 +114,22 @@ const toApiErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const formatCompactNumber = (num: number): string => {
+  if (num >= 1_000_000_000_000) {
+    return `${(num / 1_000_000_000_000).toFixed(1)}T`;
+  }
+  if (num >= 1_000_000_000) {
+    return `${(num / 1_000_000_000).toFixed(1)}B`;
+  }
+  if (num >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(1)}M`;
+  }
+  if (num >= 1_000) {
+    return `${(num / 1_000).toFixed(1)}K`;
+  }
+  return num.toString();
+};
+
 const toUserFormState = (user: User): UserFormState => ({
   fullName: user.fullName || "",
   email: user.email || "",
@@ -618,15 +634,15 @@ export default function AdminUsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Họ tên</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead>Onboarding</TableHead>
-                <TableHead>Placement</TableHead>
-                <TableHead>Tạo lúc</TableHead>
-                <TableHead className="text-right">Hành động</TableHead>
+                <TableHead className="min-w-[240px]">Người dùng</TableHead>
+                <TableHead className="w-[100px]">Role</TableHead>
+                <TableHead className="w-[120px]">Status</TableHead>
+                <TableHead className="w-[80px]">Level</TableHead>
+                <TableHead className="w-[70px]">XP</TableHead>
+                <TableHead className="w-[110px]">Onboarding</TableHead>
+                <TableHead className="w-[100px]">Placement</TableHead>
+                <TableHead className="w-[140px]">Tạo lúc</TableHead>
+                <TableHead className="w-[380px] text-right">Hành động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -642,11 +658,28 @@ export default function AdminUsersPage() {
               ) : (
                 data.users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium text-slate-900">
-                      {user.fullName}
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {user.email}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        {user.avatarUrl ? (
+                          <img
+                            src={user.avatarUrl}
+                            alt={user.fullName}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">
+                            {user.fullName?.charAt(0).toUpperCase() || "U"}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-slate-900">
+                            {user.fullName}
+                          </p>
+                          <p className="truncate text-sm text-slate-500">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -682,6 +715,11 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>{user.currentLevel || "A1"}</TableCell>
                     <TableCell>
+                      <span className="font-mono text-sm text-slate-600" title={`${formatNumber(user.exp || 0)} XP`}>
+                        {formatCompactNumber(user.exp || 0)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       <span
                         className={
                           user.onboardingDone
@@ -699,12 +737,13 @@ export default function AdminUsersPage() {
                       {formatDateTime(user.createdAt)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => onToggleRole(user)}
                           disabled={isMutating}
+                          className="h-8 whitespace-nowrap px-2 text-xs"
                         >
                           {user.role === "admin" ? "Hạ quyền" : "Nâng admin"}
                         </Button>
@@ -713,9 +752,10 @@ export default function AdminUsersPage() {
                           size="sm"
                           onClick={() => onOpenEdit(user)}
                           disabled={isMutating}
+                          className="h-8 w-8 p-0"
+                          title="Sửa"
                         >
-                          <UserCog className="mr-1 h-3.5 w-3.5" />
-                          Sửa
+                          <UserCog className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="outline"
@@ -725,6 +765,7 @@ export default function AdminUsersPage() {
                             setNewPassword("");
                           }}
                           disabled={isMutating}
+                          className="h-8 whitespace-nowrap px-2 text-xs"
                         >
                           Reset pass
                         </Button>
@@ -733,6 +774,7 @@ export default function AdminUsersPage() {
                           size="sm"
                           onClick={() => onDeleteUser(user)}
                           disabled={isMutating}
+                          className="h-8 px-2 text-xs"
                         >
                           Xóa
                         </Button>

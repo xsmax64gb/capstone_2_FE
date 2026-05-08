@@ -14,9 +14,9 @@ import {
   Trophy,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { TOPIC_LABELS, TYPE_LABELS } from "@/app/(user)/exercises/data";
 import { ExercisesListSkeleton } from "@/components/exercises/skeletons";
 import {
+  useGetExerciseFiltersQuery,
   useGetExercisesQuery,
   useGetExerciseSummaryQuery,
 } from "@/store/services/exercisesApi";
@@ -52,6 +52,9 @@ export default function ExercisesContent() {
   const [selectedType, setSelectedType] = useState<
     "all" | "mcq" | "fill_blank" | "matching"
   >((searchParams.get("type") as any) || "all");
+  const [selectedTopic, setSelectedTopic] = useState(
+    searchParams.get("topic") || "all",
+  );
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
@@ -60,6 +63,7 @@ export default function ExercisesContent() {
     personal?: boolean;
     level?: string;
     type?: string;
+    topic?: string;
     page?: number;
   }) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -96,6 +100,14 @@ export default function ExercisesContent() {
       }
     }
 
+    if (newFilters.topic !== undefined) {
+      if (newFilters.topic && newFilters.topic !== "all") {
+        params.set("topic", newFilters.topic);
+      } else {
+        params.delete("topic");
+      }
+    }
+
     if (newFilters.page !== undefined) {
       if (newFilters.page > 1) {
         params.set("page", newFilters.page.toString());
@@ -114,10 +126,14 @@ export default function ExercisesContent() {
   } = useGetExercisesQuery({
     query,
     personal: personalOnly,
-    level: selectedLevel,
-    type: selectedType,
+    level: selectedLevel !== "all" ? selectedLevel : undefined,
+    type: selectedType !== "all" ? selectedType : undefined,
+    topic: selectedTopic !== "all" ? selectedTopic : undefined,
     page: currentPage,
     limit: 8,
+  });
+  const { data: filterData } = useGetExerciseFiltersQuery({
+    personal: personalOnly,
   });
   const { data: summaryData } = useGetExerciseSummaryQuery();
   const { data: featureQuotaOverview } = useGetMyFeatureQuotasQuery();
@@ -132,6 +148,23 @@ export default function ExercisesContent() {
       getFeatureQuotaItem(featureQuotaOverview, AI_EXERCISE_BUILDER_FEATURE_KEY),
     [featureQuotaOverview],
   );
+  const levelOptions =
+    filterData?.levels?.length
+      ? filterData.levels
+      : ["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => ({
+          value: level,
+          label: level,
+          count: 0,
+        }));
+  const topicOptions = filterData?.topics ?? [];
+  const typeOptions =
+    filterData?.types?.length
+      ? filterData.types
+      : ["mcq", "fill_blank", "matching"].map((type) => ({
+          value: type,
+          label: type,
+          count: 0,
+        }));
 
   const handleOpenAiExerciseBuilder = () => {
     if (isFeatureQuotaBlocked(aiExerciseQuota)) {
@@ -245,7 +278,7 @@ export default function ExercisesContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
             <label className="relative">
               <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
@@ -277,10 +310,11 @@ export default function ExercisesContent() {
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
               <option value="all">{t("Tất cả cấp độ")}</option>
-              <option value="A1">A1</option>
-              <option value="A2">A2</option>
-              <option value="B1">B1</option>
-              <option value="B2">B2</option>
+              {levelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
 
             <select
@@ -294,9 +328,27 @@ export default function ExercisesContent() {
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
               <option value="all">{t("Tất cả dạng bài")}</option>
-              <option value="mcq">{t("Trắc nghiệm lựa chọn")}</option>
-              <option value="fill_blank">{t("Điền vào chỗ trống")}</option>
-              <option value="matching">{t("Nối cặp")}</option>
+              {typeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {getTypeLabel(option.value)}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedTopic}
+              onChange={(e) => {
+                setSelectedTopic(e.target.value);
+                updateFilters({ topic: e.target.value, page: 1 });
+              }}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
+            >
+              <option value="all">{t("Tất cả chủ đề")}</option>
+              {topicOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {getTopicLabel(option.value)}
+                </option>
+              ))}
             </select>
           </div>
         </section>

@@ -37,7 +37,7 @@ const appendFormDataValue = (
   formData.append(key, String(value));
 };
 
-const toExerciseFormData = (payload: AdminExercisePayload) => {
+const toExerciseFormData = (payload: Partial<AdminExercisePayload>) => {
   const formData = new FormData();
 
   appendFormDataValue(formData, "title", payload.title);
@@ -48,12 +48,12 @@ const toExerciseFormData = (payload: AdminExercisePayload) => {
   appendFormDataValue(formData, "coverImage", payload.coverImage);
   appendFormDataValue(formData, "durationMinutes", payload.durationMinutes);
   appendFormDataValue(formData, "rewardsXp", payload.rewardsXp);
-  appendFormDataValue(formData, "skills", JSON.stringify(payload.skills ?? []));
-  appendFormDataValue(
-    formData,
-    "questions",
-    JSON.stringify(payload.questions ?? []),
-  );
+  if (payload.skills !== undefined) {
+    appendFormDataValue(formData, "skills", JSON.stringify(payload.skills));
+  }
+  if (payload.questions !== undefined) {
+    appendFormDataValue(formData, "questions", JSON.stringify(payload.questions));
+  }
   appendFormDataValue(formData, "coverImageFile", payload.coverImageFile);
 
   return formData;
@@ -255,19 +255,7 @@ export const adminApi = baseApi.injectEndpoints({
       query: ({ id, body }) => ({
         url: `/admin/exercises/${id}`,
         method: "PUT",
-        body: toExerciseFormData({
-          title: body.title ?? "",
-          description: body.description ?? "",
-          type: body.type ?? "",
-          level: body.level ?? "",
-          topic: body.topic ?? "",
-          coverImage: body.coverImage ?? "",
-          coverImageFile: body.coverImageFile ?? null,
-          durationMinutes: body.durationMinutes ?? 0,
-          rewardsXp: body.rewardsXp ?? 0,
-          skills: body.skills ?? [],
-          questions: body.questions ?? [],
-        }),
+        body: toExerciseFormData(body),
       }),
       invalidatesTags: ["AdminExercises", "AdminOverview"],
       transformResponse: (response: ApiResponse<AdminExerciseItem>) =>

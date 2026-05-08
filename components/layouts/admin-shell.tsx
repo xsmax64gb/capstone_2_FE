@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -151,7 +151,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { data: overviewData } = useGetAdminOverviewQuery(undefined, {
     skip: user?.role !== "admin",
   });
-  const currentItem = getCurrentItem(pathname);
+  
+  const currentItem = useMemo(() => getCurrentItem(pathname), [pathname]);
   const displayName = user?.fullName || user?.name || "Administrator";
   const roleLabel = (user?.role || "admin").toUpperCase();
   const initials = getInitials(displayName);

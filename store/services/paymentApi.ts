@@ -102,6 +102,29 @@ export const paymentApi = baseApi.injectEndpoints({
         response.data as PaymentPackage,
     }),
 
+    deletePaymentPackage: builder.mutation<
+      { deleted: boolean; mode: "soft" | "hard"; usageCount: number },
+      string
+    >({
+      query: (packageId) => ({
+        url: `/payment-packages/${packageId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["PaymentPackages"],
+      transformResponse: (
+        response: ApiResponse<{
+          deleted: boolean;
+          mode: "soft" | "hard";
+          usageCount: number;
+        }>,
+      ) =>
+        response.data ?? {
+          deleted: true,
+          mode: "hard",
+          usageCount: 0,
+        },
+    }),
+
     getPayments: builder.query<PaymentRecord[], { limit?: number } | void>({
       query: (params) => ({
         url: "/payments",
@@ -246,6 +269,7 @@ export const {
   useCreatePaymentMutation,
   useCancelPaymentMutation,
   useCreatePaymentPackageMutation,
+  useDeletePaymentPackageMutation,
   useGetAdminRevenueChartQuery,
   useGetAdminRevenueOverviewQuery,
   useGetAdminRevenueStatisticsQuery,

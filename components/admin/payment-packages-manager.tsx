@@ -9,6 +9,7 @@ import {
   RefreshCcw,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime, formatNumber, notify } from "@/lib/admin";
 import {
   useCreatePaymentPackageMutation,
+  useDeletePaymentPackageMutation,
   useGetPaymentPackagesQuery,
   useUpdatePaymentPackageMutation,
 } from "@/store/services/paymentApi";
@@ -336,6 +338,8 @@ export function PaymentPackagesManager() {
     useCreatePaymentPackageMutation();
   const [updatePaymentPackage, { isLoading: isUpdating }] =
     useUpdatePaymentPackageMutation();
+  const [deletePaymentPackage, { isLoading: isDeleting }] =
+    useDeletePaymentPackageMutation();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<PaymentPackage | null>(
@@ -352,7 +356,7 @@ export function PaymentPackagesManager() {
   const activePackages = packages.filter(
     (item) => item.isActive && !isDefaultPackage(item),
   );
-  const isSubmitting = isCreating || isUpdating;
+  const isSubmitting = isCreating || isUpdating || isDeleting;
   const isEditingDefaultPackage = isDefaultPackage(editingPackage);
 
   const accessLevelOptions =
@@ -692,6 +696,45 @@ export function PaymentPackagesManager() {
     }
   };
 
+  const handleDeletePackage = async (paymentPackage: PaymentPackage) => {
+    if (isDefaultPackage(paymentPackage)) {
+      notify({
+        title: "Không thể xóa gói mặc định",
+        message: "Gói Free mặc định cần được giữ lại để cấp quyền cơ bản.",
+        type: "warning",
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Xóa gói "${paymentPackage.name}" khỏi danh sách quản trị?`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const result = await deletePaymentPackage(paymentPackage.id).unwrap();
+      notify({
+        title: "Đã xóa gói",
+        message:
+          result.mode === "soft"
+            ? "Gói đã được ẩn khỏi danh sách nhưng lịch sử thanh toán vẫn được giữ."
+            : "Gói đã được xóa khỏi hệ thống.",
+        type: "success",
+      });
+    } catch (deleteError) {
+      notify({
+        title: "Không xóa được gói",
+        message: toApiErrorMessage(
+          deleteError,
+          "Backend từ chối thao tác xóa gói thanh toán.",
+        ),
+        type: "error",
+      });
+    }
+  };
+
   if (isLoading && !data) {
     return (
       <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-6 text-sm text-slate-500">
@@ -883,6 +926,7 @@ export function PaymentPackagesManager() {
                         {formatDateTime(paymentPackage.updatedAt)}
                       </TableCell>
                       <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                         <Button
                           type="button"
                           variant="outline"
@@ -892,6 +936,17 @@ export function PaymentPackagesManager() {
                           <Pencil className="mr-2 h-4 w-4" />
                           Chỉnh sửa
                         </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50"
+                          onClick={() => void handleDeletePackage(paymentPackage)}
+                          disabled={isDefaultPackage(paymentPackage) || isDeleting}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Xóa
+                        </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

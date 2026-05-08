@@ -11,6 +11,34 @@ import {
 import { VocabularyAttemptSkeleton } from "@/components/vocabularies/skeletons";
 import { useI18n } from "@/lib/i18n/context";
 
+type QuizOption = {
+  id: string;
+  label: string;
+};
+
+type QuizQuestion = {
+  wordId: string;
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+};
+
+const hashString = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
+
+const stableShuffle = (options: QuizOption[], seed: string) =>
+  [...options].sort((a, b) => {
+    const left = hashString(`${seed}|${a.id}|${a.label}`);
+    const right = hashString(`${seed}|${b.id}|${b.label}`);
+    return left - right;
+  });
+
 export default function QuizPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
@@ -32,26 +60,35 @@ export default function QuizPage() {
     () =>
       words
         .slice(0, 10)
-        .map((w) => w.id)
+        .map((w) => `${w.id}:${w.word}:${w.meaning}`)
         .join("|"),
     [words],
   );
 
-  // Memoize so options don't re-shuffle on every timer tick
-  const questions = useMemo(() => {
-    const filler = t("Không có trong danh sách");
+  const questions = useMemo<QuizQuestion[]>(() => {
+    const filler = lang === "vi" ? "Không có trong danh sách" : "Not in the list";
     return words.slice(0, 10).map((word) => {
       const otherMeanings = words
         .filter((w) => w.id !== word.id)
-        .map((w) => w.meaning)
+        .map((w, optionIndex) => ({
+          id: `other-${w.id}-${optionIndex}`,
+          label: w.meaning,
+        }))
         .slice(0, 3);
       while (otherMeanings.length < 3) {
-        otherMeanings.push(filler);
+        otherMeanings.push({
+          id: `filler-${word.id}-${otherMeanings.length}`,
+          label: filler,
+        });
       }
-      const options = [word.meaning, ...otherMeanings].sort(
-        () => Math.random() - 0.5,
+      const shuffledOptions = stableShuffle(
+        [{ id: `correct-${word.id}`, label: word.meaning }, ...otherMeanings],
+        `${word.id}:${word.meaning}`,
       );
-      const correctIndex = options.indexOf(word.meaning);
+      const options = shuffledOptions.map((option) => option.label);
+      const correctIndex = shuffledOptions.findIndex(
+        (option) => option.id === `correct-${word.id}`,
+      );
       const prompt =
         lang === "vi"
           ? `Nghĩa của "${word.word}" là gì?`
@@ -63,15 +100,7 @@ export default function QuizPage() {
         correctIndex: correctIndex >= 0 ? correctIndex : 0,
       };
     });
-  }, [words, lang, t]);
-
-  const questionsShuffleKey = useMemo(
-    () =>
-      questions
-        .map((q) => `${q.wordId}|${q.options.join("\u001f")}`)
-        .join("\u001e"),
-    [questions],
-  );
+  }, [words, lang]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,7 +115,7 @@ export default function QuizPage() {
     }
     setAnswers(new Array(questions.length).fill(null));
     setCurrentIndex(0);
-  }, [questionWordSig, questionsShuffleKey, questions.length]);
+  }, [questionWordSig, questions.length]);
 
   const current = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
@@ -113,9 +142,22 @@ export default function QuizPage() {
       if (idx == null || idx < 0) return "";
       return q.options[idx] ?? "";
     });
+    const questionSnapshots = questions.map((q) => ({
+      wordId: q.wordId,
+      prompt: q.prompt,
+      options: q.options,
+      correctIndex: q.correctIndex,
+    }));
     const result = await submit({
       id,
-      body: { mode: "quiz", answers, wordIds, selectedLabels, durationSec },
+      body: {
+        mode: "quiz",
+        answers,
+        wordIds,
+        selectedLabels,
+        questionSnapshots,
+        durationSec,
+      },
     }).unwrap();
 
     router.push(

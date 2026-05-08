@@ -30,6 +30,7 @@ function ResultContent() {
   const percent = parseInt(searchParams.get("percent") ?? "0", 10);
   const time = parseInt(searchParams.get("time") ?? "0", 10);
   const mode = searchParams.get("mode") ?? "flashcards";
+  const attemptId = searchParams.get("attemptId");
 
   const resultKey =
     percent >= 90
@@ -138,7 +139,7 @@ function ResultContent() {
         )}
 
         <Link
-          href={`/vocabularies/${id}/result/review`}
+          href={`/vocabularies/${id}/result/review${attemptId ? `?attemptId=${attemptId}` : ""}`}
           className="inline-flex items-center rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           <Target className="mr-2 h-4 w-4" />

@@ -11,6 +11,7 @@ export interface LevelInfo {
   progressPercentage: number;
   testAvailable: boolean;
   canAttemptTest: boolean;
+  currentCefrLevel?: string;
 }
 
 export interface LevelHistoryItem {

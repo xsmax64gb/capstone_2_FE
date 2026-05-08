@@ -418,56 +418,6 @@ export const learnApi = baseApi.injectEndpoints({
         ],
       },
     ),
-
-    getAdminLearnAchievements: builder.query<
-      {
-        items: Array<{
-          id: string;
-          key: string;
-          title: string;
-          description: string;
-          iconUrl: string;
-          trigger: string;
-          xpReward: number;
-        }>;
-      },
-      void
-    >({
-      query: () => ({ url: "/admin/learn/achievements", method: "GET" }),
-      providesTags: ["AdminLearnAchievements"],
-      transformResponse: (response: ApiResponse<{ items: unknown[] }>) =>
-        response.data as {
-          items: Array<{
-            id: string;
-            key: string;
-            title: string;
-            description: string;
-            iconUrl: string;
-            trigger: string;
-            xpReward: number;
-          }>;
-        },
-    }),
-
-    createAdminLearnAchievement: builder.mutation<
-      void,
-      { key: string; title: string; description?: string; xpReward?: number }
-    >({
-      query: (body) => ({
-        url: "/admin/learn/achievements",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["AdminLearnAchievements"],
-    }),
-
-    deleteAdminLearnAchievement: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `/admin/learn/achievements/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["AdminLearnAchievements"],
-    }),
   }),
   overrideExisting: true,
 });
@@ -489,7 +439,4 @@ export const {
   useCreateAdminLearnStepMutation,
   useUpdateAdminLearnStepMutation,
   useDeleteAdminLearnStepMutation,
-  useGetAdminLearnAchievementsQuery,
-  useCreateAdminLearnAchievementMutation,
-  useDeleteAdminLearnAchievementMutation,
 } = learnApi;

@@ -16,6 +16,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "@/app/(user)/vocabularies/data";
 import { VocabulariesListSkeleton } from "@/components/vocabularies/skeletons";
 import {
+  useGetVocabularyFiltersQuery,
   useGetVocabularySummaryQuery,
   useGetVocabulariesQuery,
 } from "@/store/services/vocabulariesApi";
@@ -113,11 +114,23 @@ export default function VocabulariesContent() {
   });
 
   const { data: summaryData } = useGetVocabularySummaryQuery();
+  const { data: filterData } = useGetVocabularyFiltersQuery({
+    personal: personalOnly,
+  });
 
   const items: VocabularySet[] = listData?.items ?? [];
   const pagination = listData?.pagination;
   const totalSets = summaryData?.totalSets ?? 0;
   const totalWords = summaryData?.totalWords ?? 0;
+  const levelOptions =
+    filterData?.levels?.length
+      ? filterData.levels
+      : ["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => ({
+          value: level,
+          label: level,
+          count: 0,
+        }));
+  const topicOptions = filterData?.topics ?? [];
 
   return (
     <ProtectedRoute>
@@ -230,12 +243,12 @@ export default function VocabulariesContent() {
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
               <option value="all">{t("Tất cả cấp độ")}</option>
-              <option value="A1">{t("A1 — Người mới bắt đầu")}</option>
-              <option value="A2">{t("A2 — Sơ cấp")}</option>
-              <option value="B1">{t("B1 — Trung cấp")}</option>
-              <option value="B2">{t("B2 — Trung cấp cao")}</option>
-              <option value="C1">{t("C1 — Nâng cao")}</option>
-              <option value="C2">{t("C2 — Thành thạo")}</option>
+              {levelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {LEVEL_LABELS[option.value as keyof typeof LEVEL_LABELS] ??
+                    option.label}
+                </option>
+              ))}
             </select>
 
             <select
@@ -247,10 +260,12 @@ export default function VocabulariesContent() {
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-black"
             >
               <option value="all">{t("Tất cả chủ đề")}</option>
-              <option value="daily-life">{t("Đời sống hằng ngày")}</option>
-              <option value="work">{t("Công việc")}</option>
-              <option value="travel">{t("Du lịch")}</option>
-              <option value="technology">{t("Công nghệ")}</option>
+              {topicOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {TOPIC_LABELS[option.value as keyof typeof TOPIC_LABELS] ??
+                    option.label}
+                </option>
+              ))}
             </select>
           </div>
         </section>
@@ -316,11 +331,13 @@ export default function VocabulariesContent() {
                   {/* Badges */}
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold">
-                      {LEVEL_LABELS[item.level] ?? item.level}
+                      {LEVEL_LABELS[item.level as keyof typeof LEVEL_LABELS] ??
+                        item.level}
                     </span>
                     <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                       <BookOpen className="mr-1 h-3.5 w-3.5" />
-                      {TOPIC_LABELS[item.topic] ?? item.topic}
+                      {TOPIC_LABELS[item.topic as keyof typeof TOPIC_LABELS] ??
+                        item.topic}
                     </span>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                       {item.wordCount} {t("từ")}

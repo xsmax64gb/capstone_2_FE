@@ -51,8 +51,10 @@ export function LevelProgressBar({
 
   const levelColor = LEVEL_COLORS[currentLevel as keyof typeof LEVEL_COLORS] || "bg-slate-500";
   const cefrLevel = LEVEL_TO_CEFR[currentLevel as keyof typeof LEVEL_TO_CEFR] || "A1";
-  const xpInCurrentLevel = totalXp - currentLevelThreshold;
-  const xpNeededForNextLevel = nextLevelThreshold - currentLevelThreshold;
+  const xpInCurrentLevel = Math.max(0, totalXp - currentLevelThreshold);
+  const xpNeededForNextLevel = Math.max(0, nextLevelThreshold - currentLevelThreshold);
+  const xpRemaining = Math.max(0, nextLevelThreshold - totalXp);
+  const safeProgressPercentage = Math.max(0, Math.min(progressPercentage, 100));
 
   const handleTakeTest = () => {
     router.push("/level-test");
@@ -96,7 +98,7 @@ export function LevelProgressBar({
               <p className="text-sm text-slate-600">
                 Cần thêm{" "}
                 <span className="font-semibold text-emerald-600">
-                  {(nextLevelThreshold - totalXp).toLocaleString("vi-VN")} XP
+                  {xpRemaining.toLocaleString("vi-VN")} XP
                 </span>
               </p>
             )}
@@ -110,11 +112,11 @@ export function LevelProgressBar({
                 Tiến độ đến {LEVEL_TO_CEFR[(currentLevel + 1) as keyof typeof LEVEL_TO_CEFR]}
               </span>
               <span className="font-semibold text-slate-900">
-                {Math.round(progressPercentage)}%
+                {Math.round(safeProgressPercentage)}%
               </span>
             </div>
             
-            <Progress value={progressPercentage} className="h-3" />
+            <Progress value={safeProgressPercentage} className="h-3" />
             
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span>{xpInCurrentLevel.toLocaleString("vi-VN")} XP</span>

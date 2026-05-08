@@ -377,6 +377,13 @@ export function LearnStepClient({ slug, step }: Props) {
     }
   };
 
+  const handleRetrySpeaking = () => {
+    stopListening("abort");
+    setFinalTranscript("");
+    setInterimTranscript("");
+    setSpeechError(null);
+  };
+
   const startListening = () => {
     const RecognitionCtor = getRecognitionConstructor();
     if (!RecognitionCtor) {
@@ -1413,7 +1420,18 @@ export function LearnStepClient({ slug, step }: Props) {
                     ? bi("Dừng micro", "Stop mic")
                     : voice.recognition
                       ? bi("Bắt đầu nói", "Start speaking")
-                      : bi("Không có micro", "No mic available")}
+                    : bi("Không có micro", "No mic available")}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRetrySpeaking}
+                  disabled={!voice.recognition || (!finalTranscript && !interimTranscript && !isListening)}
+                  className="h-12 rounded-2xl border-slate-200"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  {bi("Nói lại", "Try again")}
                 </Button>
 
                 <Button

@@ -29,6 +29,14 @@ import { LevelProgressBar } from "@/components/layouts/level-progress-bar";
 import { useLevel } from "@/contexts/level-context";
 
 const DEFAULT_AVATAR_URL = "/placeholder-user.jpg";
+const LEVEL_TO_CEFR: Record<number, string> = {
+  1: "A1",
+  2: "A2",
+  3: "B1",
+  4: "B2",
+  5: "C1",
+  6: "C2",
+};
 
 const DEFAULT_NATIVE_LANGUAGE_OPTIONS = [
   "Vietnamese",
@@ -120,6 +128,12 @@ export default function ProfilePage() {
     authUser?.fullName ||
     authUser?.name ||
     "Người dùng";
+  const currentCefrLevel =
+    levelInfo?.currentCefrLevel ||
+    (levelInfo?.currentLevel ? LEVEL_TO_CEFR[levelInfo.currentLevel] : null) ||
+    profile?.currentLevel ||
+    authUser?.currentLevel ||
+    "A1";
 
   const stats = [
     {
@@ -128,7 +142,7 @@ export default function ProfilePage() {
     },
     {
       label: t("Trình độ (CEFR)"),
-      value: profile?.currentLevel || authUser?.currentLevel || "A1",
+      value: currentCefrLevel,
     },
     {
       label: t("Ngôn ngữ"),
@@ -280,7 +294,7 @@ export default function ProfilePage() {
                   <span>
                     {t("Trình độ hiện tại:")}{" "}
                     <span className="font-semibold text-slate-950">
-                      {profile?.currentLevel || authUser?.currentLevel || "A1"}
+                      {currentCefrLevel}
                     </span>
                   </span>
                 </div>

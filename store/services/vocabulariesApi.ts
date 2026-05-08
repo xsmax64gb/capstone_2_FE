@@ -4,7 +4,7 @@ import type { ApiResponse } from "@/types";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type VocabularyLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
-export type VocabularyTopic = "daily-life" | "work" | "travel" | "technology" | "general";
+export type VocabularyTopic = string;
 
 export interface VocabularyWord {
   id: string;
@@ -99,7 +99,19 @@ export interface VocabularyReviewItem {
 
 export interface VocabularyReviewResponse {
   vocabularyId: string;
+  attemptId?: string;
   review: VocabularyReviewItem[];
+}
+
+export interface VocabularyFilterOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export interface VocabularyFiltersResponse {
+  levels: VocabularyFilterOption[];
+  topics: VocabularyFilterOption[];
 }
 
 export interface VocabularyListResponse {
@@ -150,6 +162,12 @@ export interface SubmitVocabularyBody {
   wordIds?: string[];
   /** Nội dung đáp án đã chọn (quiz) — backend so khớp với nghĩa đúng trong DB */
   selectedLabels?: string[];
+  questionSnapshots?: Array<{
+    wordId: string;
+    prompt: string;
+    options: string[];
+    correctIndex: number;
+  }>;
   durationSec?: number;
 }
 
@@ -200,6 +218,20 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<VocabularySummary>) =>
         response.data as VocabularySummary,
       providesTags: ["VocabularySummary"],
+    }),
+
+    getVocabularyFilters: builder.query<
+      VocabularyFiltersResponse,
+      { personal?: boolean } | void
+    >({
+      query: (params) => ({
+        url: "/vocabularies/filters",
+        method: "GET",
+        params: params ?? undefined,
+      }),
+      transformResponse: (response: ApiResponse<VocabularyFiltersResponse>) =>
+        response.data as VocabularyFiltersResponse,
+      providesTags: ["Vocabularies"],
     }),
 
     getRecommendedVocabularies: builder.query<
@@ -257,12 +289,12 @@ export const vocabulariesApi = baseApi.injectEndpoints({
 
     getVocabularyReview: builder.query<
       VocabularyReviewResponse,
-      { id: string; answers?: string }
+      { id: string; answers?: string; attemptId?: string }
     >({
-      query: ({ id, answers }) => ({
+      query: ({ id, answers, attemptId }) => ({
         url: `/vocabularies/${id}/review`,
         method: "GET",
-        params: { answers },
+        params: { answers, attemptId },
       }),
       transformResponse: (response: ApiResponse<VocabularyReviewResponse>) =>
         response.data as VocabularyReviewResponse,
@@ -363,6 +395,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
 export const {
   useGetVocabulariesQuery,
   useGetVocabularySummaryQuery,
+  useGetVocabularyFiltersQuery,
   useGetRecommendedVocabulariesQuery,
   useGetVocabularyHistoryQuery,
   useGetVocabularyByIdQuery,

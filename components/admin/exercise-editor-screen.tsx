@@ -191,6 +191,8 @@ const mapBulkQuestionsToEditor = (input: unknown): ExerciseQuestionEditor[] => {
       question?: unknown;
       options?: unknown;
       correctIndex?: unknown;
+      correctAnswer?: unknown;
+      answer?: unknown;
       explanation?: unknown;
       score?: unknown;
     };
@@ -201,11 +203,25 @@ const mapBulkQuestionsToEditor = (input: unknown): ExerciseQuestionEditor[] => {
     if (!prompt) throw new Error(`Phần tử ${idx + 1}: Thiếu trường "prompt".`);
     if (options.length < 2)
       throw new Error(`Phần tử ${idx + 1}: "options" cần ít nhất 2 phần tử.`);
+    const rawCorrectAnswer = r.correctAnswer ?? r.answer;
+    const correctIndex =
+      r.correctIndex !== undefined && r.correctIndex !== null
+        ? Number(r.correctIndex)
+        : typeof rawCorrectAnswer === "number"
+          ? rawCorrectAnswer
+          : options.findIndex(
+              (option) =>
+                option.toLowerCase() ===
+                String(rawCorrectAnswer ?? "").trim().toLowerCase(),
+            );
+    if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= options.length) {
+      throw new Error(`Phần tử ${idx + 1}: Đáp án đúng không khớp với options.`);
+    }
     return {
       id: createEmptyQuestion(idx).id,
       prompt,
       options,
-      correctIndex: String(Number(r.correctIndex ?? 0)),
+      correctIndex: String(correctIndex),
       explanation: String(r.explanation || ""),
       score: String(Number(r.score ?? 1) || 1),
     };

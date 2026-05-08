@@ -64,6 +64,18 @@ export interface ExerciseSummary {
   pastAttempts: number;
 }
 
+export interface ExerciseFilterOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export interface ExerciseFiltersResponse {
+  levels: ExerciseFilterOption[];
+  topics: ExerciseFilterOption[];
+  types: ExerciseFilterOption[];
+}
+
 export interface ExerciseListResponse {
   items: ExerciseItem[];
   pagination: {
@@ -174,6 +186,20 @@ export const exercisesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<ExerciseListResponse>) =>
         response.data as ExerciseListResponse,
+      providesTags: ["Exercises"],
+    }),
+
+    getExerciseFilters: builder.query<
+      ExerciseFiltersResponse,
+      { personal?: boolean } | void
+    >({
+      query: (params) => ({
+        url: "/exercises/filters",
+        method: "GET",
+        params: params ?? undefined,
+      }),
+      transformResponse: (response: ApiResponse<ExerciseFiltersResponse>) =>
+        response.data as ExerciseFiltersResponse,
       providesTags: ["Exercises"],
     }),
 
@@ -333,6 +359,7 @@ export const exercisesApi = baseApi.injectEndpoints({
 
 export const {
   useGetExercisesQuery,
+  useGetExerciseFiltersQuery,
   useGetExerciseSummaryQuery,
   useGetRecommendedExercisesQuery,
   useGetExerciseHistoryQuery,

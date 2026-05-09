@@ -70,6 +70,7 @@ export const baseApi = createApi({
     "LearnMaps",
     "AdminLearnMaps",
     "AdminLearnSteps",
+    "AdminLearnAchievements",
     "PlacementActiveTest",
     "PlacementAttempt",
     "Payments",

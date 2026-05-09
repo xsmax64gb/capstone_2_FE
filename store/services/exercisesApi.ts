@@ -7,6 +7,7 @@ type ExerciseLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 export interface ExerciseQuestion {
   id: string;
   prompt: string;
+  question?: string;
   options: string[];
   correctIndex: number;
   explanation: string;

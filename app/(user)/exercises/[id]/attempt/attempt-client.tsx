@@ -30,13 +30,53 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
   const { t } = useI18n();
   const [submitAttempt, { isLoading: isSubmitting }] = useSubmitExerciseAttemptMutation();
 
-  const questionList = exercise.questions ?? [];
+  const questionList = useMemo(() => {
+    const rawQuestions = exercise.questions ?? [];
+    const promptCounts = new Map<string, number>();
+    rawQuestions.forEach((question) => {
+      const prompt = String(question.prompt ?? "").trim();
+      if (prompt) {
+        promptCounts.set(prompt, (promptCounts.get(prompt) ?? 0) + 1);
+      }
+    });
+
+    const seenIds = new Set<string>();
+    return rawQuestions.map((question, index) => {
+      const rawId = String(question.id ?? "").trim();
+      const id = rawId && !seenIds.has(rawId) ? rawId : `q_${index + 1}`;
+      seenIds.add(id);
+
+      const prompt = String(question.prompt ?? "").trim();
+      const legacyQuestion = String(question.question ?? "").trim();
+      const displayPrompt =
+        legacyQuestion &&
+        legacyQuestion !== prompt &&
+        prompt &&
+        (promptCounts.get(prompt) ?? 0) > 1
+          ? legacyQuestion
+          : prompt || legacyQuestion || t("Câu hỏi chưa có nội dung");
+
+      return {
+        ...question,
+        id,
+        prompt: displayPrompt,
+        options: Array.isArray(question.options) ? question.options : [],
+      };
+    });
+  }, [exercise.questions, t]);
   const total = questionList.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [elapsedSec, setElapsedSec] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+    setAnswers({});
+    setElapsedSec(0);
+    setSubmitError(null);
+  }, [exercise.id]);
 
   // Timer
   useEffect(() => {
@@ -45,7 +85,14 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
   }, []);
 
   const currentQuestion = questionList[currentIndex];
-  const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
+  const answeredCount = useMemo(
+    () =>
+      questionList.reduce(
+        (count, question) => count + (answers[question.id] !== undefined ? 1 : 0),
+        0,
+      ),
+    [answers, questionList],
+  );
   const progressPct = Math.round(((currentIndex + 1) / Math.max(total, 1)) * 100);
   const answeredPct = Math.round((answeredCount / Math.max(total, 1)) * 100);
 
@@ -172,7 +219,10 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
       </div>
 
       {/* ── Question Card ────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div
+        key={`${currentQuestion.id}-${currentIndex}`}
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      >
         {/* Question text */}
         <div className="mb-6">
           <span className="inline-block rounded-lg bg-slate-900 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white">
@@ -190,7 +240,7 @@ export function AttemptClient({ exercise }: AttemptClientProps) {
             const letter = OPTION_LETTERS[index] ?? String(index + 1);
             return (
               <button
-                key={`${currentQuestion.id}-opt-${index}`}
+                key={`${currentQuestion.id}-${currentIndex}-opt-${index}`}
                 type="button"
                 onClick={() => selectAnswer(index)}
                 className={`group flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-medium transition-all duration-150 ${

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Clock3 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import {
@@ -39,6 +39,9 @@ const stableShuffle = (options: QuizOption[], seed: string) =>
     return left - right;
   });
 
+const normalizeOptionLabel = (value: string) =>
+  value.trim().replace(/\s+/g, " ").toLowerCase();
+
 export default function QuizPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
@@ -48,10 +51,11 @@ export default function QuizPage() {
   const { data, isLoading, isError } = useGetVocabularyByIdQuery(id, {
     skip: !id,
   });
-  const [submit] = useSubmitVocabularyAttemptMutation();
+  const [submit, { isLoading: isSubmitting }] = useSubmitVocabularyAttemptMutation();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
+  const answersRef = useRef<(number | null)[]>([]);
   const [startedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
 
@@ -68,17 +72,33 @@ export default function QuizPage() {
   const questions = useMemo<QuizQuestion[]>(() => {
     const filler = lang === "vi" ? "Không có trong danh sách" : "Not in the list";
     return words.slice(0, 10).map((word) => {
+      const seenLabels = new Set([normalizeOptionLabel(word.meaning)]);
       const otherMeanings = words
         .filter((w) => w.id !== word.id)
-        .map((w, optionIndex) => ({
-          id: `other-${w.id}-${optionIndex}`,
-          label: w.meaning,
-        }))
+        .reduce<QuizOption[]>((items, w, optionIndex) => {
+          const label = String(w.meaning ?? "").trim();
+          const normalizedLabel = normalizeOptionLabel(label);
+          if (!label || seenLabels.has(normalizedLabel)) {
+            return items;
+          }
+          seenLabels.add(normalizedLabel);
+          items.push({
+            id: `other-${w.id}-${optionIndex}`,
+            label,
+          });
+          return items;
+        }, [])
         .slice(0, 3);
       while (otherMeanings.length < 3) {
+        const fallbackLabel =
+          otherMeanings.length === 0
+            ? filler
+            : lang === "vi"
+              ? `Đáp án nhiễu ${otherMeanings.length + 1}`
+              : `Distractor ${otherMeanings.length + 1}`;
         otherMeanings.push({
           id: `filler-${word.id}-${otherMeanings.length}`,
-          label: filler,
+          label: fallbackLabel,
         });
       }
       const shuffledOptions = stableShuffle(
@@ -113,7 +133,9 @@ export default function QuizPage() {
     if (!questionWordSig || questions.length === 0) {
       return;
     }
-    setAnswers(new Array(questions.length).fill(null));
+    const emptyAnswers = new Array(questions.length).fill(null);
+    answersRef.current = emptyAnswers;
+    setAnswers(emptyAnswers);
     setCurrentIndex(0);
   }, [questionWordSig, questions.length]);
 
@@ -134,11 +156,26 @@ export default function QuizPage() {
     return `${m}:${String(sec).padStart(2, "0")}`;
   };
 
+  const selectAnswer = (questionIndex: number, optionIndex: number) => {
+    const currentAnswers = answersRef.current.length ? answersRef.current : answers;
+    const next = Array.from(
+      { length: questions.length },
+      (_, index) => currentAnswers[index] ?? null,
+    );
+    next[questionIndex] = optionIndex;
+    answersRef.current = next;
+    setAnswers(next);
+  };
+
   const handleSubmit = async () => {
     const durationSec = Math.round((Date.now() - startedAt) / 1000);
     const wordIds = questions.map((q) => q.wordId);
+    const submittedAnswers = questions.map((_, i) => {
+      const value = answersRef.current[i] ?? answers[i] ?? null;
+      return typeof value === "number" && Number.isInteger(value) ? value : null;
+    });
     const selectedLabels = questions.map((q, i) => {
-      const idx = answers[i];
+      const idx = submittedAnswers[i];
       if (idx == null || idx < 0) return "";
       return q.options[idx] ?? "";
     });
@@ -152,7 +189,7 @@ export default function QuizPage() {
       id,
       body: {
         mode: "quiz",
-        answers,
+        answers: submittedAnswers,
         wordIds,
         selectedLabels,
         questionSnapshots,
@@ -233,21 +270,18 @@ export default function QuizPage() {
 
         {/* Question */}
         {current && (
-          <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div
+            key={`${current.wordId}-${currentIndex}`}
+            className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
             <p className="mb-6 text-lg font-semibold">{current.prompt}</p>
             <div className="space-y-3">
               {current.options.map((option, optIdx) => {
                 const isSelected = answers[currentIndex] === optIdx;
                 return (
                   <button
-                    key={optIdx}
-                    onClick={() =>
-                      setAnswers((prev) => {
-                        const next = [...prev];
-                        next[currentIndex] = optIdx;
-                        return next;
-                      })
-                    }
+                    key={`${current.wordId}-${optIdx}-${option}`}
+                    onClick={() => selectAnswer(currentIndex, optIdx)}
                     className={`w-full rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
                       isSelected
                         ? "border-black bg-black text-white"
@@ -276,10 +310,10 @@ export default function QuizPage() {
           {isLast ? (
             <button
               onClick={handleSubmit}
-              disabled={!allAnswered}
+              disabled={!allAnswered || isSubmitting}
               className="inline-flex items-center rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {t("Nộp quiz")}
+              {isSubmitting ? t("Đang nộp...") : t("Nộp quiz")}
             </button>
           ) : (
             <button

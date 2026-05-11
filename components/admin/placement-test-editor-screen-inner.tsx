@@ -339,6 +339,10 @@ export function PlacementTestEditorScreenInner({ testId, source }: Props) {
   };
 
   const handleNext = () => {
+    if (!draft) {
+      return;
+    }
+
     try {
       const nextDraft = validatePlacementTestDraft(draft);
       setDraft(nextDraft);

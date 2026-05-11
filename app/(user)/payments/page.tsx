@@ -9,6 +9,7 @@ import {
   Clock3,
   Copy,
   LoaderCircle,
+  Sparkles,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { API_BASE_URL } from "@/config/api";
@@ -103,6 +104,61 @@ const formatCountdown = (remainingSeconds: number) => {
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = safeSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
+const playPaymentSuccessSound = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const AudioContextCtor =
+    window.AudioContext ||
+    (window as Window & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+
+  if (!AudioContextCtor) {
+    return;
+  }
+
+  try {
+    const context = new AudioContextCtor();
+    const startedAt = context.currentTime;
+    const masterGain = context.createGain();
+
+    masterGain.gain.setValueAtTime(0.0001, startedAt);
+    masterGain.gain.exponentialRampToValueAtTime(0.9, startedAt + 0.02);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, startedAt + 1.2);
+    masterGain.connect(context.destination);
+
+    [1046.5, 1318.5, 1568].forEach((frequency, index) => {
+      const start = startedAt + index * 0.17;
+      const stop = start + 0.34;
+      const oscillator = context.createOscillator();
+      const noteGain = context.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency, start);
+      oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.012, stop);
+      noteGain.gain.setValueAtTime(0.0001, start);
+      noteGain.gain.exponentialRampToValueAtTime(0.65, start + 0.018);
+      noteGain.gain.exponentialRampToValueAtTime(0.0001, stop);
+
+      oscillator.connect(noteGain);
+      noteGain.connect(masterGain);
+      oscillator.start(start);
+      oscillator.stop(stop + 0.02);
+    });
+
+    if (context.state === "suspended") {
+      void context.resume();
+    }
+
+    window.setTimeout(() => {
+      void context.close();
+    }, 1400);
+  } catch (_error) {
+    // Audio can be blocked by browser policy; payment UI still proceeds.
+  }
 };
 
 const BANK_NAMES: Record<string, string> = {
@@ -314,6 +370,7 @@ export default function PaymentPackagesPage() {
   const [mounted, setMounted] = useState(false);
   const autoCheckedInvoiceRef = useRef<string | null>(null);
   const cancelledInvoiceRef = useRef<string | null>(null);
+  const successSoundInvoiceRef = useRef<string | null>(null);
   const checkoutPaymentRef = useRef<PaymentRecord | null>(null);
 
   useEffect(() => {
@@ -710,6 +767,7 @@ export default function PaymentPackagesPage() {
 
       autoCheckedInvoiceRef.current = null;
       cancelledInvoiceRef.current = null;
+      successSoundInvoiceRef.current = null;
       setCheckoutPayment(created);
       setCheckoutPlanName(created.packageName || checkoutPlanName);
       setCheckoutSyncSummary(null);
@@ -849,6 +907,21 @@ export default function PaymentPackagesPage() {
     runReconcile,
   ]);
 
+  useEffect(() => {
+    const invoiceNumber = checkoutPayment?.invoiceNumber;
+    if (
+      !isQrDialogOpen ||
+      !invoiceNumber ||
+      checkoutPayment?.status !== "paid" ||
+      successSoundInvoiceRef.current === invoiceNumber
+    ) {
+      return;
+    }
+
+    successSoundInvoiceRef.current = invoiceNumber;
+    playPaymentSuccessSound();
+  }, [checkoutPayment?.invoiceNumber, checkoutPayment?.status, isQrDialogOpen]);
+
   const createInvoiceForPlan = useCallback(
     async (plan: PricingPlan) => {
       if (!plan.packageId) {
@@ -880,6 +953,7 @@ export default function PaymentPackagesPage() {
 
         autoCheckedInvoiceRef.current = null;
         cancelledInvoiceRef.current = null;
+        successSoundInvoiceRef.current = null;
         setCheckoutPlanName(plan.name);
         setCheckoutPayment(payment);
         setCheckoutSyncSummary(null);
@@ -1390,7 +1464,17 @@ export default function PaymentPackagesPage() {
             <div className="grid gap-6 p-6 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="space-y-4">
                 <div className="mx-auto w-full max-w-[260px] rounded-2xl border border-slate-200 bg-white p-4">
-                  {qrData ? (
+                  {isPaidPayment ? (
+                    <div className="payment-success-visual relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50">
+                      <div className="payment-success-ring" />
+                      <div className="payment-success-ring payment-success-ring-delay" />
+                      <div className="relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_22px_55px_-22px_rgba(5,150,105,0.9)]">
+                        <CircleCheckBig className="h-16 w-16 payment-success-check" />
+                      </div>
+                      <Sparkles className="payment-success-sparkle left-8 top-8 h-5 w-5 text-emerald-500" />
+                      <Sparkles className="payment-success-sparkle payment-success-sparkle-delay bottom-9 right-8 h-4 w-4 text-teal-500" />
+                    </div>
+                  ) : qrData ? (
                     <div className="relative overflow-hidden rounded-xl border border-slate-200">
                       <img
                         src={qrData.qrImageUrl}
@@ -1407,7 +1491,9 @@ export default function PaymentPackagesPage() {
                   )}
                 </div>
                 <p className="text-center text-sm text-slate-400">
-                  Quét mã QR để tự động nhập số tiền và nội dung
+                  {isPaidPayment
+                    ? "Thanh toán đã được xác nhận"
+                    : "Quét mã QR để tự động nhập số tiền và nội dung"}
                 </p>
 
                 {checkoutPayment?.status === "paid" ? (
@@ -1537,6 +1623,36 @@ export default function PaymentPackagesPage() {
                 animation: qrScanDown 2.4s linear infinite;
               }
 
+              .payment-success-visual {
+                animation: successPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+              }
+
+              .payment-success-ring {
+                position: absolute;
+                width: 120px;
+                height: 120px;
+                border-radius: 9999px;
+                border: 2px solid rgba(16, 185, 129, 0.35);
+                animation: successRing 1.6s ease-out infinite;
+              }
+
+              .payment-success-ring-delay {
+                animation-delay: 0.45s;
+              }
+
+              .payment-success-check {
+                animation: successCheck 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+              }
+
+              .payment-success-sparkle {
+                position: absolute;
+                animation: successSparkle 1.5s ease-in-out infinite;
+              }
+
+              .payment-success-sparkle-delay {
+                animation-delay: 0.35s;
+              }
+
               @keyframes qrScanDown {
                 0% {
                   transform: translateY(-140%);
@@ -1551,6 +1667,51 @@ export default function PaymentPackagesPage() {
                 100% {
                   transform: translateY(900%);
                   opacity: 0.15;
+                }
+              }
+
+              @keyframes successPop {
+                0% {
+                  opacity: 0;
+                  transform: scale(0.92);
+                }
+                100% {
+                  opacity: 1;
+                  transform: scale(1);
+                }
+              }
+
+              @keyframes successRing {
+                0% {
+                  opacity: 0.8;
+                  transform: scale(0.74);
+                }
+                100% {
+                  opacity: 0;
+                  transform: scale(1.85);
+                }
+              }
+
+              @keyframes successCheck {
+                0% {
+                  opacity: 0;
+                  transform: scale(0.62) rotate(-14deg);
+                }
+                100% {
+                  opacity: 1;
+                  transform: scale(1) rotate(0deg);
+                }
+              }
+
+              @keyframes successSparkle {
+                0%,
+                100% {
+                  opacity: 0.45;
+                  transform: scale(0.86) rotate(0deg);
+                }
+                50% {
+                  opacity: 1;
+                  transform: scale(1.18) rotate(12deg);
                 }
               }
             `}</style>

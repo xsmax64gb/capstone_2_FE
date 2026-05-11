@@ -15,14 +15,19 @@ import type {
   User,
 } from "@/types";
 
+const getAuthUser = (getState: () => unknown): User | null => {
+  const state = getState() as { auth?: { user?: User | null } };
+  return state.auth?.user ?? null;
+};
+
 const syncUserState = async (
   dispatch: (action: unknown) => unknown,
-  getState: () => { auth: { user: User | null } },
+  getState: () => unknown,
   queryFulfilled: Promise<{ data: PlacementFinalizeResponse }>,
 ) => {
   try {
     const { data } = await queryFulfilled;
-    const prev = getState().auth.user;
+    const prev = getAuthUser(getState);
     const next = data.user;
     dispatch(
       setUser({

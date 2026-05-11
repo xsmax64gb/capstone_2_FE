@@ -727,6 +727,9 @@ export interface RevenueBreakdownItem {
 
 export interface AdminRevenueRecentPaidItem {
   invoiceNumber: string;
+  userName: string;
+  userEmail: string | null;
+  userAvatarUrl: string;
   amount: number;
   currency: string;
   paymentMethod: string;

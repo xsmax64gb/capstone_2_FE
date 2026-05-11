@@ -70,13 +70,18 @@ const mergeUserIntoAuth = (prev: User | null, next: User): User => ({
   name: next.fullName || next.name || prev?.name,
 });
 
+const getAuthUser = (getState: () => unknown): User | null => {
+  const state = getState() as { auth?: { user?: User | null } };
+  return state.auth?.user ?? null;
+};
+
 const syncProfileState = async (
   dispatch: (action: unknown) => unknown,
-  getState: () => { auth: { user: User | null } },
+  getState: () => unknown,
   queryFulfilled: Promise<{ data: User }>,
 ) => {
   const { data } = await queryFulfilled;
-  const merged = mergeUserIntoAuth(getState().auth.user, data);
+  const merged = mergeUserIntoAuth(getAuthUser(getState), data);
   dispatch(setUser(merged));
   dispatch(authApi.util.upsertQueryData("getProfile", undefined, data));
 };
@@ -137,7 +142,7 @@ export const authApi = baseApi.injectEndpoints({
       async onQueryStarted(_arg, { dispatch, queryFulfilled, getState }) {
         try {
           const { data } = await queryFulfilled;
-          const merged = mergeUserIntoAuth(getState().auth.user, data);
+          const merged = mergeUserIntoAuth(getAuthUser(getState), data);
           dispatch(setUser(merged));
         } catch {
           /* ignore */

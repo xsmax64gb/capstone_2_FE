@@ -148,32 +148,46 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/admin";
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { data: overviewData } = useGetAdminOverviewQuery(undefined, {
-    skip: user?.role !== "admin",
+  const {
+    data: overviewData,
+    isFetching: isOverviewFetching,
+    isError: isOverviewError,
+    isLoading: isOverviewLoading,
+  } = useGetAdminOverviewQuery(undefined, {
+    pollingInterval: 60_000,
+    refetchOnFocus: true,
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true,
   });
   
   const currentItem = useMemo(() => getCurrentItem(pathname), [pathname]);
   const displayName = user?.fullName || user?.name || "Administrator";
   const roleLabel = (user?.role || "admin").toUpperCase();
   const initials = getInitials(displayName);
+  const snapshotFallback =
+    isOverviewError && !overviewData
+      ? "Lỗi"
+      : isOverviewLoading || isOverviewFetching
+        ? "Đang tải"
+        : "N/A";
   const systemHighlights = [
     {
       label: "Uptime",
       value: overviewData?.systemSnapshot
         ? formatUptime(overviewData.systemSnapshot.uptime)
-        : "N/A",
+        : snapshotFallback,
     },
     {
       label: "Attempts 7d",
       value: overviewData
         ? formatCompactNumber(overviewData.summary.attemptsLast7Days)
-        : "N/A",
+        : snapshotFallback,
     },
     {
       label: "AI active",
       value: overviewData
         ? formatCompactNumber(overviewData.summary.activeAiSessions)
-        : "N/A",
+        : snapshotFallback,
     },
   ];
 

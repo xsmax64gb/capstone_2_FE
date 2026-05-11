@@ -1,8 +1,11 @@
 const configuredApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-const developmentApiFallback =
-  process.env.NODE_ENV === "development" ? "http://localhost:5000/api" : "";
+const productionApiFallback = "https://capstone-2-g51u.onrender.com/api";
+const defaultApiBaseUrl =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:5000/api"
+    : productionApiFallback;
 
-export const API_BASE_URL = configuredApiBaseUrl || developmentApiFallback;
+export const API_BASE_URL = configuredApiBaseUrl || defaultApiBaseUrl;
 
 export const API_ENDPOINTS = {
   AUTH: {

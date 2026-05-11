@@ -8,7 +8,6 @@ import {
   BadgeCheck,
   CircleDollarSign,
   CreditCard,
-  Filter,
   RefreshCcw,
   Search,
   TrendingUp,
@@ -37,14 +36,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -65,7 +58,10 @@ import {
   useGetAdminRevenueStatisticsQuery,
   useSyncPaymentsMutation,
 } from "@/store/services/paymentApi";
-import type { AdminRevenueRecentPaidItem } from "@/types";
+import type {
+  AdminRevenueChartPoint,
+  AdminRevenueRecentPaidItem,
+} from "@/types";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -110,6 +106,23 @@ const formatChartDateLabel = (dateKey: string) => {
   return year && month && day ? `${day}/${month}/${year}` : dateKey;
 };
 
+const getInitials = (value: string | null | undefined) => {
+  const words = String(value ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return "U";
+  }
+
+  return words
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+};
+
 // ─── Method Display Map ───────────────────────────────────────────────────────
 const methodLabel: Record<string, string> = {
   bank_transfer: "Chuyển khoản",
@@ -120,19 +133,61 @@ const methodLabel: Record<string, string> = {
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
 type RevenueChartTooltipPayloadItem = {
-  payload?: { date?: string; revenue?: number; paidTransactions?: number };
+  dataKey?: string | number;
+  value?: number | string;
+  payload?: {
+    date?: string;
+    label?: string;
+    revenue?: number | string;
+    paidTransactions?: number | string;
+  };
+};
+
+const toFiniteNumber = (value: unknown, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+type RevenueChartMouseState = {
+  activeTooltipIndex?: number | string;
+  isTooltipActive?: boolean;
 };
 
 function RevenueChartTooltip({
   active,
+  label,
   payload,
+  points,
+  activePoint,
   currency,
 }: {
   active?: boolean;
+  label?: string | number;
   payload?: RevenueChartTooltipPayloadItem[];
+  points: AdminRevenueChartPoint[];
+  activePoint?: AdminRevenueChartPoint | null;
   currency: string;
 }) {
-  const point = payload?.[0]?.payload;
+  const payloadPoint = payload?.[0]?.payload;
+  const activeKey = String(label ?? payloadPoint?.date ?? payloadPoint?.label ?? "");
+  const point =
+    activePoint ??
+    points.find(
+      (item) =>
+        item.date === activeKey ||
+        item.label === activeKey ||
+        item.date === payloadPoint?.date ||
+        item.label === payloadPoint?.label,
+    ) ??
+    payloadPoint;
+  const revenuePayload =
+    payload?.find((item) => item.dataKey === "revenue") ?? payload?.[0];
+  const revenue =
+    point?.revenue !== undefined
+      ? toFiniteNumber(point.revenue)
+      : toFiniteNumber(revenuePayload?.value);
+  const paidTransactions = toFiniteNumber(point?.paidTransactions);
+
   if (!active || !point?.date) return null;
 
   return (
@@ -141,10 +196,10 @@ function RevenueChartTooltip({
         Ngày {formatChartDateLabel(point.date)}
       </p>
       <p className="mt-2 text-sm font-bold text-slate-900">
-        {formatCurrency(Number(point.revenue ?? 0), currency)}
+        {formatCurrency(revenue, currency)}
       </p>
       <p className="mt-0.5 text-xs text-slate-500">
-        {formatNumber(Number(point.paidTransactions ?? 0))} giao dịch thành công
+        {formatNumber(paidTransactions)} giao dịch thành công
       </p>
     </div>
   );
@@ -250,6 +305,7 @@ export default function AdminRevenuePage() {
   const [filterPricing, setFilterPricing] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [activeRevenuePointIndex, setActiveRevenuePointIndex] = useState<number | null>(null);
 
   const queryParams = useMemo(() => ({ range: activeRange }), [activeRange]);
 
@@ -297,6 +353,24 @@ export default function AdminRevenuePage() {
   };
 
   const chartPoints = revenueChart?.points ?? [];
+  const activeRevenuePoint =
+    activeRevenuePointIndex === null ? null : chartPoints[activeRevenuePointIndex] ?? null;
+
+  const handleRevenueChartMouseMove = (state?: RevenueChartMouseState) => {
+    if (!state?.isTooltipActive) {
+      setActiveRevenuePointIndex(null);
+      return;
+    }
+
+    const nextIndex = Number(state.activeTooltipIndex);
+    const hasValidIndex =
+      Number.isInteger(nextIndex) && nextIndex >= 0 && nextIndex < chartPoints.length;
+
+    setActiveRevenuePointIndex((currentIndex) => {
+      if (!hasValidIndex) return null;
+      return currentIndex === nextIndex ? currentIndex : nextIndex;
+    });
+  };
 
   // ── Derive unique filter options from data ─────────────────────────────────
   const allTransactions: AdminRevenueRecentPaidItem[] =
@@ -322,6 +396,8 @@ export default function AdminRevenuePage() {
       const matchSearch =
         !q ||
         t.invoiceNumber.toLowerCase().includes(q) ||
+        (t.userName ?? "").toLowerCase().includes(q) ||
+        (t.userEmail ?? "").toLowerCase().includes(q) ||
         (t.externalRef ?? "").toLowerCase().includes(q) ||
         (t.xgateReference ?? "").toLowerCase().includes(q);
       const matchMethod = filterMethod === "all" || t.paymentMethod === filterMethod;
@@ -517,6 +593,8 @@ export default function AdminRevenuePage() {
                       <AreaChart
                         data={chartPoints}
                         margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                        onMouseMove={handleRevenueChartMouseMove}
+                        onMouseLeave={() => setActiveRevenuePointIndex(null)}
                       >
                         <defs>
                           <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
@@ -547,10 +625,15 @@ export default function AdminRevenuePage() {
                         />
                         <Tooltip
                           cursor={{ stroke: "#64748b", strokeDasharray: "4 4", strokeOpacity: 0.35 }}
-                          content={({ active, payload }) => (
+                          isAnimationActive={false}
+                          content={({ active, label, payload }) => (
                             <RevenueChartTooltip
+                              key={activeRevenuePoint?.date ?? String(label ?? "")}
                               active={active}
+                              label={label}
                               payload={payload as RevenueChartTooltipPayloadItem[]}
+                              points={chartPoints}
+                              activePoint={activeRevenuePoint}
                               currency={revenueChart.totals.currency}
                             />
                           )}
@@ -670,69 +753,56 @@ export default function AdminRevenuePage() {
                   </div>
 
                   {/* Method filter */}
-                  <Select
+                  <select
                     value={filterMethod}
-                    onValueChange={(v) => {
-                      setFilterMethod(v);
+                    onChange={(event) => {
+                      setFilterMethod(event.target.value);
                       setCurrentPage(1);
                     }}
+                    className="h-8 w-40 rounded-lg border border-input bg-transparent px-3 text-sm text-slate-700 shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <SelectTrigger id="tx-method-filter" className="h-8 w-40 rounded-lg text-sm">
-                      <Filter className="mr-1.5 h-3.5 w-3.5 text-slate-400" />
-                      <SelectValue placeholder="Phương thức" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả phương thức</SelectItem>
-                      {uniqueMethods.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {methodLabel[m] ?? m}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <option value="all">Tất cả phương thức</option>
+                    {uniqueMethods.map((m) => (
+                      <option key={m} value={m}>
+                        {methodLabel[m] ?? m}
+                      </option>
+                    ))}
+                  </select>
 
                   {/* Pricing filter */}
                   {uniquePricings.length > 0 && (
-                    <Select
+                    <select
                       value={filterPricing}
-                      onValueChange={(v) => {
-                        setFilterPricing(v);
+                      onChange={(event) => {
+                        setFilterPricing(event.target.value);
                         setCurrentPage(1);
                       }}
+                      className="h-8 w-36 rounded-lg border border-input bg-transparent px-3 text-sm text-slate-700 shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
-                      <SelectTrigger id="tx-pricing-filter" className="h-8 w-36 rounded-lg text-sm">
-                        <SelectValue placeholder="Gói" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả gói</SelectItem>
-                        {uniquePricings.map((p) => (
-                          <SelectItem key={p} value={p}>
-                            {p}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <option value="all">Tất cả gói</option>
+                      {uniquePricings.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
                   )}
 
                   {/* Page size */}
-                  <Select
+                  <select
                     value={String(pageSize)}
-                    onValueChange={(v) => {
-                      setPageSize(Number(v));
+                    onChange={(event) => {
+                      setPageSize(Number(event.target.value));
                       setCurrentPage(1);
                     }}
+                    className="h-8 w-28 rounded-lg border border-input bg-transparent px-3 text-sm text-slate-700 shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <SelectTrigger id="tx-page-size" className="h-8 w-28 rounded-lg text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAGE_SIZE_OPTIONS.map((s) => (
-                        <SelectItem key={s} value={String(s)}>
-                          {s} / trang
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {PAGE_SIZE_OPTIONS.map((s) => (
+                      <option key={s} value={String(s)}>
+                        {s} / trang
+                      </option>
+                    ))}
+                  </select>
 
                   {/* Reset */}
                   {hasActiveFilters && (
@@ -766,6 +836,9 @@ export default function AdminRevenuePage() {
                         Hóa đơn
                       </TableHead>
                       <TableHead className="py-3 text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
+                        Người dùng
+                      </TableHead>
+                      <TableHead className="py-3 text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
                         Gói
                       </TableHead>
                       <TableHead className="py-3 text-xs font-bold uppercase tracking-[0.1em] text-slate-500">
@@ -796,6 +869,28 @@ export default function AdminRevenuePage() {
                               ref: {item.externalRef}
                             </p>
                           )}
+                        </TableCell>
+                        <TableCell className="py-3.5">
+                          <div className="flex min-w-[180px] items-center gap-3">
+                            <Avatar className="h-9 w-9 border border-slate-200">
+                              <AvatarImage
+                                src={item.userAvatarUrl || undefined}
+                                alt={item.userName}
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="bg-slate-100 text-xs font-bold text-slate-500">
+                                {getInitials(item.userName || item.userEmail)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">
+                                {item.userName || "Người dùng"}
+                              </p>
+                              <p className="truncate text-xs text-slate-400">
+                                {item.userEmail || "Không có email"}
+                              </p>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell className="py-3.5">
                           {item.pricingKey ? (

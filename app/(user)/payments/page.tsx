@@ -68,8 +68,8 @@ type UpgradeConfirmationToastState = {
   nextPlan: PricingPlan;
 };
 
-/** Interval while QR dialog is open to call POST /payments/reconcile (server queries XGate). */
-const PAYMENT_POLL_INTERVAL_MS = 5000;
+/** Polls backend payment status; XGate webhook updates the server in realtime. */
+const PAYMENT_STATUS_POLL_INTERVAL_MS = 2500;
 const MIN_PAID_PACKAGE_AMOUNT = 2000;
 
 const buildApiUrl = (path: string) => {
@@ -548,7 +548,7 @@ export default function PaymentPackagesPage() {
       return "Thanh toán thất bại";
     }
 
-    return "Hệ thống đang tự động kiểm tra giao dịch...";
+    return "Hệ thống đang chờ xác nhận giao dịch...";
   };
 
   const handleCopy = async (
@@ -655,6 +655,7 @@ export default function PaymentPackagesPage() {
         setCheckoutSyncError(null);
         const result = await reconcilePayment({
           invoiceNumber: checkoutPayment.invoiceNumber,
+          backupSync: !silent,
         }).unwrap();
 
         setCheckoutPayment(result.payment);
@@ -835,7 +836,7 @@ export default function PaymentPackagesPage() {
     void tick();
     const intervalId = window.setInterval(() => {
       void tick();
-    }, PAYMENT_POLL_INTERVAL_MS);
+    }, PAYMENT_STATUS_POLL_INTERVAL_MS);
 
     return () => {
       cancelled = true;

@@ -162,7 +162,7 @@ export const paymentApi = baseApi.injectEndpoints({
 
     reconcilePayment: builder.mutation<
       PaymentReconcileResponse,
-      { invoiceNumber: string }
+      { invoiceNumber: string; backupSync?: boolean }
     >({
       query: (body) => ({
         url: "/payments/reconcile",

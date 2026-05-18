@@ -30,6 +30,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
 
 const VI_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN");
@@ -38,6 +39,7 @@ export default function VocabulariesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useI18n();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [personalOnly, setPersonalOnly] = useState(
     searchParams.get("personal") === "true",
@@ -50,6 +52,7 @@ export default function VocabulariesContent() {
   );
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const canFetchVocabulary = isAuthenticated && !isAuthLoading;
 
   const updateFilters = (newFilters: {
     query?: string;
@@ -114,20 +117,27 @@ export default function VocabulariesContent() {
     personal: personalOnly,
     page: currentPage,
     limit: 8,
+  }, {
+    skip: !canFetchVocabulary,
   });
 
   const {
     data: summaryData,
     isFetching: isSummaryFetching,
     isError: isSummaryError,
-  } = useGetVocabularySummaryQuery({ personal: personalOnly });
-  const { data: filterData } = useGetVocabularyFiltersQuery({
-    personal: personalOnly,
-  });
+  } = useGetVocabularySummaryQuery(
+    { personal: personalOnly },
+    { skip: !canFetchVocabulary },
+  );
+  const { data: filterData } = useGetVocabularyFiltersQuery(
+    { personal: personalOnly },
+    { skip: !canFetchVocabulary },
+  );
 
   const items: VocabularySet[] = listData?.items ?? [];
   const pagination = listData?.pagination;
-  const summaryIsPending = isSummaryFetching && !summaryData;
+  const summaryIsPending =
+    !canFetchVocabulary || (isSummaryFetching && !summaryData);
   const formatSummaryValue = (value: number | undefined) => {
     if (summaryIsPending) return "...";
     if (isSummaryError) return "--";

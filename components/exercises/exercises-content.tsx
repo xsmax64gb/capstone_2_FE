@@ -37,9 +37,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useAuth } from "@/lib/auth-context";
+
+const VI_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN");
 
 export default function ExercisesContent() {
   const { t } = useI18n();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("query") || "");
@@ -57,6 +61,7 @@ export default function ExercisesContent() {
   );
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const canFetchExercises = isAuthenticated && !isAuthLoading;
 
   const updateFilters = (newFilters: {
     query?: string;
@@ -131,17 +136,34 @@ export default function ExercisesContent() {
     topic: selectedTopic !== "all" ? selectedTopic : undefined,
     page: currentPage,
     limit: 8,
+  }, {
+    skip: !canFetchExercises,
   });
-  const { data: filterData } = useGetExerciseFiltersQuery({
-    personal: personalOnly,
-  });
-  const { data: summaryData } = useGetExerciseSummaryQuery();
-  const { data: featureQuotaOverview } = useGetMyFeatureQuotasQuery();
+  const { data: filterData } = useGetExerciseFiltersQuery(
+    { personal: personalOnly },
+    { skip: !canFetchExercises },
+  );
+  const {
+    data: summaryData,
+    isFetching: isSummaryFetching,
+    isError: isSummaryError,
+  } = useGetExerciseSummaryQuery(undefined, { skip: !canFetchExercises });
+  const { data: featureQuotaOverview } = useGetMyFeatureQuotasQuery(
+    undefined,
+    { skip: !canFetchExercises },
+  );
 
   const items = listData?.items ?? [];
   const pagination = listData?.pagination;
-  const totalQuestions = summaryData?.totalQuestions ?? 0;
-  const totalXp = summaryData?.totalXp ?? 0;
+  const summaryIsPending =
+    !canFetchExercises || (isSummaryFetching && !summaryData);
+  const formatSummaryValue = (value: number | undefined) => {
+    if (summaryIsPending) return "...";
+    if (isSummaryError) return "--";
+    return VI_NUMBER_FORMATTER.format(value ?? 0);
+  };
+  const totalQuestions = summaryData?.totalQuestions;
+  const totalXp = summaryData?.totalXp;
   const aiExerciseQuota = useMemo(
     () =>
       getFeatureQuotaItem(featureQuotaOverview, AI_EXERCISE_BUILDER_FEATURE_KEY),
@@ -261,13 +283,17 @@ export default function ExercisesContent() {
               <p className="text-xs font-semibold uppercase text-slate-500">
                 {t("Ngân hàng câu hỏi")}
               </p>
-              <p className="mt-1 text-xl font-bold">{totalQuestions}</p>
+              <p className="mt-1 text-xl font-bold tabular-nums">
+                {formatSummaryValue(totalQuestions)}
+              </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase text-slate-500">
                 {t("XP tiềm năng")}
               </p>
-              <p className="mt-1 text-xl font-bold">{totalXp}</p>
+              <p className="mt-1 text-xl font-bold tabular-nums">
+                {formatSummaryValue(totalXp)}
+              </p>
             </div>
           </div>
 

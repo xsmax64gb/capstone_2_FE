@@ -1,0 +1,21 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="boss-bg" x1="24" y1="18" x2="139" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7AD"/>
+      <stop offset="0.5" stop-color="#F9B44D"/>
+      <stop offset="1" stop-color="#C65A21"/>
+    </linearGradient>
+    <linearGradient id="boss-shine" x1="48" y1="33" x2="111" y2="124" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFE082"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#boss-bg)"/>
+  <circle cx="80" cy="80" r="58" fill="#FFF3C4" fill-opacity="0.52"/>
+  <path d="M42 65L61 82L78 44L98 82L118 65L109 111H51L42 65Z" fill="#7C2D12"/>
+  <path d="M52 68L64 79L78 50L95 79L108 68L101 102H58L52 68Z" fill="url(#boss-shine)"/>
+  <path d="M56 115H104C109 115 113 119 113 124V126H47V124C47 119 51 115 56 115Z" fill="#7C2D12"/>
+  <circle cx="78" cy="78" r="8" fill="#EF4444"/>
+  <path d="M44 43L52 38L60 43L52 48L44 43Z" fill="#FFFFFF" fill-opacity="0.8"/>
+  <path d="M113 41L119 37L125 41L119 45L113 41Z" fill="#FFFFFF" fill-opacity="0.8"/>
+</svg>

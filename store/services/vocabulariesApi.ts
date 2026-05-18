@@ -210,10 +210,14 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       providesTags: ["Vocabularies"],
     }),
 
-    getVocabularySummary: builder.query<VocabularySummary, void>({
-      query: () => ({
+    getVocabularySummary: builder.query<
+      VocabularySummary,
+      { personal?: boolean } | void
+    >({
+      query: (params) => ({
         url: "/vocabularies/summary",
         method: "GET",
+        params: params ?? undefined,
       }),
       transformResponse: (response: ApiResponse<VocabularySummary>) =>
         response.data as VocabularySummary,
@@ -351,7 +355,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<{ id: string }>) =>
         response.data as { id: string },
-      invalidatesTags: ["Vocabularies"],
+      invalidatesTags: ["Vocabularies", "VocabularySummary"],
     }),
 
     createPersonalVocabularyAi: builder.mutation<
@@ -365,7 +369,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<{ id: string }>) =>
         response.data as { id: string },
-      invalidatesTags: ["Vocabularies", "FeatureQuotas"],
+      invalidatesTags: ["Vocabularies", "VocabularySummary", "FeatureQuotas"],
     }),
 
     updatePersonalVocabularySet: builder.mutation<
@@ -379,7 +383,7 @@ export const vocabulariesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<{ id: string }>) =>
         response.data as { id: string },
-      invalidatesTags: ["Vocabularies"],
+      invalidatesTags: ["Vocabularies", "VocabularySummary"],
     }),
 
     deletePersonalVocabularySet: builder.mutation<void, string>({

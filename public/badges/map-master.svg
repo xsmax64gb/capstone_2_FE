@@ -1,0 +1,22 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="map-bg" x1="22" y1="19" x2="139" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BAE6FD"/>
+      <stop offset="0.52" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <linearGradient id="map-line" x1="47" y1="48" x2="113" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ECFEFF"/>
+      <stop offset="1" stop-color="#CCFBF1"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#map-bg)"/>
+  <path d="M49 39L75 49L104 39L121 48V117L95 107L66 117L39 107V39L49 39Z" fill="#0F172A" fill-opacity="0.86"/>
+  <path d="M49 50L67 57V104L49 98V50Z" fill="#E0F2FE"/>
+  <path d="M73 59L93 51V98L73 106V59Z" fill="#F0FDFA"/>
+  <path d="M99 51L111 57V105L99 100V51Z" fill="#DCFCE7"/>
+  <path d="M58 76C68 65 81 91 93 79C100 72 105 72 111 78" stroke="url(#map-line)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="58" cy="76" r="7" fill="#F97316"/>
+  <circle cx="111" cy="78" r="7" fill="#F97316"/>
+  <path d="M80 34L86 46L99 48L89 58L92 71L80 65L68 71L71 58L61 48L74 46L80 34Z" fill="#FACC15"/>
+</svg>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BookOpen, Pencil, Plus, Search, Trophy } from "lucide-react";
+import { BookOpen, Medal, Pencil, Plus, Search, Trophy } from "lucide-react";
 
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
 import { DeleteConfirmButton } from "@/components/admin/delete-confirm-button";
@@ -19,7 +19,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatNumber, notify } from "@/lib/admin";
-import { useDeleteAdminLearnMapMutation, useGetAdminLearnMapsQuery } from "@/store/services/learnApi";
+import {
+  useDeleteAdminLearnMapMutation,
+  useGetAdminLearnAchievementsQuery,
+  useGetAdminLearnMapsQuery,
+} from "@/store/services/learnApi";
 import { handleApiError } from "@/lib/api-error-handler";
 
 function formatRequiredXp(value: number, totalXP: number) {
@@ -32,6 +36,7 @@ function formatRequiredXp(value: number, totalXP: number) {
 
 export default function AdminLearnMapsPage() {
   const { data, isLoading, isError, error } = useGetAdminLearnMapsQuery();
+  const { data: achievementsData } = useGetAdminLearnAchievementsQuery();
   const [deleteMap] = useDeleteAdminLearnMapMutation();
   const [query, setQuery] = useState("");
 
@@ -57,6 +62,10 @@ export default function AdminLearnMapsPage() {
       item.theme.toLowerCase().includes(keyword)
     );
   });
+  const achievementById = useMemo(
+    () => new Map((achievementsData?.items ?? []).map((item) => [item.id, item])),
+    [achievementsData?.items],
+  );
 
   const publishedCount = items.filter((item) => item.isPublished).length;
 
@@ -140,6 +149,7 @@ export default function AdminLearnMapsPage() {
                   <TableHead>Thứ tự</TableHead>
                   <TableHead>Tổng XP</TableHead>
                   <TableHead>XP hoàn thành</TableHead>
+                  <TableHead>Huy hiệu</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
@@ -147,12 +157,17 @@ export default function AdminLearnMapsPage() {
               <TableBody>
                 {filteredItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-sm text-slate-500">
+                    <TableCell colSpan={8} className="h-24 text-center text-sm text-slate-500">
                       {query ? "Không có map nào khớp từ khóa." : "Chưa có map nào."}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredItems.map((item) => (
+                  filteredItems.map((item) => {
+                    const completionAchievement = item.completionAchievementId
+                      ? achievementById.get(item.completionAchievementId)
+                      : null;
+
+                    return (
                     <TableRow key={item.id}>
                       <TableCell className="align-top whitespace-normal">
                         <div className="flex items-start gap-2">
@@ -175,6 +190,26 @@ export default function AdminLearnMapsPage() {
                       <TableCell>{formatNumber(item.totalXP ?? 0)}</TableCell>
                       <TableCell className="whitespace-normal">
                         {formatRequiredXp(item.requiredXPToComplete ?? 0, item.totalXP ?? 0)}
+                      </TableCell>
+                      <TableCell className="whitespace-normal">
+                        {completionAchievement ? (
+                          <div className="flex items-center gap-2">
+                            {completionAchievement.iconUrl ? (
+                              <img
+                                src={completionAchievement.iconUrl}
+                                alt={completionAchievement.title}
+                                className="h-8 w-8 shrink-0 object-contain"
+                              />
+                            ) : (
+                              <Medal className="h-4 w-4 shrink-0 text-slate-400" />
+                            )}
+                            <span className="text-sm font-semibold text-slate-700">
+                              {completionAchievement.title}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-slate-400">Chưa gắn</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {item.isPublished ? (
@@ -210,7 +245,8 @@ export default function AdminLearnMapsPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

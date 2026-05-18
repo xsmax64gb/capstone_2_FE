@@ -1,0 +1,22 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="prism-bg" x1="22" y1="18" x2="138" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAE8FF"/>
+      <stop offset="0.35" stop-color="#C084FC"/>
+      <stop offset="0.7" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="prism-core" x1="80" y1="46" x2="80" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.48" stop-color="#E9D5FF"/>
+      <stop offset="1" stop-color="#67E8F9"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#prism-bg)"/>
+  <path d="M58 35H77L69 63H50L58 35Z" fill="#581C87"/>
+  <path d="M83 35H102L110 63H91L83 35Z" fill="#155E75"/>
+  <circle cx="80" cy="82" r="41" fill="#0F172A" fill-opacity="0.72"/>
+  <path d="M80 47L108 82L80 117L52 82L80 47Z" fill="url(#prism-core)"/>
+  <path d="M52 82H108" stroke="#FFFFFF" stroke-width="4" opacity="0.7"/>
+  <path d="M80 47V117" stroke="#FFFFFF" stroke-width="4" opacity="0.7"/>
+</svg>

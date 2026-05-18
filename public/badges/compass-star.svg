@@ -1,0 +1,23 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="compass-bg" x1="22" y1="18" x2="138" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CCFBF1"/>
+      <stop offset="0.52" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#134E4A"/>
+    </linearGradient>
+    <linearGradient id="compass-needle" x1="80" y1="42" x2="80" y2="118" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#FACC15"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#compass-bg)"/>
+  <circle cx="80" cy="80" r="44" fill="#0F172A" fill-opacity="0.78"/>
+  <circle cx="80" cy="80" r="34" fill="#ECFEFF"/>
+  <path d="M80 39L91 69L121 80L91 91L80 121L69 91L39 80L69 69L80 39Z" fill="#134E4A"/>
+  <path d="M80 53L87 73L107 80L87 87L80 107L73 87L53 80L73 73L80 53Z" fill="url(#compass-needle)"/>
+  <circle cx="80" cy="80" r="7" fill="#F97316"/>
+  <path d="M80 27V35" stroke="#ECFEFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M80 125V133" stroke="#ECFEFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M27 80H35" stroke="#ECFEFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M125 80H133" stroke="#ECFEFF" stroke-width="6" stroke-linecap="round"/>
+</svg>

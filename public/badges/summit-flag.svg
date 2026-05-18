@@ -1,0 +1,20 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="summit-bg" x1="22" y1="18" x2="138" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0F2FE"/>
+      <stop offset="0.5" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="summit-mountain" x1="80" y1="55" x2="80" y2="124" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#94A3B8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#summit-bg)"/>
+  <path d="M38 122L67 70L82 95L96 58L124 122H38Z" fill="#0F172A" fill-opacity="0.75"/>
+  <path d="M50 122L68 88L84 122H50Z" fill="url(#summit-mountain)"/>
+  <path d="M80 122L97 80L115 122H80Z" fill="url(#summit-mountain)"/>
+  <path d="M96 40V83" stroke="#F8FAFC" stroke-width="7" stroke-linecap="round"/>
+  <path d="M99 43H123L114 57L123 71H99V43Z" fill="#F97316"/>
+  <path d="M38 126H124" stroke="#F8FAFC" stroke-width="8" stroke-linecap="round"/>
+</svg>

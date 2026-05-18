@@ -47,7 +47,11 @@ import {
   formatNumber,
   notify,
 } from "@/lib/admin";
-import type { AdminExerciseItem, AdminExercisePayload } from "@/types";
+import type {
+  AdminExerciseItem,
+  AdminExercisePayload,
+  AdminExerciseQuestionItem,
+} from "@/types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +148,36 @@ const mapExerciseToForm = (item: AdminExerciseItem): ExerciseFormState => ({
   rewardsXp: String(item.rewardsXp),
   skillsText: item.skills.join(", "),
 });
+
+const mapAdminQuestionsToEditor = (
+  source: AdminExerciseQuestionItem[] | undefined,
+): ExerciseQuestionEditor[] => {
+  if (!source?.length) {
+    return [createEmptyQuestion()];
+  }
+
+  return source.map((question, index) => {
+    const options = question.options
+      .map((option) => String(option ?? "").trim())
+      .filter(Boolean);
+    const safeOptions = options.length >= 2 ? options : ["", ""];
+    const safeCorrectIndex =
+      Number.isInteger(question.correctIndex) &&
+      question.correctIndex >= 0 &&
+      question.correctIndex < safeOptions.length
+        ? question.correctIndex
+        : 0;
+
+    return {
+      id: question.id || createEmptyQuestion(index).id,
+      prompt: String(question.prompt || question.question || "").trim(),
+      options: safeOptions,
+      correctIndex: String(safeCorrectIndex),
+      explanation: String(question.explanation || ""),
+      score: String(Number(question.score) || 1),
+    };
+  });
+};
 
 const buildBasePayload = (form: ExerciseFormState) => ({
   title: form.title.trim(),
@@ -460,7 +494,10 @@ function QuestionCard({
 
 export function ExerciseEditorScreen({ exerciseId }: Props) {
   const router = useRouter();
-  const { data, isLoading, isError, error } = useGetAdminExercisesQuery();
+  const { data, isLoading, isError, error } = useGetAdminExercisesQuery(
+    undefined,
+    { refetchOnMountOrArgChange: true },
+  );
   const [createExercise, { isLoading: isCreating }] = useCreateAdminExerciseMutation();
   const [updateExercise, { isLoading: isUpdating }] = useUpdateAdminExerciseMutation();
 
@@ -485,7 +522,7 @@ export function ExerciseEditorScreen({ exerciseId }: Props) {
     if (!item) return;
     setEditingItem(item);
     setForm(mapExerciseToForm(item));
-    setQuestions([createEmptyQuestion()]);
+    setQuestions(mapAdminQuestionsToEditor(item.questions));
     setQuestionsDirty(false);
   }, [exerciseId, items]);
 
@@ -809,12 +846,12 @@ export function ExerciseEditorScreen({ exerciseId }: Props) {
 
         <CardContent className="space-y-4 pt-5">
           {editingItem && !questionsDirty && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <p className="font-semibold">⚠️ Chỉnh sửa câu hỏi hiện có</p>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              <p className="font-semibold">Đã tải câu hỏi hiện có</p>
               <p className="mt-1 text-xs">
-                Bài tập này đã có{" "}
-                <strong>{editingItem.questionCount} câu</strong> trên hệ thống. Nếu bạn thêm, xóa
-                hoặc import tại đây, toàn bộ câu hỏi cũ sẽ bị <strong>thay thế hoàn toàn</strong>.
+                Form đang hiển thị <strong>{editingItem.questionCount} câu</strong> của bài tập
+                này. Khi chỉnh sửa câu hỏi và bấm lưu, hệ thống sẽ cập nhật lại bộ câu hỏi đang
+                thấy ở đây.
               </p>
             </div>
           )}

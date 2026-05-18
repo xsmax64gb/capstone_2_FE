@@ -17,6 +17,7 @@ import {
   Sparkles,
   Swords,
   Target,
+  Trophy,
   Volume2,
   VolumeX,
   Waves,
@@ -24,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type {
+  AdminLearnAchievement,
   LearnBossBattleState,
   LearnMessage,
   LearnStep,
@@ -51,6 +53,10 @@ type StepChatMessage = LearnMessage & {
   pendingEvaluation?: boolean;
   pendingRequestId?: string;
 };
+
+function TrophyFallback() {
+  return <Trophy className="h-8 w-8 text-amber-500" />;
+}
 
 type SpeechRecognitionAlternativeLike = { transcript: string };
 type SpeechRecognitionResultLike = {
@@ -297,6 +303,7 @@ export function LearnStepClient({ slug, step }: Props) {
     mapCompleted?: boolean;
     currentMapXP?: number;
     requiredMapXP?: number;
+    awardedAchievement?: AdminLearnAchievement | null;
     replayAttempt?: boolean;
   } | null>(null);
   const [voice, setVoice] = useState<VoiceCapabilities>({
@@ -319,6 +326,8 @@ export function LearnStepClient({ slug, step }: Props) {
   const [endConversation] = useEndLearnConversationMutation();
 
   const bi = (vi: string, en: string) => (lang === "vi" ? vi : en);
+  const formatNumber = (value: number) =>
+    new Intl.NumberFormat(lang === "vi" ? "vi-VN" : "en-US").format(value);
   const teacherName = getTeacherName(step, boss, bi);
   const latestAiMessage = getLatestAiMessage(messages);
   const focusItems = [
@@ -594,6 +603,7 @@ export function LearnStepClient({ slug, step }: Props) {
         mapCompleted: response.mapCompleted,
         currentMapXP: response.currentMapXP,
         requiredMapXP: response.requiredMapXP,
+        awardedAchievement: response.awardedAchievement,
         replayAttempt: response.replayAttempt,
       });
       setEnding(false);
@@ -1156,7 +1166,9 @@ export function LearnStepClient({ slug, step }: Props) {
                         )}
                       </span>
                       <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
-                        {ended.passed
+                        {ended.awardedAchievement
+                          ? bi("Bạn vừa nhận huy hiệu!", "New badge unlocked!")
+                          : ended.passed
                           ? bi("Buổi học hoàn thành!", "Lesson completed!")
                           : bi("Phiên học đã kết thúc", "Lesson session ended")}
                       </h3>
@@ -1166,8 +1178,13 @@ export function LearnStepClient({ slug, step }: Props) {
                               "Lượt ôn lại — không ảnh hưởng tiến độ mới.",
                               "Review attempt — does not unlock new progress.",
                             )
+                          : ended.awardedAchievement
+                          ? bi(
+                              `Hoàn thành map và mở khóa "${ended.awardedAchievement.title}".`,
+                              `Map completed and "${ended.awardedAchievement.title}" unlocked.`,
+                            )
                           : ended.mapCompleted
-                          ? bi("Bạn đã hoàn thành map này! 🎉", "You completed this map! 🎉")
+                          ? bi("Bạn đã hoàn thành map này!", "You completed this map!")
                           : ended.passed
                           ? bi("Tiến độ đã được cập nhật.", "Progress has been updated.")
                           : bi(
@@ -1177,10 +1194,60 @@ export function LearnStepClient({ slug, step }: Props) {
                       </p>
                     </div>
                     {ended.mapCompleted && (
-                      <span className="text-4xl">🏆</span>
+                      ended.awardedAchievement?.iconUrl ? (
+                          <img
+                            src={ended.awardedAchievement.iconUrl}
+                            alt={ended.awardedAchievement.title}
+                            width={56}
+                            height={56}
+                            className="h-14 w-14 shrink-0 object-contain drop-shadow-sm"
+                          />
+                      ) : (
+                        <TrophyFallback />
+                      )
                     )}
                   </div>
                 </div>
+
+                {ended.awardedAchievement ? (
+                  <div
+                    aria-live="polite"
+                    className="mx-6 mt-5 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-white shadow-sm">
+                        {ended.awardedAchievement.iconUrl ? (
+                          <img
+                            src={ended.awardedAchievement.iconUrl}
+                            alt={ended.awardedAchievement.title}
+                            width={64}
+                            height={64}
+                            className="h-16 w-16 object-contain"
+                          />
+                        ) : (
+                          <TrophyFallback />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-600">
+                          {bi("Huy hiệu mới", "New badge")}
+                        </p>
+                        <p className="mt-1 text-base font-bold text-amber-950">
+                          {ended.awardedAchievement.title}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-amber-800">
+                          {ended.awardedAchievement.description ||
+                            bi("Bạn vừa mở khóa huy hiệu hoàn thành map.", "You unlocked a map completion badge.")}
+                        </p>
+                        {(ended.awardedAchievement.xpReward ?? 0) > 0 ? (
+                          <span className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-700 shadow-sm">
+                            +{formatNumber(ended.awardedAchievement.xpReward)} XP
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 {/* ── Scores Grid ──────────────────────────────────── */}
                 <div className="grid grid-cols-2 gap-3 px-6 py-5 sm:grid-cols-4">

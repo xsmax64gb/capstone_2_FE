@@ -1,0 +1,16 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldbook-bg" x1="22" y1="18" x2="138" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FEF3C7"/>
+      <stop offset="0.5" stop-color="#EAB308"/>
+      <stop offset="1" stop-color="#713F12"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#goldbook-bg)"/>
+  <path d="M42 50C42 43 48 38 55 40L80 48V121L53 113C46 111 42 105 42 98V50Z" fill="#713F12"/>
+  <path d="M118 50C118 43 112 38 105 40L80 48V121L107 113C114 111 118 105 118 98V50Z" fill="#854D0E"/>
+  <path d="M55 55L74 61V103L55 98V55Z" fill="#FFFBEB"/>
+  <path d="M105 55L86 61V103L105 98V55Z" fill="#FFFBEB"/>
+  <path d="M80 33L88 50L106 52L93 65L96 83L80 74L64 83L67 65L54 52L72 50L80 33Z" fill="#FDE68A"/>
+  <path d="M57 120H103" stroke="#FFFBEB" stroke-width="8" stroke-linecap="round"/>
+</svg>

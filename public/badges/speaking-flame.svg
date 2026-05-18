@@ -1,0 +1,20 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="voice-bg" x1="22" y1="18" x2="138" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE68A"/>
+      <stop offset="0.5" stop-color="#FB7185"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="voice-flame" x1="80" y1="35" x2="80" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FEF3C7"/>
+      <stop offset="0.45" stop-color="#FB923C"/>
+      <stop offset="1" stop-color="#E11D48"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#voice-bg)"/>
+  <path d="M81 124C103 124 119 108 119 88C119 70 105 59 97 48C92 41 91 35 91 31C75 39 69 52 69 66C61 60 57 52 56 44C45 57 40 71 42 88C45 110 59 124 81 124Z" fill="#581C87" fill-opacity="0.8"/>
+  <path d="M81 116C96 116 107 105 107 91C107 78 96 70 91 61C87 55 86 50 87 46C76 53 72 62 73 72C67 68 64 63 63 56C55 66 52 76 54 89C56 105 66 116 81 116Z" fill="url(#voice-flame)"/>
+  <path d="M62 84C68 78 75 75 82 75C92 75 101 81 106 90" stroke="#FFF7ED" stroke-width="7" stroke-linecap="round"/>
+  <path d="M58 101C64 95 72 92 81 92C91 92 100 96 106 103" stroke="#FFF7ED" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="80" cy="53" r="6" fill="#FFF7ED"/>
+</svg>

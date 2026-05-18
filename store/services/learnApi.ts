@@ -29,8 +29,24 @@ export interface LearnMapItem {
   totalXP: number;
   requiredXPToComplete: number;
   bossXPReward: number;
+  completionAchievementId: string | null;
   isPublished: boolean;
   progress?: LearnMapProgress | null;
+}
+
+export interface AdminLearnAchievement {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  iconUrl: string;
+  trigger: string;
+  xpReward: number;
+}
+
+export interface UserLearnAchievement {
+  earnedAt: string;
+  achievement: AdminLearnAchievement | null;
 }
 
 export interface LearnBossTask {
@@ -260,6 +276,7 @@ export const learnApi = baseApi.injectEndpoints({
         mapCompleted?: boolean;
         currentMapXP?: number;
         requiredMapXP?: number;
+        awardedAchievement?: AdminLearnAchievement | null;
         replayAttempt?: boolean;
       },
       string
@@ -268,7 +285,7 @@ export const learnApi = baseApi.injectEndpoints({
         url: `/learn/conversations/${id}/end`,
         method: "POST",
       }),
-      invalidatesTags: ["LearnMaps"],
+      invalidatesTags: ["LearnMaps", "LearnAchievements"],
       transformResponse: (response: ApiResponse<Record<string, unknown>>) =>
         response.data as {
           conversation: {
@@ -286,7 +303,22 @@ export const learnApi = baseApi.injectEndpoints({
           mapCompleted?: boolean;
           currentMapXP?: number;
           requiredMapXP?: number;
+          awardedAchievement?: AdminLearnAchievement | null;
           replayAttempt?: boolean;
+        },
+    }),
+
+    getMyLearnAchievements: builder.query<
+      {
+        items: UserLearnAchievement[];
+      },
+      void
+    >({
+      query: () => ({ url: "/learn/achievements/me", method: "GET" }),
+      providesTags: ["LearnAchievements"],
+      transformResponse: (response: ApiResponse<{ items: unknown[] }>) =>
+        response.data as {
+          items: UserLearnAchievement[];
         },
     }),
 
@@ -421,15 +453,7 @@ export const learnApi = baseApi.injectEndpoints({
 
     getAdminLearnAchievements: builder.query<
       {
-        items: Array<{
-          id: string;
-          key: string;
-          title: string;
-          description: string;
-          iconUrl: string;
-          trigger: string;
-          xpReward: number;
-        }>;
+        items: AdminLearnAchievement[];
       },
       void
     >({
@@ -437,21 +461,20 @@ export const learnApi = baseApi.injectEndpoints({
       providesTags: ["AdminLearnAchievements"],
       transformResponse: (response: ApiResponse<{ items: unknown[] }>) =>
         response.data as {
-          items: Array<{
-            id: string;
-            key: string;
-            title: string;
-            description: string;
-            iconUrl: string;
-            trigger: string;
-            xpReward: number;
-          }>;
+          items: AdminLearnAchievement[];
         },
     }),
 
     createAdminLearnAchievement: builder.mutation<
       void,
-      { key: string; title: string; description?: string; xpReward?: number }
+      {
+        key: string;
+        title: string;
+        description?: string;
+        iconUrl?: string;
+        trigger?: string;
+        xpReward?: number;
+      }
     >({
       query: (body) => ({
         url: "/admin/learn/achievements",
@@ -479,6 +502,7 @@ export const {
   useSendLearnMessageQuickMutation,
   useEvaluateLearnMessageMutation,
   useEndLearnConversationMutation,
+  useGetMyLearnAchievementsQuery,
   useGetAdminLearnMapsQuery,
   useGenerateAdminLearnMapWithAiMutation,
   useCreateAdminLearnMapMutation,

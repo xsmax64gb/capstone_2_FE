@@ -11,6 +11,7 @@ import {
   PenLine,
   Search,
   Sparkles,
+  Trophy,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LEVEL_LABELS, TOPIC_LABELS } from "@/app/(user)/vocabularies/data";
@@ -29,12 +30,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
+
+const VI_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN");
 
 export default function VocabulariesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useI18n();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [personalOnly, setPersonalOnly] = useState(
     searchParams.get("personal") === "true",
@@ -47,6 +52,7 @@ export default function VocabulariesContent() {
   );
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const canFetchVocabulary = isAuthenticated && !isAuthLoading;
 
   const updateFilters = (newFilters: {
     query?: string;
@@ -111,17 +117,34 @@ export default function VocabulariesContent() {
     personal: personalOnly,
     page: currentPage,
     limit: 8,
+  }, {
+    skip: !canFetchVocabulary,
   });
 
-  const { data: summaryData } = useGetVocabularySummaryQuery();
-  const { data: filterData } = useGetVocabularyFiltersQuery({
-    personal: personalOnly,
-  });
+  const {
+    data: summaryData,
+    isFetching: isSummaryFetching,
+    isError: isSummaryError,
+  } = useGetVocabularySummaryQuery(
+    { personal: personalOnly },
+    { skip: !canFetchVocabulary },
+  );
+  const { data: filterData } = useGetVocabularyFiltersQuery(
+    { personal: personalOnly },
+    { skip: !canFetchVocabulary },
+  );
 
   const items: VocabularySet[] = listData?.items ?? [];
   const pagination = listData?.pagination;
-  const totalSets = summaryData?.totalSets ?? 0;
-  const totalWords = summaryData?.totalWords ?? 0;
+  const summaryIsPending =
+    !canFetchVocabulary || (isSummaryFetching && !summaryData);
+  const formatSummaryValue = (value: number | undefined) => {
+    if (summaryIsPending) return "...";
+    if (isSummaryError) return "--";
+    return VI_NUMBER_FORMATTER.format(value ?? 0);
+  };
+  const totalSets = summaryData?.totalSets;
+  const totalWords = summaryData?.totalWords;
   const levelOptions =
     filterData?.levels?.length
       ? filterData.levels
@@ -196,26 +219,50 @@ export default function VocabulariesContent() {
           </div>
 
           {/* Stats */}
-          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-              <p className="text-2xl font-bold">{totalSets}</p>
-              <p className="text-xs text-slate-500">{t("Tổng số bộ")}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-              <p className="text-2xl font-bold">{totalWords}</p>
-              <p className="text-xs text-slate-500">{t("Tổng số từ")}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-              <p className="text-2xl font-bold">
-                {summaryData?.masteredCount ?? 0}
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  {t("Tổng số bộ")}
+                </p>
+                <Layers3 className="h-4 w-4 text-slate-400" />
+              </div>
+              <p className="mt-2 text-2xl font-bold tabular-nums">
+                {formatSummaryValue(totalSets)}
               </p>
-              <p className="text-xs text-slate-500">{t("Đã thuộc")}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-              <p className="text-2xl font-bold">
-                {summaryData?.learningCount ?? 0}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  {t("Tổng số từ")}
+                </p>
+                <BookOpen className="h-4 w-4 text-slate-400" />
+              </div>
+              <p className="mt-2 text-2xl font-bold tabular-nums">
+                {formatSummaryValue(totalWords)}
               </p>
-              <p className="text-xs text-slate-500">{t("Đang học")}</p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase text-emerald-700">
+                  {t("Đã thuộc")}
+                </p>
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              </div>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-emerald-900">
+                {formatSummaryValue(summaryData?.masteredCount)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase text-amber-700">
+                  {t("Đang học")}
+                </p>
+                <History className="h-4 w-4 text-amber-500" />
+              </div>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-amber-900">
+                {formatSummaryValue(summaryData?.learningCount)}
+              </p>
             </div>
           </div>
 
@@ -376,10 +423,11 @@ export default function VocabulariesContent() {
                       {t("Quiz")}
                     </Link>
                     <Link
-                      href={`/vocabularies/${item.id}`}
+                      href={`/vocabularies/${item.id}/leaderboard`}
                       className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <Trophy className="mr-1 h-3.5 w-3.5" />
+                      {t("Xếp hạng")}
                     </Link>
                   </div>
                 </div>

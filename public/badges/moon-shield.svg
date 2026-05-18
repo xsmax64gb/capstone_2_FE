@@ -1,0 +1,20 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shield-bg" x1="22" y1="17" x2="139" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0E7FF"/>
+      <stop offset="0.52" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="shield-core" x1="80" y1="36" x2="80" y2="123" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#C7D2FE"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#shield-bg)"/>
+  <path d="M80 34L115 48V75C115 99 101 116 80 126C59 116 45 99 45 75V48L80 34Z" fill="#111827" fill-opacity="0.72"/>
+  <path d="M80 45L104 55V77C104 95 95 108 80 116C65 108 56 95 56 77V55L80 45Z" fill="url(#shield-core)"/>
+  <path d="M87 60C77 63 70 72 70 83C70 96 80 106 93 107C89 111 83 114 76 114C61 114 49 102 49 87C49 72 61 60 76 60C80 60 84 61 87 60Z" fill="#312E81"/>
+  <path d="M102 45L106 53L115 54L108 60L110 69L102 64L94 69L96 60L89 54L98 53L102 45Z" fill="#FACC15"/>
+  <circle cx="64" cy="45" r="4" fill="#F8FAFC"/>
+  <circle cx="111" cy="100" r="5" fill="#F8FAFC" fill-opacity="0.85"/>
+</svg>

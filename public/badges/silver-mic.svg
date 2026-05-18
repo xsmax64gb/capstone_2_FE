@@ -1,0 +1,21 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mic-bg" x1="23" y1="18" x2="138" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="0.5" stop-color="#94A3B8"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="mic-core" x1="80" y1="37" x2="80" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#CBD5E1"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#mic-bg)"/>
+  <rect x="60" y="34" width="40" height="67" rx="20" fill="#0F172A" fill-opacity="0.8"/>
+  <rect x="68" y="43" width="24" height="48" rx="12" fill="url(#mic-core)"/>
+  <path d="M49 75C49 92 62 105 80 105C98 105 111 92 111 75" stroke="#F8FAFC" stroke-width="9" stroke-linecap="round"/>
+  <path d="M80 105V126" stroke="#F8FAFC" stroke-width="9" stroke-linecap="round"/>
+  <path d="M62 126H98" stroke="#F8FAFC" stroke-width="9" stroke-linecap="round"/>
+  <path d="M69 58H91" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+  <path d="M69 73H91" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+</svg>

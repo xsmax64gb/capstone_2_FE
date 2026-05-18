@@ -1,0 +1,15 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gate-bg" x1="21" y1="18" x2="139" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D1FAE5"/>
+      <stop offset="0.5" stop-color="#10B981"/>
+      <stop offset="1" stop-color="#064E3B"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#gate-bg)"/>
+  <path d="M45 116V63C45 51 55 41 67 41H93C105 41 115 51 115 63V116H98V66C98 58 90 52 80 52C70 52 62 58 62 66V116H45Z" fill="#064E3B" fill-opacity="0.86"/>
+  <path d="M62 116V68C62 59 70 52 80 52C90 52 98 59 98 68V116H62Z" fill="#ECFDF5"/>
+  <path d="M71 116V76C71 71 75 67 80 67C85 67 89 71 89 76V116H71Z" fill="#059669"/>
+  <path d="M55 121H105" stroke="#ECFDF5" stroke-width="8" stroke-linecap="round"/>
+  <path d="M80 29L87 43L102 45L91 56L94 71L80 64L66 71L69 56L58 45L73 43L80 29Z" fill="#FACC15"/>
+</svg>

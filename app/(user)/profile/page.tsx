@@ -1,7 +1,19 @@
 "use client";
 
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AtSign, GraduationCap, Mail, MapPin, Plus, Save, Trash2, Edit, Lock } from "lucide-react";
+import {
+  AtSign,
+  Edit,
+  GraduationCap,
+  Lock,
+  Mail,
+  MapPin,
+  Medal,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ChangePasswordOtpForm } from "@/components/auth/change-password-otp-form";
@@ -21,6 +33,7 @@ import {
   useUpdateProfileMutation,
   useUploadAvatarMutation,
 } from "@/store/services/authApi";
+import { useGetMyLearnAchievementsQuery } from "@/store/services/learnApi";
 import { notify } from "@/lib/admin";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n/context";
@@ -76,10 +89,15 @@ const appendVersion = (url: string, version?: string) => {
 export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { user: authUser } = useAuth();
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const { levelInfo } = useLevel();
 
   const { data: profile, isLoading, isError } = useGetProfileQuery();
+  const {
+    data: achievementsData,
+    isLoading: isAchievementsLoading,
+    isError: isAchievementsError,
+  } = useGetMyLearnAchievementsQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();
   const [deleteAvatar, { isLoading: isDeletingAvatar }] = useDeleteAvatarMutation();
@@ -134,6 +152,22 @@ export default function ProfilePage() {
     profile?.currentLevel ||
     authUser?.currentLevel ||
     "A1";
+  const achievements = (achievementsData?.items ?? []).filter(
+    (item) => item.achievement,
+  );
+  const achievementDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(lang === "vi" ? "vi-VN" : "en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    [lang],
+  );
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(lang === "vi" ? "vi-VN" : "en-US"),
+    [lang],
+  );
 
   const stats = [
     {
@@ -367,6 +401,101 @@ export default function ProfilePage() {
             />
           </section>
         )}
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Medal className="h-5 w-5 text-amber-500" />
+                <h2 className="text-xl font-bold tracking-tight text-slate-950">
+                  {t("Huy hiệu đã sưu tập")}
+                </h2>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {t("Những phần thưởng bạn đã mở khóa khi hoàn thành các map học.")}
+              </p>
+            </div>
+            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+              {achievements.length} {t("huy hiệu")}
+            </div>
+          </div>
+
+          {isAchievementsLoading ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-32 animate-pulse rounded-2xl border border-slate-200 bg-slate-50"
+                />
+              ))}
+            </div>
+          ) : isAchievementsError ? (
+            <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {t("Không thể tải danh sách huy hiệu. Vui lòng thử lại sau.")}
+            </div>
+          ) : achievements.length > 0 ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {achievements.map((item) => {
+                const achievement = item.achievement;
+                if (!achievement) return null;
+
+                return (
+                  <article
+                    key={`${achievement.key}-${item.earnedAt}`}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4"
+                  >
+                    <div className="flex gap-4">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
+                        {achievement.iconUrl ? (
+                          <img
+                            src={achievement.iconUrl}
+                            alt={achievement.title}
+                            width={52}
+                            height={52}
+                            className="h-12 w-12 object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <Medal className="h-8 w-8 text-amber-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="break-words text-base font-bold text-slate-950">
+                          {achievement.title}
+                        </h3>
+                        <p className="mt-1 break-words text-sm leading-6 text-slate-600">
+                          {achievement.description || t("Đã mở khóa trong lộ trình học.")}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                          <span className="rounded-full bg-white px-3 py-1 text-slate-600">
+                            {achievementDateFormatter.format(new Date(item.earnedAt))}
+                          </span>
+                          {(achievement.xpReward ?? 0) > 0 ? (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+                              +{numberFormatter.format(achievement.xpReward)} XP
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <p className="mt-4 font-semibold text-slate-900">
+                {t("Chưa có huy hiệu nào")}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {t("Hoàn thành một map có phần thưởng để bắt đầu bộ sưu tập.")}
+              </p>
+            </div>
+          )}
+        </section>
 
         <section className="mt-8">
           <LevelHistoryTimeline />

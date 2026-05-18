@@ -1,0 +1,21 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bolt-bg" x1="22" y1="18" x2="138" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FEF3C7"/>
+      <stop offset="0.5" stop-color="#F97316"/>
+      <stop offset="1" stop-color="#7C2D12"/>
+    </linearGradient>
+    <linearGradient id="bolt-medal" x1="80" y1="47" x2="80" y2="126" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7ED"/>
+      <stop offset="1" stop-color="#FACC15"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#bolt-bg)"/>
+  <path d="M59 37H76L68 65H51L59 37Z" fill="#7C2D12"/>
+  <path d="M84 37H101L109 65H92L84 37Z" fill="#7C2D12"/>
+  <path d="M50 70C50 53 63 41 80 41C97 41 110 53 110 70C110 87 97 100 80 100C63 100 50 87 50 70Z" fill="#7C2D12" fill-opacity="0.85"/>
+  <path d="M58 72C58 59 67 50 80 50C93 50 102 59 102 72C102 85 93 94 80 94C67 94 58 85 58 72Z" fill="url(#bolt-medal)"/>
+  <path d="M83 55L65 76H78L73 91L95 67H82L83 55Z" fill="#DC2626"/>
+  <path d="M60 98H100L109 123L80 113L51 123L60 98Z" fill="#FFF7ED"/>
+  <path d="M69 103L80 113L91 103" stroke="#FDBA74" stroke-width="5" stroke-linecap="round"/>
+</svg>

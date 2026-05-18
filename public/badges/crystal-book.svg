@@ -1,0 +1,23 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="book-bg" x1="23" y1="18" x2="138" y2="143" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FCE7F3"/>
+      <stop offset="0.52" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="book-gem" x1="80" y1="35" x2="80" y2="91" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0FDFA"/>
+      <stop offset="0.55" stop-color="#67E8F9"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#book-bg)"/>
+  <path d="M42 56C42 48 48 43 56 45L79 51V118L54 111C47 109 42 103 42 96V56Z" fill="#312E81"/>
+  <path d="M118 56C118 48 112 43 104 45L81 51V118L106 111C113 109 118 103 118 96V56Z" fill="#4C1D95"/>
+  <path d="M56 58L73 63V104L56 99V58Z" fill="#F5F3FF"/>
+  <path d="M104 58L87 63V104L104 99V58Z" fill="#F5F3FF"/>
+  <path d="M80 33L101 50L94 78L80 92L66 78L59 50L80 33Z" fill="#0F172A" fill-opacity="0.65"/>
+  <path d="M80 42L93 53L89 73L80 82L71 73L67 53L80 42Z" fill="url(#book-gem)"/>
+  <path d="M80 42V82" stroke="#ECFEFF" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+  <path d="M58 122H102" stroke="#F5F3FF" stroke-width="8" stroke-linecap="round"/>
+</svg>

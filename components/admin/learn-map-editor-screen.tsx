@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Pencil, Plus, Route, Sparkles } from "lucide-react";
+import { ArrowLeft, Medal, Pencil, Plus, Route, Sparkles, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { AdminPageError, AdminPageLoading } from "@/components/admin/admin-query-state";
@@ -15,6 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -30,6 +37,7 @@ import {
   useCreateAdminLearnMapMutation,
   useDeleteAdminLearnMapMutation,
   useDeleteAdminLearnStepMutation,
+  useGetAdminLearnAchievementsQuery,
   useGetAdminLearnMapsQuery,
   useGetAdminLearnStepsQuery,
   useUpdateAdminLearnMapMutation,
@@ -54,6 +62,7 @@ type LearnMapFormState = {
   order: string;
   requiredXPToComplete: string;
   bossXPReward: string;
+  completionAchievementId: string;
   isPublished: boolean;
 };
 
@@ -66,8 +75,11 @@ const emptyForm: LearnMapFormState = {
   order: "0",
   requiredXPToComplete: "0",
   bossXPReward: "50",
+  completionAchievementId: "",
   isPublished: true,
 };
+
+const NO_COMPLETION_ACHIEVEMENT_VALUE = "__none";
 
 const createSlug = (value: string) =>
   value
@@ -87,6 +99,7 @@ function mapToForm(map: NonNullable<ReturnType<typeof useGetAdminLearnMapsQuery>
     order: String(map.order ?? 0),
     requiredXPToComplete: String(map.requiredXPToComplete ?? 0),
     bossXPReward: String(map.bossXPReward ?? 0),
+    completionAchievementId: map.completionAchievementId || "",
     isPublished: Boolean(map.isPublished),
   };
 }
@@ -111,6 +124,8 @@ export function LearnMapEditorScreen({ mapId, source }: Props) {
   } = useGetAdminLearnStepsQuery(mapId ?? "", {
     skip: !mapId,
   });
+  const { data: achievementsData, isLoading: achievementsLoading } =
+    useGetAdminLearnAchievementsQuery();
 
   const [form, setForm] = useState<LearnMapFormState>(emptyForm);
   const [isInitializingForm, setIsInitializingForm] = useState(!isEdit);
@@ -152,6 +167,7 @@ export function LearnMapEditorScreen({ mapId, source }: Props) {
           order: String(aiDraft.order ?? 0),
           requiredXPToComplete: String(aiDraft.requiredXPToComplete ?? 0),
           bossXPReward: String(aiDraft.bossXPReward ?? 0),
+          completionAchievementId: "",
           isPublished: Boolean(aiDraft.isPublished),
         });
         setDraftSource("ai");
@@ -184,6 +200,10 @@ export function LearnMapEditorScreen({ mapId, source }: Props) {
     () => (steps.length > 0 ? Math.max(...steps.map((step) => step.order ?? 0)) + 1 : 0),
     [steps],
   );
+  const achievements = achievementsData?.items ?? [];
+  const selectedCompletionAchievement = achievements.find(
+    (item) => item.id === form.completionAchievementId,
+  );
 
   const setField = <K extends keyof LearnMapFormState>(key: K, value: LearnMapFormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -206,6 +226,7 @@ export function LearnMapEditorScreen({ mapId, source }: Props) {
       order: Number(form.order || 0),
       requiredXPToComplete: Number(form.requiredXPToComplete || 0),
       bossXPReward: Number(form.bossXPReward || 0),
+      completionAchievementId: form.completionAchievementId || null,
       isPublished: form.isPublished,
     };
 
@@ -415,6 +436,96 @@ export function LearnMapEditorScreen({ mapId, source }: Props) {
                     </div>
                   </div>
 
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                          <Trophy className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <Label htmlFor="map-completion-achievement">Huy hiệu hoàn thành map</Label>
+                          <p className="mt-1 text-sm leading-6 text-slate-500">
+                            Khi người học hoàn thành map này lần đầu, hệ thống sẽ cấp huy hiệu được chọn.
+                          </p>
+                        </div>
+                      </div>
+
+                      <Select
+                        value={form.completionAchievementId || NO_COMPLETION_ACHIEVEMENT_VALUE}
+                        onValueChange={(value) =>
+                          setField(
+                            "completionAchievementId",
+                            value === NO_COMPLETION_ACHIEVEMENT_VALUE ? "" : value,
+                          )
+                        }
+                        disabled={achievementsLoading}
+                      >
+                        <SelectTrigger
+                          id="map-completion-achievement"
+                          className="h-11 w-full rounded-xl bg-white lg:w-[320px]"
+                        >
+                          <SelectValue placeholder="Chọn huy hiệu" />
+                        </SelectTrigger>
+                        <SelectContent className="min-w-[320px]">
+                          <SelectItem value={NO_COMPLETION_ACHIEVEMENT_VALUE}>
+                            Không cấp huy hiệu
+                          </SelectItem>
+                          {achievements.map((achievement) => (
+                            <SelectItem key={achievement.id} value={achievement.id}>
+                              <span className="flex items-center gap-2">
+                                {achievement.iconUrl ? (
+                                  <img
+                                    src={achievement.iconUrl}
+                                    alt=""
+                                    className="h-5 w-5 object-contain"
+                                  />
+                                ) : (
+                                  <Medal className="h-4 w-4" />
+                                )}
+                                <span>{achievement.title}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedCompletionAchievement ? (
+                      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white">
+                          {selectedCompletionAchievement.iconUrl ? (
+                            <img
+                              src={selectedCompletionAchievement.iconUrl}
+                              alt={selectedCompletionAchievement.title}
+                              className="h-10 w-10 object-contain"
+                            />
+                          ) : (
+                            <Medal className="h-6 w-6 text-emerald-700" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-emerald-950">
+                            {selectedCompletionAchievement.title}
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-emerald-800">
+                            {selectedCompletionAchievement.description || "Huy hiệu sẽ được cấp khi map hoàn thành."}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
+                        Chưa chọn huy hiệu. Tạo huy hiệu tại trang{" "}
+                        <Link
+                          href="/admin/learn/achievements"
+                          className="font-semibold text-slate-900 underline-offset-4 hover:underline"
+                        >
+                          Quản lý huy hiệu
+                        </Link>{" "}
+                        rồi quay lại gắn cho map.
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                     <div>
                       <p className="font-semibold text-slate-900">Published</p>
@@ -616,6 +727,30 @@ export function LearnMapEditorScreen({ mapId, source }: Props) {
                       <p className="mt-2 text-sm text-slate-700">
                         {formatRequiredXp(map.requiredXPToComplete ?? 0, map.totalXP ?? 0)}
                       </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        Completion badge
+                      </p>
+                      {selectedCompletionAchievement ? (
+                        <div className="mt-2 flex items-center gap-2">
+                          {selectedCompletionAchievement.iconUrl ? (
+                            <img
+                              src={selectedCompletionAchievement.iconUrl}
+                              alt={selectedCompletionAchievement.title}
+                              className="h-8 w-8 object-contain"
+                            />
+                          ) : (
+                            <Medal className="h-5 w-5 text-slate-500" />
+                          )}
+                          <span className="text-sm font-semibold text-slate-800">
+                            {selectedCompletionAchievement.title}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm text-slate-500">Chưa gắn huy hiệu</p>
+                      )}
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">

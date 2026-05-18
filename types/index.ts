@@ -196,6 +196,17 @@ export interface AdminUpdateUserPayload {
   avatarUrl?: string;
 }
 
+export interface AdminExerciseQuestionItem {
+  id: string;
+  prompt: string;
+  question?: string;
+  options: string[];
+  correctIndex: number;
+  correctAnswer?: string | number;
+  explanation: string;
+  score: number;
+}
+
 export interface AdminExerciseItem {
   id: string;
   title: string;
@@ -208,6 +219,7 @@ export interface AdminExerciseItem {
   rewardsXp: number;
   coverImage: string;
   skills: string[];
+  questions?: AdminExerciseQuestionItem[];
   createdAt: string | null;
   updatedAt: string | null;
 }

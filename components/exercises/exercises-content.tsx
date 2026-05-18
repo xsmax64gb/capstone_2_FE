@@ -142,7 +142,6 @@ export default function ExercisesContent() {
   const pagination = listData?.pagination;
   const totalQuestions = summaryData?.totalQuestions ?? 0;
   const totalXp = summaryData?.totalXp ?? 0;
-  const pastAttempts = summaryData?.pastAttempts ?? 0;
   const aiExerciseQuota = useMemo(
     () =>
       getFeatureQuotaItem(featureQuotaOverview, AI_EXERCISE_BUILDER_FEATURE_KEY),
@@ -257,7 +256,7 @@ export default function ExercisesContent() {
             </div>
           </div>
 
-          <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase text-slate-500">
                 {t("Ngân hàng câu hỏi")}
@@ -269,12 +268,6 @@ export default function ExercisesContent() {
                 {t("XP tiềm năng")}
               </p>
               <p className="mt-1 text-xl font-bold">{totalXp}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">
-                {t("Lượt làm trước")}
-              </p>
-              <p className="mt-1 text-xl font-bold">{pastAttempts}</p>
             </div>
           </div>
 
